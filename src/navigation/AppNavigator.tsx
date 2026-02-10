@@ -1,6 +1,6 @@
-
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { View, StyleSheet, Platform } from 'react-native';
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { HomeScreen } from '../screens/HomeScreen';
@@ -10,12 +10,26 @@ import { ProgressScreen } from '../screens/ProgressScreen';
 import { ExerciseListScreen } from '../screens/ExerciseListScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { WorkoutDetailsScreen } from '../screens/WorkoutDetailsScreen';
-import { colors } from '../theme/colors';
-import { Home, History, TrendingUp, PlusCircle, Settings } from 'lucide-react-native';
+import { colors, borderRadius } from '../theme/colors';
+import { Home, History, TrendingUp, Settings } from 'lucide-react-native';
 import { RootStackParamList, TabParamList } from '../types';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
+
+const AppTheme = {
+    ...DefaultTheme,
+    dark: true,
+    colors: {
+        ...DefaultTheme.colors,
+        primary: colors.primary,
+        background: colors.background,
+        card: colors.surface,
+        text: colors.text,
+        border: colors.border,
+        notification: colors.accent,
+    },
+};
 
 const TabNavigator = () => {
     return (
@@ -25,44 +39,51 @@ const TabNavigator = () => {
                 tabBarStyle: {
                     backgroundColor: colors.surface,
                     borderTopColor: colors.border,
-                    height: 60,
-                    paddingBottom: 8,
+                    borderTopWidth: 1,
+                    height: Platform.OS === 'ios' ? 88 : 64,
+                    paddingBottom: Platform.OS === 'ios' ? 28 : 8,
                     paddingTop: 8,
+                    elevation: 0,
                 },
                 tabBarActiveTintColor: colors.primary,
-                tabBarInactiveTintColor: colors.textSecondary,
+                tabBarInactiveTintColor: colors.textMuted,
+                tabBarLabelStyle: {
+                    fontSize: 11,
+                    fontWeight: '600',
+                    letterSpacing: 0.3,
+                },
             }}
         >
             <Tab.Screen
                 name="Home"
                 component={HomeScreen}
                 options={{
-                    tabBarIcon: ({ color, size }) => <Home color={color} size={size} />,
-                    tabBarLabel: 'Dashboard'
+                    tabBarIcon: ({ color, size }) => <Home color={color} size={size - 2} />,
+                    tabBarLabel: 'Dashboard',
                 }}
             />
             <Tab.Screen
                 name="History"
                 component={HistoryScreen}
                 options={{
-                    tabBarIcon: ({ color, size }) => <History color={color} size={size} />,
-                    tabBarLabel: 'History'
+                    tabBarIcon: ({ color, size }) => <History color={color} size={size - 2} />,
+                    tabBarLabel: 'History',
                 }}
             />
             <Tab.Screen
                 name="Progress"
                 component={ProgressScreen}
                 options={{
-                    tabBarIcon: ({ color, size }) => <TrendingUp color={color} size={size} />,
-                    tabBarLabel: 'Progress'
+                    tabBarIcon: ({ color, size }) => <TrendingUp color={color} size={size - 2} />,
+                    tabBarLabel: 'Progress',
                 }}
             />
             <Tab.Screen
                 name="Settings"
                 component={SettingsScreen}
                 options={{
-                    tabBarIcon: ({ color, size }) => <Settings color={color} size={size} />,
-                    tabBarLabel: 'Settings'
+                    tabBarIcon: ({ color, size }) => <Settings color={color} size={size - 2} />,
+                    tabBarLabel: 'Settings',
                 }}
             />
         </Tab.Navigator>
@@ -71,11 +92,12 @@ const TabNavigator = () => {
 
 export const AppNavigator = () => {
     return (
-        <NavigationContainer>
+        <NavigationContainer theme={AppTheme}>
             <Stack.Navigator
                 screenOptions={{
                     headerShown: false,
                     contentStyle: { backgroundColor: colors.background },
+                    animation: 'slide_from_right',
                 }}
             >
                 <Stack.Screen name="Main" component={TabNavigator} />
@@ -85,6 +107,7 @@ export const AppNavigator = () => {
                     options={{
                         presentation: 'fullScreenModal',
                         gestureEnabled: false,
+                        animation: 'slide_from_bottom',
                     }}
                 />
                 <Stack.Screen
@@ -96,6 +119,8 @@ export const AppNavigator = () => {
                         headerTitle: 'Select Exercise',
                         headerStyle: { backgroundColor: colors.surface },
                         headerTintColor: colors.text,
+                        headerTitleStyle: { fontWeight: '600' },
+                        animation: 'slide_from_bottom',
                     }}
                 />
                 <Stack.Screen
@@ -104,9 +129,10 @@ export const AppNavigator = () => {
                     options={{
                         presentation: 'card',
                         headerShown: true,
-                        headerTitle: 'Details',
+                        headerTitle: 'Workout Details',
                         headerStyle: { backgroundColor: colors.surface },
                         headerTintColor: colors.text,
+                        headerTitleStyle: { fontWeight: '600' },
                     }}
                 />
             </Stack.Navigator>

@@ -1,20 +1,36 @@
-
 import React from 'react';
 import { View, StyleSheet, ViewProps } from 'react-native';
-import { colors, borderRadius, spacing } from '../theme/colors';
+import { colors, borderRadius, spacing, shadows } from '../theme/colors';
 
 interface CardProps extends ViewProps {
-    variant?: 'default' | 'elevated';
+    variant?: 'default' | 'elevated' | 'outlined' | 'glass';
+    glowColor?: string;
 }
 
 export const Card: React.FC<CardProps> = ({
     children,
     variant = 'default',
+    glowColor,
     style,
     ...props
 }) => {
+    const variantStyles = {
+        default: styles.default,
+        elevated: styles.elevated,
+        outlined: styles.outlined,
+        glass: styles.glass,
+    };
+
     return (
-        <View style={[styles.container, style]} {...props}>
+        <View
+            style={[
+                styles.container,
+                variantStyles[variant],
+                glowColor && shadows.glow(glowColor),
+                style,
+            ]}
+            {...props}
+        >
             {children}
         </View>
     );
@@ -22,17 +38,30 @@ export const Card: React.FC<CardProps> = ({
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: colors.surface,
-        borderRadius: borderRadius.m,
+        borderRadius: borderRadius.l,
         padding: spacing.m,
         marginBottom: spacing.m,
-        // Add subtle shadow for depth
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 2,
+    },
+    default: {
+        backgroundColor: colors.surface,
         borderWidth: 1,
         borderColor: colors.border,
+        ...shadows.small,
+    },
+    elevated: {
+        backgroundColor: colors.surfaceElevated,
+        borderWidth: 0,
+        ...shadows.medium,
+    },
+    outlined: {
+        backgroundColor: 'transparent',
+        borderWidth: 1.5,
+        borderColor: colors.border,
+    },
+    glass: {
+        backgroundColor: colors.surface + 'CC',
+        borderWidth: 1,
+        borderColor: colors.border + '60',
+        ...shadows.small,
     },
 });

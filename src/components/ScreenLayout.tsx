@@ -1,20 +1,23 @@
-
 import React from 'react';
-import { View, StyleSheet, StatusBar, ViewStyle } from 'react-native';
+import { View, StyleSheet, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../theme/colors';
 
 interface ScreenLayoutProps {
     children: React.ReactNode;
-    style?: ViewStyle;
-    edges?: ['top' | 'right' | 'bottom' | 'left'];
+    style?: object;
+    noPadding?: boolean;
 }
 
-export const ScreenLayout: React.FC<ScreenLayoutProps> = ({ children, style }) => {
+export const ScreenLayout: React.FC<ScreenLayoutProps> = ({
+    children,
+    style,
+    noPadding = false,
+}) => {
     return (
         <SafeAreaView style={[styles.container, style]}>
             <StatusBar barStyle="light-content" backgroundColor={colors.background} />
-            <View style={styles.content}>
+            <View style={[styles.content, noPadding && { paddingHorizontal: 0 }]}>
                 {children}
             </View>
         </SafeAreaView>
@@ -28,6 +31,6 @@ const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
-        paddingHorizontal: 16,
+        paddingHorizontal: 20,
     },
 });

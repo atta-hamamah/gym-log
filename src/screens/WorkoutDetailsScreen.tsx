@@ -1,16 +1,18 @@
 import React from 'react';
-import { ScrollView, View, StyleSheet } from 'react-native';
+import { ScrollView, View, StyleSheet, Alert } from 'react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { useWorkout } from '../context/WorkoutContext';
 import { Card } from '../components/Card';
+import { StatBadge } from '../components/StatBadge';
+import { Button } from '../components/Button';
 import { format } from 'date-fns';
 import { colors, spacing, borderRadius } from '../theme/colors';
 import { WorkoutSession, ExerciseLog, Set } from '../types';
 
-export const WorkoutDetailsScreen = ({ route }: any) => {
+export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
     const { workoutId } = route.params as { workoutId: string };
-    const { workouts } = useWorkout();
+    const { workouts, deleteWorkout } = useWorkout();
 
     const workout = workouts.find((w: WorkoutSession) => w.id === workoutId);
 
@@ -18,7 +20,7 @@ export const WorkoutDetailsScreen = ({ route }: any) => {
         return (
             <ScreenLayout>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                    <Typography variant="h2">Workout not found</Typography>
+                    <Typography variant="h2" color={colors.textMuted}>Workout not found</Typography>
                 </View>
             </ScreenLayout>
         );
@@ -30,74 +32,123 @@ export const WorkoutDetailsScreen = ({ route }: any) => {
         (acc, e) => acc + e.sets.reduce((a, s) => a + s.weight * s.reps, 0),
         0
     );
+    const totalReps = workout.exercises.reduce(
+        (acc, e) => acc + e.sets.reduce((a, s) => a + s.reps, 0),
+        0
+    );
+
+    const handleDelete = () => {
+        Alert.alert('Delete Workout?', 'This action cannot be undone.', [
+            { text: 'Cancel', style: 'cancel' },
+            {
+                text: 'Delete',
+                style: 'destructive',
+                onPress: async () => {
+                    await deleteWorkout(workoutId);
+                    navigation.goBack();
+                },
+            },
+        ]);
+    };
 
     return (
         <ScreenLayout>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+                {/* Title */}
                 <Typography variant="h1" style={{ marginBottom: 4 }}>{workout.name}</Typography>
-                <Typography variant="caption" style={{ marginBottom: 16 }}>
+                <Typography variant="caption" style={{ marginBottom: 20 }}>
                     {format(workout.startTime, 'EEEE, MMM dd, yyyy • HH:mm')}
                 </Typography>
 
-                {/* Summary Row */}
+                {/* Summary Stats */}
                 <View style={styles.summaryRow}>
-                    <Card style={styles.summaryCard}>
-                        <Typography variant="h3" color={colors.primary}>{duration}</Typography>
-                        <Typography variant="caption">min</Typography>
+                    <Card style={styles.summaryCard} variant="glass">
+                        <StatBadge value={duration} label="min" color={colors.primary} />
                     </Card>
-                    <Card style={styles.summaryCard}>
-                        <Typography variant="h3" color={colors.success}>{totalSets}</Typography>
-                        <Typography variant="caption">sets</Typography>
+                    <Card style={styles.summaryCard} variant="glass">
+                        <StatBadge value={totalSets} label="sets" color={colors.secondary} />
                     </Card>
-                    <Card style={styles.summaryCard}>
-                        <Typography variant="h3" color={colors.warning}>
-                            {totalVolume > 999 ? `${(totalVolume / 1000).toFixed(1)}k` : totalVolume}
-                        </Typography>
-                        <Typography variant="caption">kg vol</Typography>
+                    <Card style={styles.summaryCard} variant="glass">
+                        <StatBadge value={totalReps} label="reps" color={colors.warning} />
+                    </Card>
+                    <Card style={styles.summaryCard} variant="glass">
+                        <StatBadge
+                            value={totalVolume > 999 ? `${(totalVolume / 1000).toFixed(1)}k` : totalVolume}
+                            label="kg"
+                            color={colors.accent}
+                        />
                     </Card>
                 </View>
 
-                {workout.notes && (
-                    <Card style={{ marginBottom: 20 }}>
-                        <Typography variant="caption" style={{ marginBottom: 4 }}>Notes</Typography>
-                        <Typography variant="body">{workout.notes}</Typography>
+                {/* Notes */}
+                {workout.notes ? (
+                    <Card variant="outlined" style={{ marginBottom: 20 }}>
+                        <Typography variant="label" style={{ marginBottom: 6 }}>Session Notes</Typography>
+                        <Typography variant="body" color={colors.textSecondary}>
+                            {workout.notes}
+                        </Typography>
                     </Card>
-                )}
+                ) : null}
 
-                {workout.exercises.map((log: ExerciseLog) => (
-                    <Card key={log.id} style={{ marginBottom: 12 }}>
-                        <Typography variant="h3" style={{ marginBottom: 8 }}>{log.exerciseName}</Typography>
+                {/* Exercises */}
+                <Typography variant="h3" style={{ marginBottom: 12 }}>Exercises</Typography>
+                {workout.exercises.map((log: ExerciseLog) => {
+                    const exVolume = log.sets.reduce((a, s) => a + s.weight * s.reps, 0);
+                    const bestWeight = log.sets.length > 0 ? Math.max(...log.sets.map(s => s.weight)) : 0;
 
-                        <View style={styles.tableHeader}>
-                            <Typography variant="label" style={{ width: 40 }}>Set</Typography>
-                            <Typography variant="label" style={{ width: 80 }}>kg</Typography>
-                            <Typography variant="label" style={{ width: 80 }}>Reps</Typography>
-                            <Typography variant="label" style={{ flex: 1, textAlign: 'right' }}>Volume</Typography>
-                        </View>
-
-                        {log.sets.map((set: Set, index: number) => (
-                            <View key={set.id} style={styles.row}>
-                                <Typography variant="body" style={{ width: 40 }}>{index + 1}</Typography>
-                                <Typography variant="body" style={{ width: 80 }}>{set.weight}</Typography>
-                                <Typography variant="body" style={{ width: 80 }}>{set.reps}</Typography>
-                                <Typography variant="body" color={colors.textSecondary} style={{ flex: 1, textAlign: 'right' }}>
-                                    {set.weight * set.reps} kg
-                                </Typography>
+                    return (
+                        <Card key={log.id} style={{ marginBottom: 12 }}>
+                            <View style={styles.exHeader}>
+                                <Typography variant="h3" style={{ flex: 1 }}>{log.exerciseName}</Typography>
+                                {bestWeight > 0 && (
+                                    <View style={styles.prBadge}>
+                                        <Typography variant="label" color={colors.primary} style={{ fontSize: 10 }}>
+                                            BEST {bestWeight}kg
+                                        </Typography>
+                                    </View>
+                                )}
                             </View>
-                        ))}
 
-                        {log.sets.length > 0 && (
-                            <View style={styles.exerciseSummary}>
-                                <Typography variant="caption" color={colors.primary}>
-                                    Best: {Math.max(...log.sets.map(s => s.weight))} kg
-                                </Typography>
+                            {/* Table */}
+                            <View style={styles.tableHeader}>
+                                <Typography variant="label" style={styles.colSet}>SET</Typography>
+                                <Typography variant="label" style={styles.colData}>KG</Typography>
+                                <Typography variant="label" style={styles.colData}>REPS</Typography>
+                                <Typography variant="label" style={[styles.colData, { textAlign: 'right' }]}>VOL</Typography>
+                            </View>
+
+                            {log.sets.map((set: Set, index: number) => (
+                                <View key={set.id} style={[styles.row, index % 2 === 0 && styles.rowAlt]}>
+                                    <View style={styles.setBadge}>
+                                        <Typography variant="bodySmall" bold align="center">{index + 1}</Typography>
+                                    </View>
+                                    <Typography variant="body" style={styles.colData} bold>{set.weight}</Typography>
+                                    <Typography variant="body" style={styles.colData}>{set.reps}</Typography>
+                                    <Typography variant="bodySmall" color={colors.textMuted} style={[styles.colData, { textAlign: 'right' }]}>
+                                        {set.weight * set.reps}
+                                    </Typography>
+                                </View>
+                            ))}
+
+                            {/* Exercise totals */}
+                            <View style={styles.exFooter}>
                                 <Typography variant="caption" color={colors.textSecondary}>
-                                    Volume: {log.sets.reduce((a, s) => a + s.weight * s.reps, 0)} kg
+                                    {log.sets.length} sets • {exVolume.toLocaleString()} kg total
                                 </Typography>
                             </View>
-                        )}
-                    </Card>
-                ))}
+                        </Card>
+                    );
+                })}
+
+                {/* Delete */}
+                <Button
+                    title="Delete Workout"
+                    variant="danger"
+                    size="medium"
+                    onPress={handleDelete}
+                    fullWidth
+                    style={{ marginTop: 16 }}
+                />
             </ScrollView>
         </ScreenLayout>
     );
@@ -112,24 +163,58 @@ const styles = StyleSheet.create({
     summaryCard: {
         flex: 1,
         alignItems: 'center',
-        paddingVertical: 12,
+        paddingVertical: 14,
         marginBottom: 0,
+    },
+    exHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    prBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: borderRadius.xs,
+        borderWidth: 1,
+        borderColor: colors.primary + '40',
+        backgroundColor: colors.primary + '10',
     },
     tableHeader: {
         flexDirection: 'row',
-        marginBottom: 8,
+        alignItems: 'center',
+        paddingBottom: 8,
         borderBottomWidth: 1,
         borderBottomColor: colors.border,
-        paddingBottom: 4,
+        marginBottom: 4,
     },
     row: {
         flexDirection: 'row',
-        marginBottom: 4,
         alignItems: 'center',
+        paddingVertical: 6,
+        paddingHorizontal: 4,
+        borderRadius: borderRadius.xs,
     },
-    exerciseSummary: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
+    rowAlt: {
+        backgroundColor: colors.surfaceLight + '40',
+    },
+    colSet: {
+        width: 36,
+        textAlign: 'center',
+    },
+    colData: {
+        flex: 1,
+        textAlign: 'center',
+    },
+    setBadge: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: colors.surfaceLight,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 8,
+    },
+    exFooter: {
         marginTop: 8,
         paddingTop: 8,
         borderTopWidth: 1,

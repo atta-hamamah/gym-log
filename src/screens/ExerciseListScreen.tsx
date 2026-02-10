@@ -6,6 +6,7 @@ import { useWorkout } from '../context/WorkoutContext';
 import { colors, spacing, borderRadius } from '../theme/colors';
 import { StorageService } from '../services/storage';
 import { Button } from '../components/Button';
+import { Card } from '../components/Card';
 import { generateId } from '../utils/generateId';
 import { Exercise } from '../types';
 import { MUSCLE_GROUPS } from '../constants/exercises';
@@ -16,7 +17,6 @@ export const ExerciseListScreen = ({ navigation }: any) => {
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedGroup, setSelectedGroup] = useState('All');
 
-    // Custom Exercise Form
     const [newExName, setNewExName] = useState('');
     const [newExMuscle, setNewExMuscle] = useState('');
     const [newExCategory, setNewExCategory] = useState<'strength' | 'cardio'>('strength');
@@ -61,19 +61,26 @@ export const ExerciseListScreen = ({ navigation }: any) => {
 
     return (
         <ScreenLayout>
+            {/* Search + New */}
             <View style={styles.header}>
-                <TextInput
-                    style={styles.search}
-                    placeholder="Search exercises..."
-                    placeholderTextColor={colors.textSecondary}
-                    value={search}
-                    onChangeText={setSearch}
-                />
+                <View style={styles.searchContainer}>
+                    <Typography variant="bodySmall" color={colors.textMuted} style={{ position: 'absolute', left: 12, zIndex: 1 }}>
+                        🔍
+                    </Typography>
+                    <TextInput
+                        style={styles.search}
+                        placeholder="Search exercises..."
+                        placeholderTextColor={colors.textMuted}
+                        value={search}
+                        onChangeText={setSearch}
+                    />
+                </View>
                 <Button
-                    title="New"
+                    title="+ New"
                     variant="secondary"
+                    size="small"
                     onPress={() => setModalVisible(true)}
-                    style={{ width: 60, height: 40, marginLeft: 8 }}
+                    style={{ marginLeft: 8 }}
                 />
             </View>
 
@@ -81,7 +88,7 @@ export const ExerciseListScreen = ({ navigation }: any) => {
             <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                style={styles.filterRow}
+                style={styles.filterScroll}
                 contentContainerStyle={styles.filterContent}
             >
                 {MUSCLE_GROUPS.map(group => (
@@ -92,11 +99,15 @@ export const ExerciseListScreen = ({ navigation }: any) => {
                             selectedGroup === group && styles.filterChipActive,
                         ]}
                         onPress={() => setSelectedGroup(group)}
+                        activeOpacity={0.7}
                     >
                         <Typography
                             variant="caption"
                             color={selectedGroup === group ? colors.black : colors.textSecondary}
-                            style={{ fontWeight: selectedGroup === group ? '700' : '400' }}
+                            style={{
+                                fontWeight: selectedGroup === group ? '700' : '500',
+                                fontSize: 12,
+                            }}
                         >
                             {group}
                         </Typography>
@@ -104,68 +115,77 @@ export const ExerciseListScreen = ({ navigation }: any) => {
                 ))}
             </ScrollView>
 
+            {/* Exercise List */}
             <FlatList
                 data={filtered}
                 keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 20 }}
+                renderItem={({ item, index }) => (
                     <TouchableOpacity
-                        style={styles.item}
+                        style={[styles.item, index === 0 && { borderTopLeftRadius: borderRadius.m, borderTopRightRadius: borderRadius.m }]}
                         onPress={() => handleSelect(item)}
-                        activeOpacity={0.7}
+                        activeOpacity={0.6}
                     >
                         <View style={{ flex: 1 }}>
-                            <Typography variant="body">{item.name}</Typography>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
-                                <Typography variant="caption">{item.muscleGroup}</Typography>
+                            <Typography variant="body" bold>{item.name}</Typography>
+                            <View style={styles.tagRow}>
+                                <Typography variant="caption" style={{ fontSize: 12 }}>{item.muscleGroup}</Typography>
                                 {item.category === 'cardio' && (
-                                    <View style={styles.cardioBadge}>
-                                        <Typography variant="caption" color={colors.primary} style={{ fontSize: 10 }}>
+                                    <View style={[styles.badge, { borderColor: colors.primary }]}>
+                                        <Typography variant="label" color={colors.primary} style={{ fontSize: 9 }}>
                                             CARDIO
                                         </Typography>
                                     </View>
                                 )}
                                 {item.isCustom && (
-                                    <View style={styles.customBadge}>
-                                        <Typography variant="caption" color={colors.accent} style={{ fontSize: 10 }}>
+                                    <View style={[styles.badge, { borderColor: colors.accent }]}>
+                                        <Typography variant="label" color={colors.accent} style={{ fontSize: 9 }}>
                                             CUSTOM
                                         </Typography>
                                     </View>
                                 )}
                             </View>
                         </View>
+                        <Typography variant="body" color={colors.textMuted}>+</Typography>
                     </TouchableOpacity>
                 )}
                 ListEmptyComponent={
                     <View style={{ padding: 40, alignItems: 'center' }}>
-                        <Typography variant="body" color={colors.textSecondary}>
-                            No exercises found.
+                        <Typography variant="body" color={colors.textMuted} align="center">
+                            No exercises found for "{search || selectedGroup}".
                         </Typography>
                     </View>
                 }
             />
 
+            {/* Custom Exercise Modal */}
             <Modal
                 visible={modalVisible}
                 transparent={true}
-                animationType="slide"
+                animationType="fade"
                 onRequestClose={() => setModalVisible(false)}
             >
                 <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
-                        <Typography variant="h3" style={{ marginBottom: 16 }}>Add Custom Exercise</Typography>
+                    <Card variant="elevated" style={styles.modalCard}>
+                        <Typography variant="h2" style={{ marginBottom: 4 }}>Custom Exercise</Typography>
+                        <Typography variant="caption" style={{ marginBottom: 20 }}>
+                            Add your own exercise to the library
+                        </Typography>
 
                         <TextInput
                             style={styles.input}
                             placeholder="Exercise Name"
-                            placeholderTextColor={colors.textSecondary}
+                            placeholderTextColor={colors.textMuted}
                             value={newExName}
                             onChangeText={setNewExName}
+                            autoFocus
                         />
 
                         <TextInput
                             style={styles.input}
-                            placeholder="Muscle Group (e.g. Chest)"
-                            placeholderTextColor={colors.textSecondary}
+                            placeholder="Muscle Group (e.g. Chest, Back)"
+                            placeholderTextColor={colors.textMuted}
                             value={newExMuscle}
                             onChangeText={setNewExMuscle}
                         />
@@ -176,10 +196,11 @@ export const ExerciseListScreen = ({ navigation }: any) => {
                                 onPress={() => setNewExCategory('strength')}
                             >
                                 <Typography
-                                    variant="caption"
+                                    variant="bodySmall"
                                     color={newExCategory === 'strength' ? colors.black : colors.textSecondary}
+                                    bold={newExCategory === 'strength'}
                                 >
-                                    Strength
+                                    🏋️ Strength
                                 </Typography>
                             </TouchableOpacity>
                             <TouchableOpacity
@@ -187,19 +208,25 @@ export const ExerciseListScreen = ({ navigation }: any) => {
                                 onPress={() => setNewExCategory('cardio')}
                             >
                                 <Typography
-                                    variant="caption"
+                                    variant="bodySmall"
                                     color={newExCategory === 'cardio' ? colors.black : colors.textSecondary}
+                                    bold={newExCategory === 'cardio'}
                                 >
-                                    Cardio
+                                    🏃 Cardio
                                 </Typography>
                             </TouchableOpacity>
                         </View>
 
                         <View style={styles.modalButtons}>
-                            <Button title="Cancel" variant="outline" onPress={() => setModalVisible(false)} style={{ flex: 1, marginRight: 8 }} />
-                            <Button title="Save" onPress={handleCreateExercise} style={{ flex: 1 }} />
+                            <Button
+                                title="Cancel"
+                                variant="ghost"
+                                onPress={() => setModalVisible(false)}
+                                style={{ flex: 1, marginRight: 8 }}
+                            />
+                            <Button title="Add & Select" onPress={handleCreateExercise} style={{ flex: 1.5 }} />
                         </View>
-                    </View>
+                    </Card>
                 </View>
             </Modal>
         </ScreenLayout>
@@ -212,30 +239,40 @@ const styles = StyleSheet.create({
         marginBottom: 8,
         alignItems: 'center',
     },
-    search: {
+    searchContainer: {
         flex: 1,
-        height: 40,
-        backgroundColor: colors.surfaceLight,
-        borderRadius: borderRadius.s,
-        paddingHorizontal: 12,
-        color: colors.text,
+        justifyContent: 'center',
     },
-    filterRow: {
+    search: {
+        height: 42,
+        backgroundColor: colors.surfaceLight,
+        borderRadius: borderRadius.m,
+        paddingLeft: 36,
+        paddingRight: 12,
+        color: colors.text,
+        fontSize: 15,
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    filterScroll: {
         maxHeight: 44,
-        marginBottom: 8,
+        marginBottom: 12,
     },
     filterContent: {
         paddingVertical: 4,
-        gap: 8,
+        gap: 6,
     },
     filterChip: {
-        paddingHorizontal: 14,
+        paddingHorizontal: 16,
         paddingVertical: 6,
-        borderRadius: borderRadius.xl,
+        borderRadius: borderRadius.full,
         backgroundColor: colors.surfaceLight,
+        borderWidth: 1,
+        borderColor: colors.border,
     },
     filterChipActive: {
         backgroundColor: colors.primary,
+        borderColor: colors.primary,
     },
     item: {
         flexDirection: 'row',
@@ -244,60 +281,60 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: colors.border,
         backgroundColor: colors.surface,
-        marginBottom: 1,
     },
-    cardioBadge: {
-        marginLeft: 8,
+    tagRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 3,
+        gap: 6,
+    },
+    badge: {
         paddingHorizontal: 6,
         paddingVertical: 1,
         borderRadius: 4,
         borderWidth: 1,
-        borderColor: colors.primary,
-    },
-    customBadge: {
-        marginLeft: 8,
-        paddingHorizontal: 6,
-        paddingVertical: 1,
-        borderRadius: 4,
-        borderWidth: 1,
-        borderColor: colors.accent,
     },
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.6)',
+        backgroundColor: colors.overlay,
         justifyContent: 'center',
-        padding: 20,
+        paddingHorizontal: 24,
     },
-    modalContent: {
-        backgroundColor: colors.surface,
-        borderRadius: borderRadius.m,
-        padding: 20,
+    modalCard: {
+        padding: 24,
+        marginBottom: 0,
     },
     input: {
         height: 48,
         backgroundColor: colors.surfaceLight,
-        borderRadius: borderRadius.s,
+        borderRadius: borderRadius.m,
         paddingHorizontal: 16,
         color: colors.text,
-        marginBottom: 16,
+        marginBottom: 12,
+        fontSize: 15,
+        borderWidth: 1,
+        borderColor: colors.border,
     },
     categoryRow: {
         flexDirection: 'row',
         gap: 8,
-        marginBottom: 16,
+        marginBottom: 8,
     },
     categoryChip: {
         flex: 1,
-        paddingVertical: 10,
-        borderRadius: borderRadius.s,
+        paddingVertical: 12,
+        borderRadius: borderRadius.m,
         backgroundColor: colors.surfaceLight,
         alignItems: 'center',
+        borderWidth: 1,
+        borderColor: colors.border,
     },
     categoryChipActive: {
         backgroundColor: colors.primary,
+        borderColor: colors.primary,
     },
     modalButtons: {
         flexDirection: 'row',
-        marginTop: 8,
+        marginTop: 12,
     },
 });
