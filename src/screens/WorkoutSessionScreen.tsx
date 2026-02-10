@@ -133,26 +133,45 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
                     </View>
                 </View>
 
-                {/* Rest Timer Header Badge */}
-                {restCountdown !== null && (
-                    <TouchableOpacity
-                        style={[
-                            styles.restBadge,
-                            restCountdown <= 0 && styles.restBadgeComplete,
-                        ]}
-                        onPress={() => setShowRestTimer(!showRestTimer)}
-                        activeOpacity={0.7}
+                {/* Rest Timer Header Badge - always visible */}
+                <TouchableOpacity
+                    style={[
+                        styles.restBadge,
+                        restCountdown !== null && restCountdown > 0 && styles.restBadgeActive,
+                        restCountdown !== null && restCountdown <= 0 && styles.restBadgeComplete,
+                    ]}
+                    onPress={() => {
+                        if (restCountdown === null) {
+                            // Start a new rest timer
+                            setShowRestTimer(true);
+                            setRestCountdown(restDuration);
+                        } else {
+                            // Toggle the panel visibility
+                            setShowRestTimer(!showRestTimer);
+                        }
+                    }}
+                    activeOpacity={0.7}
+                >
+                    <Typography
+                        variant="bodySmall"
+                        color={
+                            restCountdown === null
+                                ? colors.textSecondary
+                                : restCountdown <= 0
+                                    ? colors.success
+                                    : colors.primary
+                        }
+                        bold
+                        style={{ fontSize: 14 }}
                     >
-                        <Typography
-                            variant="bodySmall"
-                            color={restCountdown <= 0 ? colors.success : colors.text}
-                            bold
-                            style={{ fontSize: 14 }}
-                        >
-                            {restCountdown <= 0 ? '✓ ' : '💤 '}{formatRestTime(restCountdown)}
-                        </Typography>
-                    </TouchableOpacity>
-                )}
+                        {restCountdown === null
+                            ? '💤'
+                            : restCountdown <= 0
+                                ? `✓ ${formatRestTime(restCountdown)}`
+                                : `💤 ${formatRestTime(restCountdown)}`
+                        }
+                    </Typography>
+                </TouchableOpacity>
 
                 <Button
                     title={t('workoutSession.finish')}
@@ -206,6 +225,7 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
                 visible={showRestTimer}
                 defaultDuration={restDuration}
                 onDismiss={handleDismissRest}
+                onTimeChange={(newRemaining) => setRestCountdown(newRemaining)}
             />
         </ScreenLayout>
     );
@@ -451,6 +471,10 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: colors.border,
         marginLeft: 8,
+    },
+    restBadgeActive: {
+        backgroundColor: colors.primary + '15',
+        borderColor: colors.primary + '40',
     },
     restBadgeComplete: {
         backgroundColor: colors.success + '15',

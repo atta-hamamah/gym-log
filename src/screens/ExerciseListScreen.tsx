@@ -20,8 +20,12 @@ export const ExerciseListScreen = ({ navigation }: any) => {
     const [selectedGroup, setSelectedGroup] = useState('All');
 
     const [newExName, setNewExName] = useState('');
-    const [newExMuscle, setNewExMuscle] = useState('');
+    const [newExMuscle, setNewExMuscle] = useState('My Exercises');
     const [newExCategory, setNewExCategory] = useState<'strength' | 'cardio'>('strength');
+
+    // Muscle groups available for selection (exclude 'All')
+    const selectableMuscleGroups = useMemo(() =>
+        MUSCLE_GROUPS.filter(g => g !== 'All'), []);
 
     const filtered = useMemo(() => {
         return exercises.filter((e: Exercise) => {
@@ -39,7 +43,7 @@ export const ExerciseListScreen = ({ navigation }: any) => {
     };
 
     const handleCreateExercise = async () => {
-        if (!newExName.trim() || !newExMuscle.trim()) {
+        if (!newExName.trim() || !newExMuscle) {
             Alert.alert(t('exerciseList.error'), t('exerciseList.errorMessage'));
             return;
         }
@@ -48,7 +52,7 @@ export const ExerciseListScreen = ({ navigation }: any) => {
             id: generateId(),
             name: newExName.trim(),
             category: newExCategory,
-            muscleGroup: newExMuscle.trim(),
+            muscleGroup: newExMuscle,
             isCustom: true,
         };
 
@@ -56,7 +60,7 @@ export const ExerciseListScreen = ({ navigation }: any) => {
         await refreshData();
         setModalVisible(false);
         setNewExName('');
-        setNewExMuscle('');
+        setNewExMuscle('My Exercises');
         setNewExCategory('strength');
         handleSelect(newExercise);
     };
@@ -184,13 +188,39 @@ export const ExerciseListScreen = ({ navigation }: any) => {
                             autoFocus
                         />
 
-                        <TextInput
-                            style={styles.input}
-                            placeholder={t('exerciseList.muscleGroupPlaceholder')}
-                            placeholderTextColor={colors.textMuted}
-                            value={newExMuscle}
-                            onChangeText={setNewExMuscle}
-                        />
+                        {/* Muscle Group Selector */}
+                        <Typography variant="label" style={{ marginBottom: 8 }}>
+                            {t('exerciseList.muscleGroupPlaceholder')}
+                        </Typography>
+                        <ScrollView
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            style={{ maxHeight: 44, marginBottom: 12 }}
+                            contentContainerStyle={{ gap: 6 }}
+                        >
+                            {selectableMuscleGroups.map(group => (
+                                <TouchableOpacity
+                                    key={group}
+                                    style={[
+                                        styles.muscleChip,
+                                        newExMuscle === group && styles.muscleChipActive,
+                                    ]}
+                                    onPress={() => setNewExMuscle(group)}
+                                    activeOpacity={0.7}
+                                >
+                                    <Typography
+                                        variant="caption"
+                                        color={newExMuscle === group ? colors.black : colors.textSecondary}
+                                        style={{
+                                            fontWeight: newExMuscle === group ? '700' : '500',
+                                            fontSize: 12,
+                                        }}
+                                    >
+                                        {group}
+                                    </Typography>
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
 
                         <View style={styles.categoryRow}>
                             <TouchableOpacity
@@ -338,5 +368,17 @@ const styles = StyleSheet.create({
     modalButtons: {
         flexDirection: 'row',
         marginTop: 12,
+    },
+    muscleChip: {
+        paddingHorizontal: 14,
+        paddingVertical: 8,
+        borderRadius: borderRadius.full,
+        backgroundColor: colors.surfaceLight,
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    muscleChipActive: {
+        backgroundColor: colors.primary,
+        borderColor: colors.primary,
     },
 });

@@ -5,15 +5,16 @@ import { colors, borderRadius } from '../theme/colors';
 import { Audio } from 'expo-av';
 import { useTranslation } from 'react-i18next';
 
-const REST_PRESETS = [30, 60, 90, 120, 180];
+const REST_PRESETS = [30, 60, 90, 120, 180, 240, 300];
 
 interface RestTimerProps {
     visible: boolean;
     defaultDuration: number;
     onDismiss: () => void;
+    onTimeChange?: (remaining: number) => void;
 }
 
-export const RestTimer: React.FC<RestTimerProps> = ({ visible, defaultDuration, onDismiss }) => {
+export const RestTimer: React.FC<RestTimerProps> = ({ visible, defaultDuration, onDismiss, onTimeChange }) => {
     const { t } = useTranslation();
     const [remaining, setRemaining] = useState(defaultDuration);
     const [totalDuration, setTotalDuration] = useState(defaultDuration);
@@ -125,10 +126,15 @@ export const RestTimer: React.FC<RestTimerProps> = ({ visible, defaultDuration, 
         setRemaining(duration);
         setIsRunning(true);
         setIsFinished(false);
+        onTimeChange?.(duration);
     };
 
     const handleAddTime = (seconds: number) => {
-        setRemaining(prev => prev + seconds);
+        setRemaining(prev => {
+            const newVal = prev + seconds;
+            onTimeChange?.(newVal);
+            return newVal;
+        });
         setTotalDuration(prev => prev + seconds);
         if (isFinished) {
             setIsRunning(true);

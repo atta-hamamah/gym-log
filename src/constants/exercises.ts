@@ -66,6 +66,7 @@ export const EXERCISES: Exercise[] = [
 
 export const MUSCLE_GROUPS = [
   'All',
+  'My Exercises',
   'Chest',
   'Back',
   'Legs',
