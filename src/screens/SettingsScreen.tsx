@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Alert, TextInput, ScrollView, Share } from 'react-native';
+import { View, StyleSheet, Alert, TextInput, ScrollView, Share, TouchableOpacity, I18nManager } from 'react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { Button } from '../components/Button';
@@ -8,8 +8,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useWorkout } from '../context/WorkoutContext';
 import { colors, spacing, borderRadius } from '../theme/colors';
 import { format } from 'date-fns';
+import { useTranslation } from 'react-i18next';
+import { LANGUAGE_LABELS, SupportedLanguage, isRTL, saveLanguagePreference } from '../i18n';
+import * as Updates from 'expo-updates';
 
 export const SettingsScreen = () => {
+    const { t, i18n } = useTranslation();
     const { updateUserStats, userStats, workouts, refreshData } = useWorkout();
     const [weight, setWeight] = useState('');
     const [bodyFat, setBodyFat] = useState('');
@@ -27,7 +31,7 @@ export const SettingsScreen = () => {
         const w = parseFloat(weight);
 
         if (isNaN(w) || w <= 0) {
-            Alert.alert('Invalid Weight', 'Please enter a valid weight.');
+            Alert.alert(t('settings.invalidWeight'), t('settings.invalidWeightMessage'));
             return;
         }
 
@@ -39,12 +43,12 @@ export const SettingsScreen = () => {
             bodyFat: isNaN(bf) ? undefined : bf,
             height: isNaN(h) ? undefined : h,
         });
-        Alert.alert('✅ Saved', 'Body stats updated successfully.');
+        Alert.alert(t('settings.saved'), t('settings.savedMessage'));
     };
 
     const handleExportCSV = async () => {
         if (workouts.length === 0) {
-            Alert.alert('No Data', 'You have no workouts to export.');
+            Alert.alert(t('settings.noData'), t('settings.noDataMessage'));
             return;
         }
 
@@ -77,27 +81,59 @@ export const SettingsScreen = () => {
                 title: `GymLog_Export_${format(Date.now(), 'yyyy-MM-dd')}`,
             });
         } catch (error: any) {
-            Alert.alert('Export Error', error.message);
+            Alert.alert(t('settings.exportError'), error.message);
         }
     };
 
     const handleReset = () => {
         Alert.alert(
-            '⚠️ Reset All Data?',
-            'This will permanently delete all workouts, custom exercises, and stats. This cannot be undone.',
+            t('settings.resetTitle'),
+            t('settings.resetMessage'),
             [
-                { text: 'Cancel', style: 'cancel' },
+                { text: t('common.cancel'), style: 'cancel' },
                 {
-                    text: 'Delete Everything',
+                    text: t('settings.deleteEverything'),
                     style: 'destructive',
                     onPress: async () => {
                         await AsyncStorage.clear();
                         await refreshData();
-                        Alert.alert('Data Cleared', 'All data has been removed.');
+                        Alert.alert(t('settings.dataCleared'), t('settings.dataClearedMessage'));
                     },
                 },
             ]
         );
+    };
+
+    const handleChangeLanguage = (lang: SupportedLanguage) => {
+        const currentIsRTL = isRTL(currentLang);
+        const newIsRTL = isRTL(lang);
+
+        i18n.changeLanguage(lang);
+        saveLanguagePreference(lang); // Persist the choice
+
+        // If RTL direction changed, we need to force RTL and reload
+        if (currentIsRTL !== newIsRTL) {
+            I18nManager.forceRTL(newIsRTL);
+            I18nManager.allowRTL(newIsRTL);
+
+            Alert.alert(
+                t('settings.restartRequired'),
+                t('settings.restartMessage'),
+                [
+                    {
+                        text: t('common.ok'),
+                        onPress: async () => {
+                            try {
+                                await Updates.reloadAsync();
+                            } catch {
+                                // Fallback: inform user to manually restart
+                                Alert.alert('Restart', 'Please close and reopen the app for the layout change to take effect.');
+                            }
+                        },
+                    },
+                ]
+            );
+        }
     };
 
     // Calculate lifetime stats
@@ -109,17 +145,49 @@ export const SettingsScreen = () => {
         acc + w.exercises.reduce((a, e) => a + e.sets.reduce((s, set) => s + set.weight * set.reps, 0), 0), 0
     );
 
+    const currentLang = i18n.language as SupportedLanguage;
+
     return (
         <ScreenLayout>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
-                <Typography variant="h1" style={{ marginBottom: 24 }}>Settings</Typography>
+                <Typography variant="h1" style={{ marginBottom: 24 }}>{t('settings.title')}</Typography>
+
+                {/* Language Selector */}
+                <Card>
+                    <Typography variant="h3" style={{ marginBottom: 4 }}>{t('settings.language')}</Typography>
+                    <Typography variant="caption" style={{ marginBottom: 16 }}>
+                        {t('settings.languageDescription')}
+                    </Typography>
+
+                    <View style={styles.languageGrid}>
+                        {(Object.keys(LANGUAGE_LABELS) as SupportedLanguage[]).map(lang => (
+                            <TouchableOpacity
+                                key={lang}
+                                style={[
+                                    styles.languageChip,
+                                    currentLang === lang && styles.languageChipActive,
+                                ]}
+                                onPress={() => handleChangeLanguage(lang)}
+                                activeOpacity={0.7}
+                            >
+                                <Typography
+                                    variant="bodySmall"
+                                    color={currentLang === lang ? colors.black : colors.textSecondary}
+                                    bold={currentLang === lang}
+                                >
+                                    {LANGUAGE_LABELS[lang]}
+                                </Typography>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </Card>
 
                 {/* Body Stats */}
                 <Card>
-                    <Typography variant="h3" style={{ marginBottom: 16 }}>Body Stats</Typography>
+                    <Typography variant="h3" style={{ marginBottom: 16 }}>{t('settings.bodyStats')}</Typography>
 
                     <View style={styles.inputContainer}>
-                        <Typography variant="label" style={styles.inputLabel}>Weight (kg)</Typography>
+                        <Typography variant="label" style={styles.inputLabel}>{t('settings.weightKg')}</Typography>
                         <TextInput
                             style={styles.input}
                             placeholder="e.g. 75"
@@ -131,7 +199,7 @@ export const SettingsScreen = () => {
                     </View>
 
                     <View style={styles.inputContainer}>
-                        <Typography variant="label" style={styles.inputLabel}>Height (cm)</Typography>
+                        <Typography variant="label" style={styles.inputLabel}>{t('settings.heightCm')}</Typography>
                         <TextInput
                             style={styles.input}
                             placeholder="e.g. 180"
@@ -143,7 +211,7 @@ export const SettingsScreen = () => {
                     </View>
 
                     <View style={styles.inputContainer}>
-                        <Typography variant="label" style={styles.inputLabel}>Body Fat %</Typography>
+                        <Typography variant="label" style={styles.inputLabel}>{t('settings.bodyFatPercent')}</Typography>
                         <TextInput
                             style={styles.input}
                             placeholder="e.g. 15"
@@ -156,50 +224,50 @@ export const SettingsScreen = () => {
 
                     {userStats?.lastUpdated && (
                         <Typography variant="caption" style={{ marginBottom: 12 }}>
-                            Last updated: {format(userStats.lastUpdated, 'MMM dd, yyyy')}
+                            {t('settings.lastUpdated', { date: format(userStats.lastUpdated, 'MMM dd, yyyy') })}
                         </Typography>
                     )}
 
-                    <Button title="Save Stats" onPress={handleSaveStats} />
+                    <Button title={t('settings.saveStats')} onPress={handleSaveStats} />
                 </Card>
 
                 {/* Lifetime Stats */}
                 <Card>
-                    <Typography variant="h3" style={{ marginBottom: 12 }}>Lifetime Stats</Typography>
+                    <Typography variant="h3" style={{ marginBottom: 12 }}>{t('settings.lifetimeStats')}</Typography>
                     <View style={styles.lifetimeRow}>
                         <View style={styles.lifetimeStat}>
                             <Typography variant="h2" color={colors.primary}>{totalWorkouts}</Typography>
-                            <Typography variant="caption">Workouts</Typography>
+                            <Typography variant="caption">{t('home.workouts')}</Typography>
                         </View>
                         <View style={styles.lifetimeStat}>
                             <Typography variant="h2" color={colors.success}>{totalSets}</Typography>
-                            <Typography variant="caption">Sets</Typography>
+                            <Typography variant="caption">{t('common.sets')}</Typography>
                         </View>
                         <View style={styles.lifetimeStat}>
                             <Typography variant="h2" color={colors.warning}>
                                 {totalVolume > 9999 ? `${(totalVolume / 1000).toFixed(0)}k` : totalVolume}
                             </Typography>
-                            <Typography variant="caption">kg Total</Typography>
+                            <Typography variant="caption">{t('settings.kgTotal')}</Typography>
                         </View>
                     </View>
                 </Card>
 
                 {/* Data Management */}
                 <Card>
-                    <Typography variant="h3" style={{ marginBottom: 4 }}>Data Management</Typography>
+                    <Typography variant="h3" style={{ marginBottom: 4 }}>{t('settings.dataManagement')}</Typography>
                     <Typography variant="caption" style={{ marginBottom: 16 }}>
-                        Export or reset your local data.
+                        {t('settings.dataManagementDescription')}
                     </Typography>
 
                     <Button
-                        title="📤 Export Data (CSV)"
+                        title={t('settings.exportCSV')}
                         onPress={handleExportCSV}
                         variant="secondary"
                         style={{ marginBottom: 12 }}
                     />
 
                     <Button
-                        title="🗑 Clear All Data"
+                        title={t('settings.clearAllData')}
                         onPress={handleReset}
                         variant="outline"
                         style={{ borderColor: colors.error }}
@@ -208,10 +276,10 @@ export const SettingsScreen = () => {
 
                 <View style={styles.footer}>
                     <Typography variant="caption" style={{ textAlign: 'center' }}>
-                        Gym Log v1.0.0
+                        {t('settings.version')}
                     </Typography>
                     <Typography variant="caption" style={{ textAlign: 'center', marginTop: 4 }}>
-                        No ads • No subscriptions • Lifetime access
+                        {t('settings.tagline')}
                     </Typography>
                 </View>
             </ScrollView>
@@ -242,6 +310,25 @@ const styles = StyleSheet.create({
     },
     lifetimeStat: {
         alignItems: 'center',
+    },
+    languageGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    languageChip: {
+        paddingHorizontal: 20,
+        paddingVertical: 10,
+        borderRadius: borderRadius.m,
+        backgroundColor: colors.surfaceLight,
+        borderWidth: 1,
+        borderColor: colors.border,
+        minWidth: '45%',
+        alignItems: 'center',
+    },
+    languageChipActive: {
+        backgroundColor: colors.primary,
+        borderColor: colors.primary,
     },
     footer: {
         marginTop: 24,

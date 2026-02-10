@@ -10,8 +10,10 @@ import { Card } from '../components/Card';
 import { generateId } from '../utils/generateId';
 import { Exercise } from '../types';
 import { MUSCLE_GROUPS } from '../constants/exercises';
+import { useTranslation } from 'react-i18next';
 
 export const ExerciseListScreen = ({ navigation }: any) => {
+    const { t } = useTranslation();
     const { exercises, addExerciseToWorkout, refreshData } = useWorkout();
     const [search, setSearch] = useState('');
     const [modalVisible, setModalVisible] = useState(false);
@@ -38,7 +40,7 @@ export const ExerciseListScreen = ({ navigation }: any) => {
 
     const handleCreateExercise = async () => {
         if (!newExName.trim() || !newExMuscle.trim()) {
-            Alert.alert('Error', 'Please enter name and muscle group');
+            Alert.alert(t('exerciseList.error'), t('exerciseList.errorMessage'));
             return;
         }
 
@@ -69,14 +71,14 @@ export const ExerciseListScreen = ({ navigation }: any) => {
                     </Typography>
                     <TextInput
                         style={styles.search}
-                        placeholder="Search exercises..."
+                        placeholder={t('exerciseList.searchPlaceholder')}
                         placeholderTextColor={colors.textMuted}
                         value={search}
                         onChangeText={setSearch}
                     />
                 </View>
                 <Button
-                    title="+ New"
+                    title={t('exerciseList.new')}
                     variant="secondary"
                     size="small"
                     onPress={() => setModalVisible(true)}
@@ -134,14 +136,14 @@ export const ExerciseListScreen = ({ navigation }: any) => {
                                 {item.category === 'cardio' && (
                                     <View style={[styles.badge, { borderColor: colors.primary }]}>
                                         <Typography variant="label" color={colors.primary} style={{ fontSize: 9 }}>
-                                            CARDIO
+                                            {t('common.cardio')}
                                         </Typography>
                                     </View>
                                 )}
                                 {item.isCustom && (
                                     <View style={[styles.badge, { borderColor: colors.accent }]}>
                                         <Typography variant="label" color={colors.accent} style={{ fontSize: 9 }}>
-                                            CUSTOM
+                                            {t('common.custom')}
                                         </Typography>
                                     </View>
                                 )}
@@ -153,7 +155,7 @@ export const ExerciseListScreen = ({ navigation }: any) => {
                 ListEmptyComponent={
                     <View style={{ padding: 40, alignItems: 'center' }}>
                         <Typography variant="body" color={colors.textMuted} align="center">
-                            No exercises found for "{search || selectedGroup}".
+                            {t('exerciseList.noResults', { query: search || selectedGroup })}
                         </Typography>
                     </View>
                 }
@@ -168,14 +170,14 @@ export const ExerciseListScreen = ({ navigation }: any) => {
             >
                 <View style={styles.modalOverlay}>
                     <Card variant="elevated" style={styles.modalCard}>
-                        <Typography variant="h2" style={{ marginBottom: 4 }}>Custom Exercise</Typography>
+                        <Typography variant="h2" style={{ marginBottom: 4 }}>{t('exerciseList.customExercise')}</Typography>
                         <Typography variant="caption" style={{ marginBottom: 20 }}>
-                            Add your own exercise to the library
+                            {t('exerciseList.addToLibrary')}
                         </Typography>
 
                         <TextInput
                             style={styles.input}
-                            placeholder="Exercise Name"
+                            placeholder={t('exerciseList.exerciseName')}
                             placeholderTextColor={colors.textMuted}
                             value={newExName}
                             onChangeText={setNewExName}
@@ -184,7 +186,7 @@ export const ExerciseListScreen = ({ navigation }: any) => {
 
                         <TextInput
                             style={styles.input}
-                            placeholder="Muscle Group (e.g. Chest, Back)"
+                            placeholder={t('exerciseList.muscleGroupPlaceholder')}
                             placeholderTextColor={colors.textMuted}
                             value={newExMuscle}
                             onChangeText={setNewExMuscle}
@@ -200,7 +202,7 @@ export const ExerciseListScreen = ({ navigation }: any) => {
                                     color={newExCategory === 'strength' ? colors.black : colors.textSecondary}
                                     bold={newExCategory === 'strength'}
                                 >
-                                    🏋️ Strength
+                                    🏋️ {t('common.strength')}
                                 </Typography>
                             </TouchableOpacity>
                             <TouchableOpacity
@@ -212,19 +214,19 @@ export const ExerciseListScreen = ({ navigation }: any) => {
                                     color={newExCategory === 'cardio' ? colors.black : colors.textSecondary}
                                     bold={newExCategory === 'cardio'}
                                 >
-                                    🏃 Cardio
+                                    🏃 {t('common.cardioType')}
                                 </Typography>
                             </TouchableOpacity>
                         </View>
 
                         <View style={styles.modalButtons}>
                             <Button
-                                title="Cancel"
+                                title={t('common.cancel')}
                                 variant="ghost"
                                 onPress={() => setModalVisible(false)}
                                 style={{ flex: 1, marginRight: 8 }}
                             />
-                            <Button title="Add & Select" onPress={handleCreateExercise} style={{ flex: 1.5 }} />
+                            <Button title={t('exerciseList.addAndSelect')} onPress={handleCreateExercise} style={{ flex: 1.5 }} />
                         </View>
                     </Card>
                 </View>

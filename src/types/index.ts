@@ -2,6 +2,7 @@ export interface Set {
   id: string;
   weight: number;
   reps: number;
+  rpe?: number; // Rate of Perceived Exertion (1-10)
   completed: boolean;
   type: 'warmup' | 'normal' | 'failure' | 'drop';
 }

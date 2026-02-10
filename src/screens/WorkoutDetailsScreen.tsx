@@ -9,8 +9,10 @@ import { Button } from '../components/Button';
 import { format } from 'date-fns';
 import { colors, spacing, borderRadius } from '../theme/colors';
 import { WorkoutSession, ExerciseLog, Set } from '../types';
+import { useTranslation } from 'react-i18next';
 
 export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
+    const { t } = useTranslation();
     const { workoutId } = route.params as { workoutId: string };
     const { workouts, deleteWorkout } = useWorkout();
 
@@ -20,7 +22,7 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
         return (
             <ScreenLayout>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                    <Typography variant="h2" color={colors.textMuted}>Workout not found</Typography>
+                    <Typography variant="h2" color={colors.textMuted}>{t('workoutDetails.workoutNotFound')}</Typography>
                 </View>
             </ScreenLayout>
         );
@@ -38,10 +40,10 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
     );
 
     const handleDelete = () => {
-        Alert.alert('Delete Workout?', 'This action cannot be undone.', [
-            { text: 'Cancel', style: 'cancel' },
+        Alert.alert(t('workoutDetails.deleteTitle'), t('workoutDetails.deleteMessage'), [
+            { text: t('common.cancel'), style: 'cancel' },
             {
-                text: 'Delete',
+                text: t('common.delete'),
                 style: 'destructive',
                 onPress: async () => {
                     await deleteWorkout(workoutId);
@@ -63,18 +65,18 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
                 {/* Summary Stats */}
                 <View style={styles.summaryRow}>
                     <Card style={styles.summaryCard} variant="glass">
-                        <StatBadge value={duration} label="min" color={colors.primary} />
+                        <StatBadge value={duration} label={t('common.min')} color={colors.primary} />
                     </Card>
                     <Card style={styles.summaryCard} variant="glass">
-                        <StatBadge value={totalSets} label="sets" color={colors.secondary} />
+                        <StatBadge value={totalSets} label={t('common.sets')} color={colors.secondary} />
                     </Card>
                     <Card style={styles.summaryCard} variant="glass">
-                        <StatBadge value={totalReps} label="reps" color={colors.warning} />
+                        <StatBadge value={totalReps} label={t('common.reps')} color={colors.warning} />
                     </Card>
                     <Card style={styles.summaryCard} variant="glass">
                         <StatBadge
                             value={totalVolume > 999 ? `${(totalVolume / 1000).toFixed(1)}k` : totalVolume}
-                            label="kg"
+                            label={t('common.kg')}
                             color={colors.accent}
                         />
                     </Card>
@@ -83,7 +85,7 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
                 {/* Notes */}
                 {workout.notes ? (
                     <Card variant="outlined" style={{ marginBottom: 20 }}>
-                        <Typography variant="label" style={{ marginBottom: 6 }}>Session Notes</Typography>
+                        <Typography variant="label" style={{ marginBottom: 6 }}>{t('workoutDetails.sessionNotes')}</Typography>
                         <Typography variant="body" color={colors.textSecondary}>
                             {workout.notes}
                         </Typography>
@@ -91,7 +93,7 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
                 ) : null}
 
                 {/* Exercises */}
-                <Typography variant="h3" style={{ marginBottom: 12 }}>Exercises</Typography>
+                <Typography variant="h3" style={{ marginBottom: 12 }}>{t('workoutDetails.exercises')}</Typography>
                 {workout.exercises.map((log: ExerciseLog) => {
                     const exVolume = log.sets.reduce((a, s) => a + s.weight * s.reps, 0);
                     const bestWeight = log.sets.length > 0 ? Math.max(...log.sets.map(s => s.weight)) : 0;
@@ -103,7 +105,7 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
                                 {bestWeight > 0 && (
                                     <View style={styles.prBadge}>
                                         <Typography variant="label" color={colors.primary} style={{ fontSize: 10 }}>
-                                            BEST {bestWeight}kg
+                                            {t('workoutDetails.best')} {bestWeight}{t('common.kg')}
                                         </Typography>
                                     </View>
                                 )}
@@ -111,10 +113,11 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
 
                             {/* Table */}
                             <View style={styles.tableHeader}>
-                                <Typography variant="label" style={styles.colSet}>SET</Typography>
-                                <Typography variant="label" style={styles.colData}>KG</Typography>
-                                <Typography variant="label" style={styles.colData}>REPS</Typography>
-                                <Typography variant="label" style={[styles.colData, { textAlign: 'right' }]}>VOL</Typography>
+                                <Typography variant="label" style={styles.colSet}>{t('common.set')}</Typography>
+                                <Typography variant="label" style={styles.colData}>{t('common.kgLabel')}</Typography>
+                                <Typography variant="label" style={styles.colData}>{t('common.repsLabel')}</Typography>
+                                <Typography variant="label" style={styles.colData}>{t('common.rpe')}</Typography>
+                                <Typography variant="label" style={[styles.colData, { textAlign: 'right' }]}>{t('common.vol')}</Typography>
                             </View>
 
                             {log.sets.map((set: Set, index: number) => (
@@ -124,6 +127,9 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
                                     </View>
                                     <Typography variant="body" style={styles.colData} bold>{set.weight}</Typography>
                                     <Typography variant="body" style={styles.colData}>{set.reps}</Typography>
+                                    <Typography variant="body" style={styles.colData} color={set.rpe ? (set.rpe <= 5 ? colors.success : set.rpe <= 7 ? colors.warning : set.rpe <= 8 ? '#FF9800' : colors.error) : colors.textMuted}>
+                                        {set.rpe || '—'}
+                                    </Typography>
                                     <Typography variant="bodySmall" color={colors.textMuted} style={[styles.colData, { textAlign: 'right' }]}>
                                         {set.weight * set.reps}
                                     </Typography>
@@ -133,7 +139,7 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
                             {/* Exercise totals */}
                             <View style={styles.exFooter}>
                                 <Typography variant="caption" color={colors.textSecondary}>
-                                    {log.sets.length} sets • {exVolume.toLocaleString()} kg total
+                                    {log.sets.length} {t('common.sets')} • {exVolume.toLocaleString()} {t('workoutDetails.kgTotal')}
                                 </Typography>
                             </View>
                         </Card>
@@ -142,7 +148,7 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
 
                 {/* Delete */}
                 <Button
-                    title="Delete Workout"
+                    title={t('workoutDetails.deleteWorkout')}
                     variant="danger"
                     size="medium"
                     onPress={handleDelete}

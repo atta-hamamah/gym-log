@@ -9,8 +9,10 @@ import { StatBadge } from '../components/StatBadge';
 import { format, isThisWeek } from 'date-fns';
 import { colors, spacing, borderRadius, shadows } from '../theme/colors';
 import { WorkoutSession } from '../types';
+import { useTranslation } from 'react-i18next';
 
 export const HomeScreen = ({ navigation }: any) => {
+    const { t } = useTranslation();
     const { currentWorkout, startWorkout, workouts } = useWorkout();
     const [nameModalVisible, setNameModalVisible] = useState(false);
     const [workoutName, setWorkoutName] = useState('');
@@ -69,9 +71,9 @@ export const HomeScreen = ({ navigation }: any) => {
                 {/* Header */}
                 <View style={styles.headerRow}>
                     <View>
-                        <Typography variant="h1">Gym Log</Typography>
+                        <Typography variant="h1">{t('home.title')}</Typography>
                         <Typography variant="caption" style={{ marginTop: 2 }}>
-                            Track every rep. Beat every PR.
+                            {t('home.subtitle')}
                         </Typography>
                     </View>
                 </View>
@@ -85,18 +87,18 @@ export const HomeScreen = ({ navigation }: any) => {
                     <View style={styles.heroContent}>
                         <View style={{ flex: 1 }}>
                             <Typography variant="h2" style={{ marginBottom: 6 }}>
-                                {currentWorkout ? '💪 Workout Active' : '🏋️ Ready to lift?'}
+                                {currentWorkout ? t('home.workoutActive') : t('home.readyToLift')}
                             </Typography>
                             <Typography variant="bodySmall" color={colors.textSecondary}>
                                 {currentWorkout
-                                    ? `"${currentWorkout.name}" — ${currentWorkout.exercises.length} exercises`
-                                    : 'Start a new session to track your progress.'
+                                    ? t('home.activeDescription', { name: currentWorkout.name, count: currentWorkout.exercises.length })
+                                    : t('home.inactiveDescription')
                                 }
                             </Typography>
                         </View>
                     </View>
                     <Button
-                        title={currentWorkout ? 'Resume Workout' : 'Start Workout'}
+                        title={currentWorkout ? t('home.resumeWorkout') : t('home.startWorkout')}
                         onPress={handleStartWorkout}
                         size="large"
                         fullWidth
@@ -105,32 +107,32 @@ export const HomeScreen = ({ navigation }: any) => {
                 </Card>
 
                 {/* Weekly Stats */}
-                <Typography variant="h3" style={styles.sectionTitle}>This Week</Typography>
+                <Typography variant="h3" style={styles.sectionTitle}>{t('home.thisWeek')}</Typography>
                 <View style={styles.statsGrid}>
                     <Card style={styles.statCell}>
-                        <StatBadge value={weeklyStats.sessions} label="Workouts" color={colors.primary} />
+                        <StatBadge value={weeklyStats.sessions} label={t('home.workouts')} color={colors.primary} />
                     </Card>
                     <Card style={styles.statCell}>
-                        <StatBadge value={weeklyStats.sets} label="Sets" color={colors.secondary} />
+                        <StatBadge value={weeklyStats.sets} label={t('common.sets')} color={colors.secondary} />
                     </Card>
                     <Card style={styles.statCell}>
-                        <StatBadge value={weeklyStats.minutes} label="Minutes" color={colors.warning} />
+                        <StatBadge value={weeklyStats.minutes} label={t('home.minutes')} color={colors.warning} />
                     </Card>
                     <Card style={styles.statCell}>
                         <StatBadge
                             value={weeklyStats.volume > 999 ? `${(weeklyStats.volume / 1000).toFixed(1)}k` : weeklyStats.volume}
-                            label="kg Volume"
+                            label={t('home.kgVolume')}
                             color={colors.accent}
                         />
                     </Card>
                 </View>
 
                 {/* Recent Activity */}
-                <Typography variant="h3" style={styles.sectionTitle}>Recent Activity</Typography>
+                <Typography variant="h3" style={styles.sectionTitle}>{t('home.recentActivity')}</Typography>
                 {recentWorkouts.length === 0 ? (
                     <Card variant="outlined">
                         <Typography variant="body" color={colors.textMuted} align="center" style={{ paddingVertical: 20 }}>
-                            No workouts logged yet.{'\n'}Start your first session!
+                            {t('home.noWorkoutsYet')}
                         </Typography>
                     </Card>
                 ) : (
@@ -156,8 +158,8 @@ export const HomeScreen = ({ navigation }: any) => {
                                                 {workout.name}
                                             </Typography>
                                             <Typography variant="caption" style={{ marginTop: 2 }}>
-                                                {format(workout.startTime, 'EEE, MMM dd')} • {workout.exercises.length} exercises • {duration} min
-                                                {volume > 0 ? ` • ${volume > 999 ? `${(volume / 1000).toFixed(1)}k` : volume} kg` : ''}
+                                                {format(workout.startTime, 'EEE, MMM dd')} • {workout.exercises.length} {t('common.exercises')} • {duration} {t('common.min')}
+                                                {volume > 0 ? ` • ${volume > 999 ? `${(volume / 1000).toFixed(1)}k` : volume} ${t('common.kg')}` : ''}
                                             </Typography>
                                         </View>
                                         <Typography variant="body" color={colors.primary} style={{ fontSize: 18 }}>›</Typography>
@@ -178,14 +180,14 @@ export const HomeScreen = ({ navigation }: any) => {
             >
                 <View style={styles.modalOverlay}>
                     <Card variant="elevated" style={styles.modalCard}>
-                        <Typography variant="h2" style={{ marginBottom: 4 }}>New Workout</Typography>
+                        <Typography variant="h2" style={{ marginBottom: 4 }}>{t('home.newWorkout')}</Typography>
                         <Typography variant="caption" style={{ marginBottom: 20 }}>
-                            Give your session a name
+                            {t('home.giveSessionName')}
                         </Typography>
 
                         <TextInput
                             style={styles.nameInput}
-                            placeholder="e.g. Push Day, Leg Day..."
+                            placeholder={t('home.namePlaceholder')}
                             placeholderTextColor={colors.textMuted}
                             value={workoutName}
                             onChangeText={setWorkoutName}
@@ -196,14 +198,14 @@ export const HomeScreen = ({ navigation }: any) => {
 
                         <View style={styles.modalButtons}>
                             <Button
-                                title="Cancel"
+                                title={t('common.cancel')}
                                 variant="ghost"
                                 size="medium"
                                 onPress={() => { setNameModalVisible(false); setWorkoutName(''); }}
                                 style={{ flex: 1, marginRight: 8 }}
                             />
                             <Button
-                                title="Let's Go! 🔥"
+                                title={t('home.letsGo')}
                                 onPress={handleConfirmStart}
                                 size="medium"
                                 style={{ flex: 1.5 }}

@@ -13,6 +13,8 @@ import { WorkoutDetailsScreen } from '../screens/WorkoutDetailsScreen';
 import { colors, borderRadius } from '../theme/colors';
 import { Home, History, TrendingUp, Settings } from 'lucide-react-native';
 import { RootStackParamList, TabParamList } from '../types';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -32,6 +34,9 @@ const AppTheme = {
 };
 
 const TabNavigator = () => {
+    const insets = useSafeAreaInsets();
+    const { t } = useTranslation();
+
     return (
         <Tab.Navigator
             screenOptions={{
@@ -40,9 +45,9 @@ const TabNavigator = () => {
                     backgroundColor: colors.surface,
                     borderTopColor: colors.border,
                     borderTopWidth: 1,
-                    height: Platform.OS === 'ios' ? 88 : 64,
-                    paddingBottom: Platform.OS === 'ios' ? 28 : 8,
-                    paddingTop: 8,
+                    height: Platform.OS === 'ios' ? 88 + insets.bottom : 80,
+                    paddingBottom: Platform.OS === 'ios' ? insets.bottom + 12 : 24,
+                    paddingTop: 12,
                     elevation: 0,
                 },
                 tabBarActiveTintColor: colors.primary,
@@ -59,7 +64,7 @@ const TabNavigator = () => {
                 component={HomeScreen}
                 options={{
                     tabBarIcon: ({ color, size }) => <Home color={color} size={size - 2} />,
-                    tabBarLabel: 'Dashboard',
+                    tabBarLabel: t('tabs.dashboard'),
                 }}
             />
             <Tab.Screen
@@ -67,7 +72,7 @@ const TabNavigator = () => {
                 component={HistoryScreen}
                 options={{
                     tabBarIcon: ({ color, size }) => <History color={color} size={size - 2} />,
-                    tabBarLabel: 'History',
+                    tabBarLabel: t('tabs.history'),
                 }}
             />
             <Tab.Screen
@@ -75,7 +80,7 @@ const TabNavigator = () => {
                 component={ProgressScreen}
                 options={{
                     tabBarIcon: ({ color, size }) => <TrendingUp color={color} size={size - 2} />,
-                    tabBarLabel: 'Progress',
+                    tabBarLabel: t('tabs.progress'),
                 }}
             />
             <Tab.Screen
@@ -83,7 +88,7 @@ const TabNavigator = () => {
                 component={SettingsScreen}
                 options={{
                     tabBarIcon: ({ color, size }) => <Settings color={color} size={size - 2} />,
-                    tabBarLabel: 'Settings',
+                    tabBarLabel: t('tabs.settings'),
                 }}
             />
         </Tab.Navigator>
@@ -91,6 +96,8 @@ const TabNavigator = () => {
 };
 
 export const AppNavigator = () => {
+    const { t } = useTranslation();
+
     return (
         <NavigationContainer theme={AppTheme}>
             <Stack.Navigator
@@ -116,7 +123,7 @@ export const AppNavigator = () => {
                     options={{
                         presentation: 'modal',
                         headerShown: true,
-                        headerTitle: 'Select Exercise',
+                        headerTitle: t('exerciseList.selectExercise'),
                         headerStyle: { backgroundColor: colors.surface },
                         headerTintColor: colors.text,
                         headerTitleStyle: { fontWeight: '600' },
@@ -129,7 +136,7 @@ export const AppNavigator = () => {
                     options={{
                         presentation: 'card',
                         headerShown: true,
-                        headerTitle: 'Workout Details',
+                        headerTitle: t('workoutDetails.exercises'),
                         headerStyle: { backgroundColor: colors.surface },
                         headerTintColor: colors.text,
                         headerTitleStyle: { fontWeight: '600' },

@@ -10,12 +10,14 @@ import { colors, spacing, borderRadius } from '../theme/colors';
 import { useWorkout } from '../context/WorkoutContext';
 import { format } from 'date-fns';
 import { Exercise, WorkoutSession, ExerciseLog, Set as WorkoutSet } from '../types';
+import { useTranslation } from 'react-i18next';
 
 const screenWidth = Dimensions.get('window').width;
 
 type Metric = 'maxWeight' | 'totalVolume' | 'bestSet';
 
 export const ProgressScreen = () => {
+    const { t } = useTranslation();
     const { workouts, exercises } = useWorkout();
     const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
     const [modalVisible, setModalVisible] = useState(false);
@@ -75,24 +77,24 @@ export const ProgressScreen = () => {
         return { max, latest, improvement, improvementPct, sessions: chartData.length };
     }, [selectedExercise, chartData]);
 
-    const metricLabel = {
-        maxWeight: 'Max Weight',
-        totalVolume: 'Total Volume',
-        bestSet: 'Best Set',
+    const metricLabel: Record<Metric, string> = {
+        maxWeight: t('progress.maxWeight'),
+        totalVolume: t('progress.totalVolume'),
+        bestSet: t('progress.bestSet'),
     };
 
     const metricUnit = {
-        maxWeight: 'kg',
-        totalVolume: 'kg',
-        bestSet: 'kg',
+        maxWeight: t('common.kg'),
+        totalVolume: t('common.kg'),
+        bestSet: t('common.kg'),
     };
 
     return (
         <ScreenLayout>
             <View style={styles.headerRow}>
-                <Typography variant="h1">Progress</Typography>
+                <Typography variant="h1">{t('progress.title')}</Typography>
                 <Button
-                    title={selectedExercise ? 'Change' : 'Select Exercise'}
+                    title={selectedExercise ? t('progress.change') : t('progress.selectExercise')}
                     variant={selectedExercise ? 'outline' : 'secondary'}
                     size="small"
                     onPress={() => setModalVisible(true)}
@@ -143,22 +145,22 @@ export const ProgressScreen = () => {
                         {stats && (
                             <View style={styles.statsGrid}>
                                 <Card style={styles.statCard} variant="glass">
-                                    <StatBadge value={stats.max} label="All-time PR" color={colors.primary} />
+                                    <StatBadge value={stats.max} label={t('progress.allTimePR')} color={colors.primary} />
                                 </Card>
                                 <Card style={styles.statCard} variant="glass">
-                                    <StatBadge value={stats.latest} label="Latest" color={colors.secondary} />
+                                    <StatBadge value={stats.latest} label={t('progress.latest')} color={colors.secondary} />
                                 </Card>
                                 <Card style={styles.statCard} variant="glass">
                                     <StatBadge
                                         value={`${stats.improvement >= 0 ? '+' : ''}${stats.improvement}`}
-                                        label="Change"
+                                        label={t('progress.changeLabel')}
                                         color={stats.improvement >= 0 ? colors.success : colors.error}
                                     />
                                 </Card>
                                 <Card style={styles.statCard} variant="glass">
                                     <StatBadge
                                         value={`${stats.improvementPct >= 0 ? '+' : ''}${stats.improvementPct}%`}
-                                        label="Growth"
+                                        label={t('progress.growth')}
                                         color={stats.improvementPct >= 0 ? colors.success : colors.error}
                                     />
                                 </Card>
@@ -166,20 +168,20 @@ export const ProgressScreen = () => {
                         )}
 
                         <Typography variant="caption" color={colors.textMuted} align="center" style={{ marginTop: 8 }}>
-                            Based on {stats?.sessions || 0} sessions
+                            {t('progress.basedOnSessions', { count: stats?.sessions || 0 })}
                         </Typography>
                     </View>
                 ) : (
                     <View style={styles.emptyState}>
                         <Typography variant="number" style={{ fontSize: 52, marginBottom: 12 }}>📈</Typography>
                         <Typography variant="h3" color={colors.textMuted} align="center" style={{ marginBottom: 8 }}>
-                            Track Your Gains
+                            {t('progress.trackYourGains')}
                         </Typography>
                         <Typography variant="body" color={colors.textMuted} align="center" style={{ marginBottom: 24 }}>
-                            Select an exercise to see your{'\n'}progress over time.
+                            {t('progress.trackDescription')}
                         </Typography>
                         <Button
-                            title="Select Exercise"
+                            title={t('progress.selectExercise')}
                             onPress={() => setModalVisible(true)}
                         />
                     </View>
@@ -197,9 +199,9 @@ export const ProgressScreen = () => {
                     <View style={styles.modalContent}>
                         <View style={styles.modalHandle} />
                         <View style={styles.modalHeader}>
-                            <Typography variant="h2">Select Exercise</Typography>
+                            <Typography variant="h2">{t('progress.selectExercise')}</Typography>
                             <Button
-                                title="Close"
+                                title={t('common.close')}
                                 variant="ghost"
                                 size="small"
                                 onPress={() => setModalVisible(false)}
@@ -209,7 +211,7 @@ export const ProgressScreen = () => {
                         {exercisesWithData.length === 0 ? (
                             <View style={{ padding: 40, alignItems: 'center' }}>
                                 <Typography variant="body" color={colors.textMuted} align="center">
-                                    Complete workouts first to track progress.
+                                    {t('progress.completeFirst')}
                                 </Typography>
                             </View>
                         ) : (

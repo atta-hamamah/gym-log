@@ -8,15 +8,17 @@ import { StatBadge } from '../components/StatBadge';
 import { format } from 'date-fns';
 import { colors, spacing, borderRadius } from '../theme/colors';
 import { WorkoutSession } from '../types';
+import { useTranslation } from 'react-i18next';
 
 export const HistoryScreen = ({ navigation }: any) => {
+    const { t } = useTranslation();
     const { workouts, deleteWorkout } = useWorkout();
 
     const handleDelete = (id: string) => {
-        Alert.alert('Delete Workout?', 'This action cannot be undone.', [
-            { text: 'Cancel', style: 'cancel' },
+        Alert.alert(t('history.deleteTitle'), t('history.deleteMessage'), [
+            { text: t('common.cancel'), style: 'cancel' },
             {
-                text: 'Delete',
+                text: t('common.delete'),
                 style: 'destructive',
                 onPress: () => deleteWorkout(id),
             },
@@ -65,28 +67,28 @@ export const HistoryScreen = ({ navigation }: any) => {
                             <Typography variant="bodySmall" color={colors.primary} bold>
                                 {item.exercises.length}
                             </Typography>
-                            <Typography variant="caption" style={{ fontSize: 11 }}>exercises</Typography>
+                            <Typography variant="caption" style={{ fontSize: 11 }}>{t('common.exercises')}</Typography>
                         </View>
                         <View style={styles.divider} />
                         <View style={styles.stat}>
                             <Typography variant="bodySmall" color={colors.secondary} bold>
                                 {totalSets}
                             </Typography>
-                            <Typography variant="caption" style={{ fontSize: 11 }}>sets</Typography>
+                            <Typography variant="caption" style={{ fontSize: 11 }}>{t('common.sets')}</Typography>
                         </View>
                         <View style={styles.divider} />
                         <View style={styles.stat}>
                             <Typography variant="bodySmall" color={colors.warning} bold>
                                 {duration}
                             </Typography>
-                            <Typography variant="caption" style={{ fontSize: 11 }}>min</Typography>
+                            <Typography variant="caption" style={{ fontSize: 11 }}>{t('common.min')}</Typography>
                         </View>
                         <View style={styles.divider} />
                         <View style={styles.stat}>
                             <Typography variant="bodySmall" color={colors.accent} bold>
                                 {totalVolume > 999 ? `${(totalVolume / 1000).toFixed(1)}k` : totalVolume}
                             </Typography>
-                            <Typography variant="caption" style={{ fontSize: 11 }}>kg</Typography>
+                            <Typography variant="caption" style={{ fontSize: 11 }}>{t('common.kg')}</Typography>
                         </View>
                     </View>
 
@@ -106,10 +108,10 @@ export const HistoryScreen = ({ navigation }: any) => {
     return (
         <ScreenLayout>
             <View style={styles.headerRow}>
-                <Typography variant="h1">History</Typography>
+                <Typography variant="h1">{t('history.title')}</Typography>
                 {workouts.length > 0 && (
                     <Typography variant="caption" color={colors.textMuted}>
-                        {workouts.length} workout{workouts.length !== 1 ? 's' : ''}
+                        {t('history.workoutCount', { count: workouts.length })}
                     </Typography>
                 )}
             </View>
@@ -118,10 +120,10 @@ export const HistoryScreen = ({ navigation }: any) => {
                 <View style={styles.emptyState}>
                     <Typography variant="number" style={{ fontSize: 48, marginBottom: 12 }}>📋</Typography>
                     <Typography variant="h3" color={colors.textMuted} align="center" style={{ marginBottom: 8 }}>
-                        No workouts yet
+                        {t('history.noWorkoutsYet')}
                     </Typography>
                     <Typography variant="body" color={colors.textMuted} align="center">
-                        Complete a session to see{'\n'}your history here.
+                        {t('history.noWorkoutsDescription')}
                     </Typography>
                 </View>
             ) : (
