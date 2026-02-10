@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ScrollView, View, StyleSheet, TextInput, Alert, TouchableOpacity } from 'react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
@@ -8,34 +7,53 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { colors, borderRadius, spacing } from '../theme/colors';
 import { ExerciseLog, Set } from '../types';
-import { Trash2 } from 'lucide-react-native'; // Assuming lucide-react-native is installed
 
 export const WorkoutSessionScreen = ({ navigation }: any) => {
     const { currentWorkout, finishWorkout, cancelWorkout, addExerciseToWorkout } = useWorkout();
     const [notes, setNotes] = useState('');
+    const [elapsed, setElapsed] = useState(0);
+
+    // Timer
+    useEffect(() => {
+        if (!currentWorkout) return;
+        const interval = setInterval(() => {
+            setElapsed(Math.floor((Date.now() - currentWorkout.startTime) / 1000));
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [currentWorkout]);
+
+    const formatTime = (seconds: number) => {
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = seconds % 60;
+        if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        return `${m}:${s.toString().padStart(2, '0')}`;
+    };
 
     if (!currentWorkout) {
         return (
             <ScreenLayout>
-                <Typography variant="h2">No active workout</Typography>
-                <Button title="Go Back" onPress={() => navigation.goBack()} />
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <Typography variant="h2" style={{ marginBottom: 16 }}>No active workout</Typography>
+                    <Button title="Go Back" onPress={() => navigation.goBack()} />
+                </View>
             </ScreenLayout>
         );
     }
 
-    const handleFinish = async () => {
+    const handleFinish = () => {
         Alert.alert(
-            "Finish Workout?",
-            "Are you sure you want to finish this workout?",
+            'Finish Workout?',
+            'Are you sure you want to finish this workout?',
             [
-                { text: "Cancel", style: "cancel" },
+                { text: 'Cancel', style: 'cancel' },
                 {
-                    text: "Finish",
+                    text: 'Finish',
                     onPress: async () => {
                         await finishWorkout(notes);
                         navigation.goBack();
-                    }
-                }
+                    },
+                },
             ]
         );
     };
@@ -44,35 +62,53 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
         Alert.alert('Cancel Workout?', 'Progress will be lost.', [
             { text: 'No', style: 'cancel' },
             {
-                text: 'Yes', style: 'destructive', onPress: async () => {
+                text: 'Yes',
+                style: 'destructive',
+                onPress: async () => {
                     await cancelWorkout();
                     navigation.goBack();
-                }
-            }
+                },
+            },
         ]);
     };
+
+    const totalSets = currentWorkout.exercises.reduce((acc, e) => acc + e.sets.length, 0);
+    const totalVolume = currentWorkout.exercises.reduce(
+        (acc, e) => acc + e.sets.reduce((a, s) => a + s.weight * s.reps, 0),
+        0
+    );
 
     return (
         <ScreenLayout>
             <View style={styles.header}>
-                <View>
+                <View style={{ flex: 1 }}>
                     <Typography variant="h2">{currentWorkout.name}</Typography>
-                    <Typography variant="caption" style={{ marginTop: 4 }}>
-                        {new Date(currentWorkout.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </Typography>
+                    <View style={{ flexDirection: 'row', gap: 16, marginTop: 4 }}>
+                        <Typography variant="caption" color={colors.primary}>
+                            ⏱ {formatTime(elapsed)}
+                        </Typography>
+                        <Typography variant="caption">
+                            {totalSets} sets
+                        </Typography>
+                        <Typography variant="caption">
+                            {totalVolume.toLocaleString()} kg vol
+                        </Typography>
+                    </View>
                 </View>
                 <Button
                     title="Finish"
                     variant="primary"
                     onPress={handleFinish}
-                    style={{ width: 100, height: 40 }}
+                    style={{ width: 90, height: 40 }}
                 />
             </View>
 
             <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 100 }}>
                 {currentWorkout.exercises.length === 0 ? (
                     <View style={{ alignItems: 'center', padding: 40 }}>
-                        <Typography variant="body" color={colors.textSecondary}>No exercises yet.</Typography>
+                        <Typography variant="body" color={colors.textSecondary}>
+                            Tap "+ Add Exercise" to get started.
+                        </Typography>
                     </View>
                 ) : (
                     currentWorkout.exercises.map((log) => (
@@ -88,7 +124,7 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
                 />
 
                 <TextInput
-                    style={[styles.input, { width: '100%', height: 60, textAlign: 'left', marginTop: 20, marginBottom: 20 }]}
+                    style={[styles.notesInput]}
                     placeholder="Workout Notes..."
                     placeholderTextColor={colors.textSecondary}
                     value={notes}
@@ -116,15 +152,18 @@ const ExerciseCard = ({ log }: { log: ExerciseLog }) => {
         const w = parseFloat(weight);
         const r = parseFloat(reps);
 
-        if (isNaN(w) || isNaN(r)) return;
+        if (isNaN(w) || isNaN(r)) {
+            Alert.alert('Invalid Input', 'Enter valid weight and reps.');
+            return;
+        }
 
         logSet(log.id, {
             weight: w,
             reps: r,
-            type: 'normal'
+            type: 'normal',
         });
-        // Keep weight for next set usually convenient, reset reps?
-        // setReps(''); 
+        // Keep weight for convenience, clear reps
+        setReps('');
     };
 
     const handleDeleteSet = (setId: string) => {
@@ -141,27 +180,29 @@ const ExerciseCard = ({ log }: { log: ExerciseLog }) => {
             </View>
 
             {/* Header for sets */}
-            <View style={[styles.row, { paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: colors.surfaceLight, marginBottom: 8 }]}>
-                <Typography variant="label" style={{ width: 40, textAlign: 'center' }}>Set</Typography>
-                <Typography variant="label" style={{ width: 80, textAlign: 'center' }}>kg</Typography>
-                <Typography variant="label" style={{ width: 80, textAlign: 'center' }}>Reps</Typography>
+            <View style={[styles.row, styles.tableHeader]}>
+                <Typography variant="label" style={styles.colSet}>Set</Typography>
+                <Typography variant="label" style={styles.colData}>kg</Typography>
+                <Typography variant="label" style={styles.colData}>Reps</Typography>
                 <View style={{ width: 40 }} />
             </View>
 
             {log.sets.map((set: Set, index: number) => (
                 <View key={set.id} style={styles.row}>
-                    <Typography variant="body" style={styles.colCenter}>{index + 1}</Typography>
-                    <Typography variant="body" style={styles.colCenter}>{set.weight}</Typography>
-                    <Typography variant="body" style={styles.colCenter}>{set.reps}</Typography>
-                    <TouchableOpacity onPress={() => handleDeleteSet(set.id)} style={[styles.colCenter, { width: 40 }]}>
+                    <Typography variant="body" style={styles.colSet}>{index + 1}</Typography>
+                    <Typography variant="body" style={styles.colData}>{set.weight}</Typography>
+                    <Typography variant="body" style={styles.colData}>{set.reps}</Typography>
+                    <TouchableOpacity onPress={() => handleDeleteSet(set.id)} style={{ width: 40, alignItems: 'center' }}>
                         <Typography variant="body" color={colors.error}>×</Typography>
                     </TouchableOpacity>
                 </View>
             ))}
 
             {/* Input Row */}
-            <View style={[styles.inputRow]}>
-                <Typography variant="body" style={[styles.colCenter, { color: colors.textSecondary }]}>{log.sets.length + 1}</Typography>
+            <View style={styles.inputRow}>
+                <Typography variant="body" style={[styles.colSet, { color: colors.textSecondary }]}>
+                    {log.sets.length + 1}
+                </Typography>
 
                 <TextInput
                     style={styles.input}
@@ -182,9 +223,9 @@ const ExerciseCard = ({ log }: { log: ExerciseLog }) => {
                 />
 
                 <Button
-                    title="Add"
+                    title="✓"
                     onPress={handleAddSet}
-                    style={{ height: 36, minWidth: 50, paddingHorizontal: 10, borderRadius: 4 }}
+                    style={{ height: 36, minWidth: 44, paddingHorizontal: 10, borderRadius: 8 }}
                 />
             </View>
         </Card>
@@ -213,10 +254,19 @@ const styles = StyleSheet.create({
         marginBottom: 8,
         height: 32,
     },
-    colCenter: {
+    tableHeader: {
+        paddingBottom: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.surfaceLight,
+        marginBottom: 8,
+    },
+    colSet: {
         width: 40,
         textAlign: 'center',
-        marginRight: 20,
+    },
+    colData: {
+        width: 80,
+        textAlign: 'center',
     },
     inputRow: {
         flexDirection: 'row',
@@ -231,9 +281,20 @@ const styles = StyleSheet.create({
         color: colors.text,
         width: 70,
         height: 36,
-        borderRadius: 4,
+        borderRadius: 8,
         paddingHorizontal: 8,
         marginRight: 16,
         textAlign: 'center',
-    }
+    },
+    notesInput: {
+        backgroundColor: colors.surfaceLight,
+        color: colors.text,
+        width: '100%',
+        height: 60,
+        borderRadius: borderRadius.s,
+        paddingHorizontal: 16,
+        paddingTop: 12,
+        marginTop: 20,
+        textAlignVertical: 'top',
+    },
 });

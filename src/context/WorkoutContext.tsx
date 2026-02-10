@@ -1,8 +1,7 @@
-
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { WorkoutSession, Exercise, UserStats, Set, ExerciseLog } from '../types';
 import { StorageService } from '../services/storage';
-import { v4 as uuidv4 } from 'uuid';
+import { generateId } from '../utils/generateId';
 import { EXERCISES } from '../constants/exercises';
 
 interface WorkoutContextType {
@@ -14,17 +13,18 @@ interface WorkoutContextType {
 
     startWorkout: (name?: string) => void;
     finishWorkout: (notes?: string) => Promise<void>;
-    cancelWorkout: () => void;
+    cancelWorkout: () => Promise<void>;
 
     addExerciseToWorkout: (exercise: Exercise) => void;
-    removeExerciseFromWorkout: (exerciseId: string) => void;
+    removeExerciseFromWorkout: (exerciseLogId: string) => void;
 
-    logSet: (exerciseId: string, set: Omit<Set, 'id' | 'completed'>) => void;
-    updateSet: (exerciseId: string, setId: string, updates: Partial<Set>) => void;
-    deleteSet: (exerciseId: string, setId: string) => void;
+    logSet: (exerciseLogId: string, set: Omit<Set, 'id' | 'completed'>) => void;
+    updateSet: (exerciseLogId: string, setId: string, updates: Partial<Set>) => void;
+    deleteSet: (exerciseLogId: string, setId: string) => void;
 
     refreshData: () => Promise<void>;
     updateUserStats: (stats: Partial<UserStats>) => Promise<void>;
+    deleteWorkout: (id: string) => Promise<void>;
 }
 
 const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
@@ -36,7 +36,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [userStats, setUserStats] = useState<UserStats | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const refreshData = async () => {
+    const refreshData = useCallback(async () => {
         setLoading(true);
         try {
             const [loadedWorkouts, loadedExercises, loadedStats] = await Promise.all([
@@ -48,41 +48,39 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
             setExercises(loadedExercises);
             setUserStats(loadedStats);
 
-            // Check for active workout
             const savedSession = await StorageService.getCurrentWorkout();
             if (savedSession) {
                 setCurrentWorkout(savedSession);
             }
         } catch (e) {
-            console.error("Error refreshing data:", e);
+            console.error('Error refreshing data:', e);
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         refreshData();
-    }, []);
+    }, [refreshData]);
 
-    // Save current workout state whenever it changes
     useEffect(() => {
         if (currentWorkout) {
             StorageService.saveCurrentWorkout(currentWorkout);
         }
     }, [currentWorkout]);
 
-    const startWorkout = (name: string = 'New Workout') => {
+    const startWorkout = useCallback((name: string = 'New Workout') => {
         const newSession: WorkoutSession = {
-            id: uuidv4(),
+            id: generateId(),
             name,
             startTime: Date.now(),
             exercises: [],
         };
         setCurrentWorkout(newSession);
         StorageService.saveCurrentWorkout(newSession);
-    };
+    }, []);
 
-    const finishWorkout = async (notes?: string) => {
+    const finishWorkout = useCallback(async (notes?: string) => {
         if (!currentWorkout) return;
 
         const completedSession: WorkoutSession = {
@@ -91,102 +89,106 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
             notes,
         };
 
-        // Save to history
-        const allWorkouts = await StorageService.getWorkouts();
-        allWorkouts.unshift(completedSession);
         await StorageService.saveWorkout(completedSession);
-        setWorkouts(allWorkouts);
+        setWorkouts(prev => [completedSession, ...prev]);
 
-        // Clear current
         setCurrentWorkout(null);
         await StorageService.saveCurrentWorkout(null);
-    };
+    }, [currentWorkout]);
 
-    const cancelWorkout = async () => {
+    const cancelWorkout = useCallback(async () => {
         setCurrentWorkout(null);
         await StorageService.saveCurrentWorkout(null);
-    };
+    }, []);
 
-    const addExerciseToWorkout = (exercise: Exercise) => {
-        if (!currentWorkout) return;
-
-        // Check if exercise already logged in this session? usually allow multiple entries or just one.
-        // Let's assume one entry per exercise type for simplicity, but users might do supersets.
-        // Let's just create a new log entry.
-
-        const newlog: ExerciseLog = {
-            id: uuidv4(),
-            exerciseId: exercise.id,
-            exerciseName: exercise.name,
-            sets: [],
-        };
-
-        setCurrentWorkout({
-            ...currentWorkout,
-            exercises: [...currentWorkout.exercises, newlog],
+    const addExerciseToWorkout = useCallback((exercise: Exercise) => {
+        setCurrentWorkout(prev => {
+            if (!prev) return prev;
+            const newLog: ExerciseLog = {
+                id: generateId(),
+                exerciseId: exercise.id,
+                exerciseName: exercise.name,
+                sets: [],
+            };
+            return {
+                ...prev,
+                exercises: [...prev.exercises, newLog],
+            };
         });
-    };
+    }, []);
 
-    const removeExerciseFromWorkout = (exerciseId: string) => {
-        if (!currentWorkout) return;
-        setCurrentWorkout({
-            ...currentWorkout,
-            exercises: currentWorkout.exercises.filter(e => e.id !== exerciseId),
+    const removeExerciseFromWorkout = useCallback((exerciseLogId: string) => {
+        setCurrentWorkout(prev => {
+            if (!prev) return prev;
+            return {
+                ...prev,
+                exercises: prev.exercises.filter(e => e.id !== exerciseLogId),
+            };
         });
-    };
+    }, []);
 
-    const logSet = (exerciseLogId: string, setConfig: Omit<Set, 'id' | 'completed'>) => {
-        if (!currentWorkout) return;
+    const logSet = useCallback((exerciseLogId: string, setConfig: Omit<Set, 'id' | 'completed'>) => {
+        setCurrentWorkout(prev => {
+            if (!prev) return prev;
 
-        const newSet: Set = {
-            id: uuidv4(),
-            ...setConfig,
-            completed: true, // Auto-complete for now when adding? or maybe user adds empty set then checks it? 
-            // The requirement says "log sets", implying adding completed data usually.
-        };
+            const newSet: Set = {
+                id: generateId(),
+                ...setConfig,
+                completed: true,
+            };
 
-        const updatedExercises = currentWorkout.exercises.map(ex => {
-            if (ex.id === exerciseLogId) {
-                return { ...ex, sets: [...ex.sets, newSet] };
-            }
-            return ex;
+            const updatedExercises = prev.exercises.map(ex => {
+                if (ex.id === exerciseLogId) {
+                    return { ...ex, sets: [...ex.sets, newSet] };
+                }
+                return ex;
+            });
+
+            return { ...prev, exercises: updatedExercises };
         });
+    }, []);
 
-        setCurrentWorkout({ ...currentWorkout, exercises: updatedExercises });
-    };
+    const updateSet = useCallback((exerciseLogId: string, setId: string, updates: Partial<Set>) => {
+        setCurrentWorkout(prev => {
+            if (!prev) return prev;
 
-    const updateSet = (exerciseLogId: string, setId: string, updates: Partial<Set>) => {
-        if (!currentWorkout) return;
+            const updatedExercises = prev.exercises.map(ex => {
+                if (ex.id === exerciseLogId) {
+                    const newSets = ex.sets.map(s => s.id === setId ? { ...s, ...updates } : s);
+                    return { ...ex, sets: newSets };
+                }
+                return ex;
+            });
 
-        const updatedExercises = currentWorkout.exercises.map(ex => {
-            if (ex.id === exerciseLogId) {
-                const newSets = ex.sets.map(s => s.id === setId ? { ...s, ...updates } : s);
-                return { ...ex, sets: newSets };
-            }
-            return ex;
+            return { ...prev, exercises: updatedExercises };
         });
+    }, []);
 
-        setCurrentWorkout({ ...currentWorkout, exercises: updatedExercises });
-    };
+    const deleteSet = useCallback((exerciseLogId: string, setId: string) => {
+        setCurrentWorkout(prev => {
+            if (!prev) return prev;
 
-    const deleteSet = (exerciseLogId: string, setId: string) => {
-        if (!currentWorkout) return;
+            const updatedExercises = prev.exercises.map(ex => {
+                if (ex.id === exerciseLogId) {
+                    return { ...ex, sets: ex.sets.filter(s => s.id !== setId) };
+                }
+                return ex;
+            });
 
-        const updatedExercises = currentWorkout.exercises.map(ex => {
-            if (ex.id === exerciseLogId) {
-                return { ...ex, sets: ex.sets.filter(s => s.id !== setId) };
-            }
-            return ex;
+            return { ...prev, exercises: updatedExercises };
         });
+    }, []);
 
-        setCurrentWorkout({ ...currentWorkout, exercises: updatedExercises });
-    };
-
-    const updateUserStats = async (stats: Partial<UserStats>) => {
+    const updateUserStats = useCallback(async (stats: Partial<UserStats>) => {
         await StorageService.updateUserStats(stats);
         const current = userStats || { weight: 0, lastUpdated: Date.now() };
         setUserStats({ ...current, ...stats, lastUpdated: Date.now() });
-    };
+    }, [userStats]);
+
+    const deleteWorkout = useCallback(async (id: string) => {
+        await StorageService.deleteWorkout(id);
+        setWorkouts(prev => prev.filter(w => w.id !== id));
+    }, []);
 
     return (
         <WorkoutContext.Provider
@@ -206,6 +208,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 deleteSet,
                 refreshData,
                 updateUserStats,
+                deleteWorkout,
             }}
         >
             {children}

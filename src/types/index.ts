@@ -6,19 +6,26 @@ export interface Set {
   type: 'warmup' | 'normal' | 'failure' | 'drop';
 }
 
+export interface CardioData {
+  distance?: number;   // km
+  duration?: number;   // minutes
+  calories?: number;
+}
+
 export interface ExerciseLog {
   id: string;
   exerciseId: string;
   exerciseName: string;
   sets: Set[];
+  cardio?: CardioData;
   notes?: string;
 }
 
 export interface WorkoutSession {
   id: string;
   name: string;
-  startTime: number; // timestamp
-  endTime?: number; // timestamp
+  startTime: number;
+  endTime?: number;
   exercises: ExerciseLog[];
   notes?: string;
   bodyWeight?: number;
@@ -41,8 +48,8 @@ export interface UserStats {
 
 export type RootStackParamList = {
   Main: undefined;
-  WorkoutSession: { workoutId?: string }; // if undefined, start new
-  ExerciseList: { onSelect: (exercise: Exercise) => void };
+  WorkoutSession: { workoutId?: string };
+  ExerciseList: undefined;
   WorkoutDetails: { workoutId: string };
 };
 

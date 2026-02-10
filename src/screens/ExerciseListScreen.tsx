@@ -1,28 +1,35 @@
-
-import React, { useState } from 'react';
-import { FlatList, TouchableOpacity, StyleSheet, View, TextInput, Modal, Alert } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { FlatList, TouchableOpacity, StyleSheet, View, TextInput, Modal, Alert, ScrollView } from 'react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { useWorkout } from '../context/WorkoutContext';
 import { colors, spacing, borderRadius } from '../theme/colors';
 import { StorageService } from '../services/storage';
 import { Button } from '../components/Button';
-import { v4 as uuidv4 } from 'uuid';
+import { generateId } from '../utils/generateId';
 import { Exercise } from '../types';
+import { MUSCLE_GROUPS } from '../constants/exercises';
 
 export const ExerciseListScreen = ({ navigation }: any) => {
     const { exercises, addExerciseToWorkout, refreshData } = useWorkout();
     const [search, setSearch] = useState('');
     const [modalVisible, setModalVisible] = useState(false);
+    const [selectedGroup, setSelectedGroup] = useState('All');
 
     // Custom Exercise Form
     const [newExName, setNewExName] = useState('');
     const [newExMuscle, setNewExMuscle] = useState('');
+    const [newExCategory, setNewExCategory] = useState<'strength' | 'cardio'>('strength');
 
-    const filtered = exercises.filter((e: Exercise) =>
-        e.name.toLowerCase().includes(search.toLowerCase()) ||
-        e.muscleGroup.toLowerCase().includes(search.toLowerCase())
-    );
+    const filtered = useMemo(() => {
+        return exercises.filter((e: Exercise) => {
+            const matchesSearch =
+                e.name.toLowerCase().includes(search.toLowerCase()) ||
+                e.muscleGroup.toLowerCase().includes(search.toLowerCase());
+            const matchesGroup = selectedGroup === 'All' || e.muscleGroup === selectedGroup;
+            return matchesSearch && matchesGroup;
+        });
+    }, [exercises, search, selectedGroup]);
 
     const handleSelect = (exercise: Exercise) => {
         addExerciseToWorkout(exercise);
@@ -36,11 +43,11 @@ export const ExerciseListScreen = ({ navigation }: any) => {
         }
 
         const newExercise: Exercise = {
-            id: uuidv4(),
-            name: newExName,
-            category: 'strength',
-            muscleGroup: newExMuscle,
-            isCustom: true
+            id: generateId(),
+            name: newExName.trim(),
+            category: newExCategory,
+            muscleGroup: newExMuscle.trim(),
+            isCustom: true,
         };
 
         await StorageService.addCustomExercise(newExercise);
@@ -48,9 +55,8 @@ export const ExerciseListScreen = ({ navigation }: any) => {
         setModalVisible(false);
         setNewExName('');
         setNewExMuscle('');
-        handleSelect(newExercise); // Select filtering won't work immediately unless we wait for refresh, but local state might lag.
-        // Actually refreshData updates context, but it's async. 
-        // We can pass the object directly to handleSelect which works.
+        setNewExCategory('strength');
+        handleSelect(newExercise);
     };
 
     return (
@@ -71,6 +77,33 @@ export const ExerciseListScreen = ({ navigation }: any) => {
                 />
             </View>
 
+            {/* Muscle Group Filter */}
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.filterRow}
+                contentContainerStyle={styles.filterContent}
+            >
+                {MUSCLE_GROUPS.map(group => (
+                    <TouchableOpacity
+                        key={group}
+                        style={[
+                            styles.filterChip,
+                            selectedGroup === group && styles.filterChipActive,
+                        ]}
+                        onPress={() => setSelectedGroup(group)}
+                    >
+                        <Typography
+                            variant="caption"
+                            color={selectedGroup === group ? colors.black : colors.textSecondary}
+                            style={{ fontWeight: selectedGroup === group ? '700' : '400' }}
+                        >
+                            {group}
+                        </Typography>
+                    </TouchableOpacity>
+                ))}
+            </ScrollView>
+
             <FlatList
                 data={filtered}
                 keyExtractor={(item) => item.id}
@@ -78,11 +111,37 @@ export const ExerciseListScreen = ({ navigation }: any) => {
                     <TouchableOpacity
                         style={styles.item}
                         onPress={() => handleSelect(item)}
+                        activeOpacity={0.7}
                     >
-                        <Typography variant="body">{item.name}</Typography>
-                        <Typography variant="caption">{item.muscleGroup}</Typography>
+                        <View style={{ flex: 1 }}>
+                            <Typography variant="body">{item.name}</Typography>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+                                <Typography variant="caption">{item.muscleGroup}</Typography>
+                                {item.category === 'cardio' && (
+                                    <View style={styles.cardioBadge}>
+                                        <Typography variant="caption" color={colors.primary} style={{ fontSize: 10 }}>
+                                            CARDIO
+                                        </Typography>
+                                    </View>
+                                )}
+                                {item.isCustom && (
+                                    <View style={styles.customBadge}>
+                                        <Typography variant="caption" color={colors.accent} style={{ fontSize: 10 }}>
+                                            CUSTOM
+                                        </Typography>
+                                    </View>
+                                )}
+                            </View>
+                        </View>
                     </TouchableOpacity>
                 )}
+                ListEmptyComponent={
+                    <View style={{ padding: 40, alignItems: 'center' }}>
+                        <Typography variant="body" color={colors.textSecondary}>
+                            No exercises found.
+                        </Typography>
+                    </View>
+                }
             />
 
             <Modal
@@ -111,6 +170,31 @@ export const ExerciseListScreen = ({ navigation }: any) => {
                             onChangeText={setNewExMuscle}
                         />
 
+                        <View style={styles.categoryRow}>
+                            <TouchableOpacity
+                                style={[styles.categoryChip, newExCategory === 'strength' && styles.categoryChipActive]}
+                                onPress={() => setNewExCategory('strength')}
+                            >
+                                <Typography
+                                    variant="caption"
+                                    color={newExCategory === 'strength' ? colors.black : colors.textSecondary}
+                                >
+                                    Strength
+                                </Typography>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.categoryChip, newExCategory === 'cardio' && styles.categoryChipActive]}
+                                onPress={() => setNewExCategory('cardio')}
+                            >
+                                <Typography
+                                    variant="caption"
+                                    color={newExCategory === 'cardio' ? colors.black : colors.textSecondary}
+                                >
+                                    Cardio
+                                </Typography>
+                            </TouchableOpacity>
+                        </View>
+
                         <View style={styles.modalButtons}>
                             <Button title="Cancel" variant="outline" onPress={() => setModalVisible(false)} style={{ flex: 1, marginRight: 8 }} />
                             <Button title="Save" onPress={handleCreateExercise} style={{ flex: 1 }} />
@@ -125,7 +209,7 @@ export const ExerciseListScreen = ({ navigation }: any) => {
 const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
-        marginBottom: 16,
+        marginBottom: 8,
         alignItems: 'center',
     },
     search: {
@@ -136,16 +220,51 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         color: colors.text,
     },
+    filterRow: {
+        maxHeight: 44,
+        marginBottom: 8,
+    },
+    filterContent: {
+        paddingVertical: 4,
+        gap: 8,
+    },
+    filterChip: {
+        paddingHorizontal: 14,
+        paddingVertical: 6,
+        borderRadius: borderRadius.xl,
+        backgroundColor: colors.surfaceLight,
+    },
+    filterChipActive: {
+        backgroundColor: colors.primary,
+    },
     item: {
+        flexDirection: 'row',
+        alignItems: 'center',
         padding: spacing.m,
         borderBottomWidth: 1,
         borderBottomColor: colors.border,
         backgroundColor: colors.surface,
         marginBottom: 1,
     },
+    cardioBadge: {
+        marginLeft: 8,
+        paddingHorizontal: 6,
+        paddingVertical: 1,
+        borderRadius: 4,
+        borderWidth: 1,
+        borderColor: colors.primary,
+    },
+    customBadge: {
+        marginLeft: 8,
+        paddingHorizontal: 6,
+        paddingVertical: 1,
+        borderRadius: 4,
+        borderWidth: 1,
+        borderColor: colors.accent,
+    },
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.6)',
         justifyContent: 'center',
         padding: 20,
     },
@@ -162,8 +281,23 @@ const styles = StyleSheet.create({
         color: colors.text,
         marginBottom: 16,
     },
+    categoryRow: {
+        flexDirection: 'row',
+        gap: 8,
+        marginBottom: 16,
+    },
+    categoryChip: {
+        flex: 1,
+        paddingVertical: 10,
+        borderRadius: borderRadius.s,
+        backgroundColor: colors.surfaceLight,
+        alignItems: 'center',
+    },
+    categoryChipActive: {
+        backgroundColor: colors.primary,
+    },
     modalButtons: {
         flexDirection: 'row',
         marginTop: 8,
-    }
+    },
 });
