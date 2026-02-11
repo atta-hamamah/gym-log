@@ -29,6 +29,8 @@ export const SettingsScreen = () => {
         onConfirm: () => { },
         onCancel: undefined as (() => void) | undefined,
         variant: 'primary' as 'primary' | 'danger' | 'success',
+        requireCheckbox: false,
+        checkboxLabel: '',
     });
 
     const showModal = (
@@ -38,7 +40,9 @@ export const SettingsScreen = () => {
         variant: 'primary' | 'danger' | 'success' = 'primary',
         confirmText: string = t('common.ok'),
         cancelText?: string,
-        onCancel?: () => void
+        onCancel?: () => void,
+        requireCheckbox: boolean = false,
+        checkboxLabel: string = ''
     ) => {
         setModalConfig({
             title,
@@ -56,6 +60,8 @@ export const SettingsScreen = () => {
                     setModalVisible(false);
                 }
                 : undefined,
+            requireCheckbox,
+            checkboxLabel,
         });
         setModalVisible(true);
     };
@@ -138,7 +144,9 @@ export const SettingsScreen = () => {
             'danger',
             t('settings.deleteEverything'),
             t('common.cancel'),
-            () => { }
+            () => { },
+            true,
+            t('settings.confirmDelete')
         );
     };
 
@@ -339,6 +347,8 @@ export const SettingsScreen = () => {
                 onConfirm={modalConfig.onConfirm}
                 onCancel={modalConfig.onCancel}
                 variant={modalConfig.variant}
+                requireCheckbox={modalConfig.requireCheckbox}
+                checkboxLabel={modalConfig.checkboxLabel}
             />
         </ScreenLayout>
     );

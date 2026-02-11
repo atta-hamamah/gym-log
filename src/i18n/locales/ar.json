@@ -139,6 +139,7 @@
     "resetTitle": "⚠️ إعادة تعيين جميع البيانات؟",
     "resetMessage": "سيتم حذف جميع التمارين والتمارين المخصصة والإحصائيات نهائياً.",
     "deleteEverything": "حذف الكل",
+    "confirmDelete": "نعم، احذف كل شيء",
     "dataCleared": "تم مسح البيانات",
     "dataClearedMessage": "تم حذف جميع البيانات.",
     "version": "Gym Log v1.0.0",

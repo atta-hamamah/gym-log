@@ -139,6 +139,7 @@
     "resetTitle": "⚠️ ¿Restablecer todo?",
     "resetMessage": "Todos los entrenamientos, ejercicios personalizados y estadísticas serán eliminados permanentemente.",
     "deleteEverything": "Eliminar todo",
+    "confirmDelete": "Sí, eliminar todo",
     "dataCleared": "Datos eliminados",
     "dataClearedMessage": "Todos los datos han sido eliminados.",
     "version": "Gym Log v1.0.0",

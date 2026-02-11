@@ -1,8 +1,9 @@
-import React from 'react';
-import { Modal, View, StyleSheet, TouchableWithoutFeedback, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { Modal, View, StyleSheet, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { colors, spacing, borderRadius, shadows } from '../theme/colors';
 import { Typography } from './Typography';
 import { Button } from './Button';
+import { Check } from 'lucide-react-native';
 
 interface ConfirmationModalProps {
     visible: boolean;
@@ -14,6 +15,8 @@ interface ConfirmationModalProps {
     onCancel?: () => void;
     variant?: 'danger' | 'primary' | 'success';
     loading?: boolean;
+    requireCheckbox?: boolean;
+    checkboxLabel?: string;
 }
 
 export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
@@ -26,7 +29,17 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     onCancel,
     variant = 'primary',
     loading = false,
+    requireCheckbox = false,
+    checkboxLabel = '',
 }) => {
+    const [isChecked, setIsChecked] = useState(false);
+
+    useEffect(() => {
+        if (visible) {
+            setIsChecked(false);
+        }
+    }, [visible]);
+
     if (!visible) return null;
 
     return (
@@ -55,6 +68,21 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                             {message}
                         </Typography>
 
+                        {requireCheckbox && (
+                            <TouchableOpacity
+                                style={styles.checkboxRow}
+                                onPress={() => setIsChecked(!isChecked)}
+                                activeOpacity={0.7}
+                            >
+                                <View style={[styles.checkbox, isChecked && styles.checkboxChecked]}>
+                                    {isChecked && <Check size={16} color="#FFF" strokeWidth={3} />}
+                                </View>
+                                <Typography variant="body" style={styles.checkboxLabel} color={colors.text}>
+                                    {checkboxLabel}
+                                </Typography>
+                            </TouchableOpacity>
+                        )}
+
                         <View style={styles.actions}>
                             {onCancel && (
                                 <Button
@@ -69,8 +97,9 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                                 title={confirmText}
                                 onPress={onConfirm}
                                 variant={variant === 'danger' ? 'danger' : 'primary'}
-                                style={styles.button}
+                                style={[styles.button, (requireCheckbox && !isChecked) && styles.buttonDisabled]}
                                 loading={loading}
+                                disabled={loading || (requireCheckbox && !isChecked)}
                             />
                         </View>
                     </View>
@@ -113,6 +142,31 @@ const styles = StyleSheet.create({
         marginBottom: spacing.xl,
         lineHeight: 22,
     },
+    // Checkbox styles
+    checkboxRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: spacing.xl,
+        paddingHorizontal: spacing.s,
+    },
+    checkbox: {
+        width: 24,
+        height: 24,
+        borderRadius: borderRadius.s,
+        borderWidth: 2,
+        borderColor: colors.textSecondary,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: spacing.m,
+        backgroundColor: 'transparent',
+    },
+    checkboxChecked: {
+        backgroundColor: colors.primary,
+        borderColor: colors.primary,
+    },
+    checkboxLabel: {
+        flex: 1,
+    },
     actions: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -120,5 +174,8 @@ const styles = StyleSheet.create({
     },
     button: {
         flex: 1,
+    },
+    buttonDisabled: {
+        opacity: 0.5,
     },
 });

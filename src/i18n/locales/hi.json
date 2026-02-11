@@ -139,6 +139,7 @@
     "resetTitle": "⚠️ सारा डेटा रीसेट करें?",
     "resetMessage": "सभी वर्कआउट, कस्टम अभ्यास और आँकड़े स्थायी रूप से हटा दिए जाएंगे।",
     "deleteEverything": "सब कुछ हटाएं",
+    "confirmDelete": "हाँ, सब कुछ हटा दें",
     "dataCleared": "डेटा हटाया गया",
     "dataClearedMessage": "सारा डेटा हटा दिया गया है।",
     "version": "Gym Log v1.0.0",
