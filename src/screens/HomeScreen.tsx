@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, ScrollView, TouchableOpacity, StyleSheet, TextInput, Modal, Alert } from 'react-native';
+import { View, ScrollView, TouchableOpacity, StyleSheet, TextInput, Modal, Alert, Image } from 'react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { useWorkout } from '../context/WorkoutContext';
@@ -96,6 +96,10 @@ export const HomeScreen = ({ navigation }: any) => {
                                 }
                             </Typography>
                         </View>
+                        <Image
+                            source={currentWorkout ? require('../../assets/resume.jpg') : require('../../assets/ready_to_lift_icon.jpg')}
+                            style={{ width: 60, height: 60, borderRadius: 8 }}
+                        />
                     </View>
                     <Button
                         title={currentWorkout ? t('home.resumeWorkout') : t('home.startWorkout')}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ScrollView, View, StyleSheet, TextInput, Alert, TouchableOpacity } from 'react-native';
+import { ScrollView, View, StyleSheet, TextInput, Alert, TouchableOpacity, Image } from 'react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { useWorkout } from '../context/WorkoutContext';
@@ -466,7 +466,7 @@ const ExerciseCard = ({
                     style={styles.plateCalcBtn}
                     activeOpacity={0.7}
                 >
-                    <Typography variant="bodySmall" style={{ fontSize: 16 }}>🏋️</Typography>
+                    <Image source={require('../../assets/plate_calc.jpg')} style={{ width: 30, height: 30, borderRadius: 4 }} />
                 </TouchableOpacity>
             </View>
 
