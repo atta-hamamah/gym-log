@@ -71,10 +71,6 @@ function getDeviceLanguage(): SupportedLanguage {
 
 const detectedLang = getDeviceLanguage();
 
-// Apply RTL on startup if the detected language needs it
-I18nManager.forceRTL(isRTL(detectedLang));
-I18nManager.allowRTL(isRTL(detectedLang));
-
 i18n.use(initReactI18next).init({
     resources: {
         en: { translation: en },
@@ -93,14 +89,17 @@ i18n.use(initReactI18next).init({
 
 // Load saved language and apply it (async, runs after initial render)
 loadLanguagePreference().then((savedLang) => {
+    const activeLang = savedLang || detectedLang;
+
     if (savedLang && savedLang !== i18n.language) {
         i18n.changeLanguage(savedLang);
-        // Also handle RTL if needed
-        const needsRTL = isRTL(savedLang);
-        if (I18nManager.isRTL !== needsRTL) {
-            I18nManager.forceRTL(needsRTL);
-            I18nManager.allowRTL(needsRTL);
-        }
+    }
+
+    // Ensure RTL matches the active language
+    const needsRTL = isRTL(activeLang);
+    if (I18nManager.isRTL !== needsRTL) {
+        I18nManager.allowRTL(needsRTL);
+        I18nManager.forceRTL(needsRTL);
     }
 });
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Alert, TextInput, ScrollView, Share, TouchableOpacity, I18nManager } from 'react-native';
+import { View, StyleSheet, Alert, TextInput, ScrollView, Share, TouchableOpacity, I18nManager, NativeModules } from 'react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { Button } from '../components/Button';
@@ -108,31 +108,44 @@ export const SettingsScreen = () => {
         const currentIsRTL = isRTL(currentLang);
         const newIsRTL = isRTL(lang);
 
-        i18n.changeLanguage(lang);
-        saveLanguagePreference(lang); // Persist the choice
-
-        // If RTL direction changed, we need to force RTL and reload
         if (currentIsRTL !== newIsRTL) {
-            I18nManager.forceRTL(newIsRTL);
-            I18nManager.allowRTL(newIsRTL);
-
             Alert.alert(
                 t('settings.restartRequired'),
                 t('settings.restartMessage'),
                 [
                     {
+                        text: t('common.cancel'),
+                        style: 'cancel',
+                    },
+                    {
                         text: t('common.ok'),
                         onPress: async () => {
+                            // 1. Save preference first
+                            await saveLanguagePreference(lang);
+
+                            // 2. Enforce new RTL setting (DO NOT change i18n instance yet to avoid flicker)
+                            I18nManager.allowRTL(newIsRTL);
+                            I18nManager.forceRTL(newIsRTL);
+
+                            // 3. Reload app
                             try {
                                 await Updates.reloadAsync();
-                            } catch {
-                                // Fallback: inform user to manually restart
-                                Alert.alert('Restart', 'Please close and reopen the app for the layout change to take effect.');
+                            } catch (e) {
+                                // Fallback for dev mode
+                                if (__DEV__ && NativeModules.DevSettings) {
+                                    NativeModules.DevSettings.reload();
+                                } else {
+                                    Alert.alert('Restart Required', 'Please close and reopen the app manually.');
+                                }
                             }
                         },
                     },
                 ]
             );
+        } else {
+            // No RTL change needed, just update immediately
+            i18n.changeLanguage(lang);
+            saveLanguagePreference(lang);
         }
     };
 
