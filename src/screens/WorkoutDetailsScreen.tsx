@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ScrollView, View, StyleSheet, Alert } from 'react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
@@ -10,11 +10,52 @@ import { format } from 'date-fns';
 import { colors, spacing, borderRadius } from '../theme/colors';
 import { WorkoutSession, ExerciseLog, Set } from '../types';
 import { useTranslation } from 'react-i18next';
+import { ConfirmationModal } from '../components/ConfirmationModal';
 
 export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
     const { t } = useTranslation();
     const { workoutId } = route.params as { workoutId: string };
     const { workouts, deleteWorkout } = useWorkout();
+
+    const [modalVisible, setModalVisible] = useState(false);
+    const [modalConfig, setModalConfig] = useState({
+        title: '',
+        message: '',
+        confirmText: 'OK',
+        cancelText: '',
+        onConfirm: () => { },
+        onCancel: undefined as (() => void) | undefined,
+        variant: 'primary' as 'primary' | 'danger' | 'success',
+    });
+
+    const showModal = (
+        title: string,
+        message: string,
+        onConfirm: () => void = () => setModalVisible(false),
+        variant: 'primary' | 'danger' | 'success' = 'primary',
+        confirmText: string = t('common.ok'),
+        cancelText?: string,
+        onCancel?: () => void
+    ) => {
+        setModalConfig({
+            title,
+            message,
+            onConfirm: () => {
+                onConfirm();
+                setModalVisible(false);
+            },
+            variant,
+            confirmText,
+            cancelText: cancelText || (onCancel ? t('common.cancel') : ''),
+            onCancel: onCancel
+                ? () => {
+                    onCancel();
+                    setModalVisible(false);
+                }
+                : undefined,
+        });
+        setModalVisible(true);
+    };
 
     const workout = workouts.find((w: WorkoutSession) => w.id === workoutId);
 
@@ -40,17 +81,18 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
     );
 
     const handleDelete = () => {
-        Alert.alert(t('workoutDetails.deleteTitle'), t('workoutDetails.deleteMessage'), [
-            { text: t('common.cancel'), style: 'cancel' },
-            {
-                text: t('common.delete'),
-                style: 'destructive',
-                onPress: async () => {
-                    await deleteWorkout(workoutId);
-                    navigation.goBack();
-                },
+        showModal(
+            t('workoutDetails.deleteTitle'),
+            t('workoutDetails.deleteMessage'),
+            async () => {
+                await deleteWorkout(workoutId);
+                navigation.goBack();
             },
-        ]);
+            'danger',
+            t('common.delete'),
+            t('common.cancel'),
+            () => { }
+        );
     };
 
     return (
@@ -156,6 +198,16 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
                     style={{ marginTop: 16 }}
                 />
             </ScrollView>
+            <ConfirmationModal
+                visible={modalVisible}
+                title={modalConfig.title}
+                message={modalConfig.message}
+                confirmText={modalConfig.confirmText}
+                cancelText={modalConfig.cancelText}
+                onConfirm={modalConfig.onConfirm}
+                onCancel={modalConfig.onCancel}
+                variant={modalConfig.variant}
+            />
         </ScreenLayout>
     );
 };

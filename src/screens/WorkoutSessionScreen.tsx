@@ -7,6 +7,7 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { PlateCalculator } from '../components/PlateCalculator';
 import { RestTimer } from '../components/RestTimer';
+import { ConfirmationModal } from '../components/ConfirmationModal';
 import { colors, borderRadius, spacing, shadows } from '../theme/colors';
 import { ExerciseLog, Set } from '../types';
 import { useTranslation } from 'react-i18next';
@@ -19,6 +20,46 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
     const [showRestTimer, setShowRestTimer] = useState(false);
     const [restDuration, setRestDuration] = useState(90); // default 90s
     const [restCountdown, setRestCountdown] = useState<number | null>(null); // header countdown
+
+    const [modalVisible, setModalVisible] = useState(false);
+    const [modalConfig, setModalConfig] = useState({
+        title: '',
+        message: '',
+        confirmText: 'OK',
+        cancelText: '',
+        onConfirm: () => { },
+        onCancel: undefined as (() => void) | undefined,
+        variant: 'primary' as 'primary' | 'danger' | 'success',
+    });
+
+    const showModal = (
+        title: string,
+        message: string,
+        onConfirm: () => void = () => setModalVisible(false),
+        variant: 'primary' | 'danger' | 'success' = 'primary',
+        confirmText: string = t('common.ok'),
+        cancelText?: string,
+        onCancel?: () => void
+    ) => {
+        setModalConfig({
+            title,
+            message,
+            onConfirm: () => {
+                onConfirm();
+                setModalVisible(false);
+            },
+            variant,
+            confirmText,
+            cancelText: cancelText || (onCancel ? t('common.cancel') : ''),
+            onCancel: onCancel
+                ? () => {
+                    onCancel();
+                    setModalVisible(false);
+                }
+                : undefined,
+        });
+        setModalVisible(true);
+    };
 
     useEffect(() => {
         if (!currentWorkout) return;
@@ -76,37 +117,41 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
 
     const handleFinish = () => {
         if (currentWorkout.exercises.length === 0) {
-            Alert.alert(
+            showModal(
                 t('workoutSession.emptyWorkoutTitle'),
                 t('workoutSession.emptyWorkoutMessage'),
-                [{ text: t('common.ok') }]
+                undefined,
+                'primary'
             );
             return;
         }
-        Alert.alert(t('workoutSession.finishTitle'), t('workoutSession.finishMessage'), [
-            { text: t('common.cancel'), style: 'cancel' },
-            {
-                text: t('workoutSession.finishConfirm'),
-                onPress: async () => {
-                    await finishWorkout(notes);
-                    navigation.goBack();
-                },
+        showModal(
+            t('workoutSession.finishTitle'),
+            t('workoutSession.finishMessage'),
+            async () => {
+                await finishWorkout(notes);
+                navigation.goBack();
             },
-        ]);
+            'success',
+            t('workoutSession.finishConfirm'),
+            t('common.cancel'),
+            () => { }
+        );
     };
 
     const handleCancel = () => {
-        Alert.alert(t('workoutSession.cancelTitle'), t('workoutSession.cancelMessage'), [
-            { text: t('common.cancel'), style: 'cancel' },
-            {
-                text: t('workoutSession.discard'),
-                style: 'destructive',
-                onPress: async () => {
-                    await cancelWorkout();
-                    navigation.goBack();
-                },
+        showModal(
+            t('workoutSession.cancelTitle'),
+            t('workoutSession.cancelMessage'),
+            async () => {
+                await cancelWorkout();
+                navigation.goBack();
             },
-        ]);
+            'danger',
+            t('workoutSession.discard'),
+            t('common.cancel'),
+            () => { }
+        );
     };
 
     const totalSets = currentWorkout.exercises.reduce((acc, e) => acc + e.sets.length, 0);
@@ -190,7 +235,13 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
                     </Card>
                 ) : (
                     currentWorkout.exercises.map((log, index) => (
-                        <ExerciseCard key={log.id} log={log} index={index} onSetLogged={handleSetLogged} />
+                        <ExerciseCard
+                            key={log.id}
+                            log={log}
+                            index={index}
+                            onSetLogged={handleSetLogged}
+                            showModal={showModal}
+                        />
                     ))
                 )}
 
@@ -220,12 +271,22 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
                 />
             </ScrollView>
 
-            {/* Auto Rest Timer */}
             <RestTimer
                 visible={showRestTimer}
                 defaultDuration={restDuration}
                 onDismiss={handleDismissRest}
                 onTimeChange={(newRemaining) => setRestCountdown(newRemaining)}
+            />
+
+            <ConfirmationModal
+                visible={modalVisible}
+                title={modalConfig.title}
+                message={modalConfig.message}
+                confirmText={modalConfig.confirmText}
+                cancelText={modalConfig.cancelText}
+                onConfirm={modalConfig.onConfirm}
+                onCancel={modalConfig.onCancel}
+                variant={modalConfig.variant}
             />
         </ScreenLayout>
     );
@@ -239,7 +300,17 @@ const getRpeColor = (rpe: number): string => {
     return colors.error;
 };
 
-const ExerciseCard = ({ log, index, onSetLogged }: { log: ExerciseLog; index: number; onSetLogged: () => void }) => {
+const ExerciseCard = ({
+    log,
+    index,
+    onSetLogged,
+    showModal
+}: {
+    log: ExerciseLog;
+    index: number;
+    onSetLogged: () => void;
+    showModal: (title: string, message: string, onConfirm?: () => void, variant?: any) => void;
+}) => {
     const { t } = useTranslation();
     const { logSet, deleteSet, removeExerciseFromWorkout } = useWorkout();
     const [weight, setWeight] = useState('');
@@ -253,7 +324,7 @@ const ExerciseCard = ({ log, index, onSetLogged }: { log: ExerciseLog; index: nu
         const r = parseFloat(reps);
 
         if (isNaN(w) || isNaN(r) || w < 0 || r <= 0) {
-            Alert.alert(t('workoutSession.invalidInput'), t('workoutSession.invalidInputMessage'));
+            showModal(t('workoutSession.invalidInput'), t('workoutSession.invalidInputMessage'), undefined, 'danger');
             return;
         }
 

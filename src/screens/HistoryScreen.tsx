@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FlatList, TouchableOpacity, View, Alert, StyleSheet } from 'react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
@@ -9,20 +9,62 @@ import { format } from 'date-fns';
 import { colors, spacing, borderRadius } from '../theme/colors';
 import { WorkoutSession } from '../types';
 import { useTranslation } from 'react-i18next';
+import { ConfirmationModal } from '../components/ConfirmationModal';
 
 export const HistoryScreen = ({ navigation }: any) => {
     const { t } = useTranslation();
     const { workouts, deleteWorkout } = useWorkout();
 
-    const handleDelete = (id: string) => {
-        Alert.alert(t('history.deleteTitle'), t('history.deleteMessage'), [
-            { text: t('common.cancel'), style: 'cancel' },
-            {
-                text: t('common.delete'),
-                style: 'destructive',
-                onPress: () => deleteWorkout(id),
+    const [modalVisible, setModalVisible] = useState(false);
+    const [modalConfig, setModalConfig] = useState({
+        title: '',
+        message: '',
+        confirmText: 'OK',
+        cancelText: '',
+        onConfirm: () => { },
+        onCancel: undefined as (() => void) | undefined,
+        variant: 'primary' as 'primary' | 'danger' | 'success',
+    });
+
+    const showModal = (
+        title: string,
+        message: string,
+        onConfirm: () => void = () => setModalVisible(false),
+        variant: 'primary' | 'danger' | 'success' = 'primary',
+        confirmText: string = t('common.ok'),
+        cancelText?: string,
+        onCancel?: () => void
+    ) => {
+        setModalConfig({
+            title,
+            message,
+            onConfirm: () => {
+                onConfirm();
+                setModalVisible(false);
             },
-        ]);
+            variant,
+            confirmText,
+            cancelText: cancelText || (onCancel ? t('common.cancel') : ''),
+            onCancel: onCancel
+                ? () => {
+                    onCancel();
+                    setModalVisible(false);
+                }
+                : undefined,
+        });
+        setModalVisible(true);
+    };
+
+    const handleDelete = (id: string) => {
+        showModal(
+            t('history.deleteTitle'),
+            t('history.deleteMessage'),
+            () => deleteWorkout(id),
+            'danger',
+            t('common.delete'),
+            t('common.cancel'),
+            () => { }
+        );
     };
 
     const renderItem = ({ item, index }: { item: WorkoutSession; index: number }) => {
@@ -135,6 +177,16 @@ export const HistoryScreen = ({ navigation }: any) => {
                     contentContainerStyle={{ paddingBottom: 20 }}
                 />
             )}
+            <ConfirmationModal
+                visible={modalVisible}
+                title={modalConfig.title}
+                message={modalConfig.message}
+                confirmText={modalConfig.confirmText}
+                cancelText={modalConfig.cancelText}
+                onConfirm={modalConfig.onConfirm}
+                onCancel={modalConfig.onCancel}
+                variant={modalConfig.variant}
+            />
         </ScreenLayout>
     );
 };

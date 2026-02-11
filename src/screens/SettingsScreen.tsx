@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Alert, TextInput, ScrollView, Share, TouchableOpacity, I18nManager, NativeModules } from 'react-native';
+import { View, StyleSheet, TextInput, ScrollView, Share, TouchableOpacity, I18nManager, NativeModules } from 'react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { Button } from '../components/Button';
@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { LANGUAGE_LABELS, SupportedLanguage, isRTL, saveLanguagePreference } from '../i18n';
 import * as Updates from 'expo-updates';
+import { ConfirmationModal } from '../components/ConfirmationModal';
 
 export const SettingsScreen = () => {
     const { t, i18n } = useTranslation();
@@ -18,6 +19,46 @@ export const SettingsScreen = () => {
     const [weight, setWeight] = useState('');
     const [bodyFat, setBodyFat] = useState('');
     const [height, setHeight] = useState('');
+
+    const [modalVisible, setModalVisible] = useState(false);
+    const [modalConfig, setModalConfig] = useState({
+        title: '',
+        message: '',
+        confirmText: 'OK',
+        cancelText: '',
+        onConfirm: () => { },
+        onCancel: undefined as (() => void) | undefined,
+        variant: 'primary' as 'primary' | 'danger' | 'success',
+    });
+
+    const showModal = (
+        title: string,
+        message: string,
+        onConfirm: () => void = () => setModalVisible(false),
+        variant: 'primary' | 'danger' | 'success' = 'primary',
+        confirmText: string = t('common.ok'),
+        cancelText?: string,
+        onCancel?: () => void
+    ) => {
+        setModalConfig({
+            title,
+            message,
+            onConfirm: () => {
+                onConfirm();
+                setModalVisible(false);
+            },
+            variant,
+            confirmText,
+            cancelText: cancelText || (onCancel ? t('common.cancel') : ''),
+            onCancel: onCancel
+                ? () => {
+                    onCancel();
+                    setModalVisible(false);
+                }
+                : undefined,
+        });
+        setModalVisible(true);
+    };
 
     useEffect(() => {
         if (userStats) {
@@ -31,7 +72,7 @@ export const SettingsScreen = () => {
         const w = parseFloat(weight);
 
         if (isNaN(w) || w <= 0) {
-            Alert.alert(t('settings.invalidWeight'), t('settings.invalidWeightMessage'));
+            showModal(t('settings.invalidWeight'), t('settings.invalidWeightMessage'), undefined, 'danger');
             return;
         }
 
@@ -43,12 +84,12 @@ export const SettingsScreen = () => {
             bodyFat: isNaN(bf) ? undefined : bf,
             height: isNaN(h) ? undefined : h,
         });
-        Alert.alert(t('settings.saved'), t('settings.savedMessage'));
+        showModal(t('settings.saved'), t('settings.savedMessage'), undefined, 'success');
     };
 
     const handleExportCSV = async () => {
         if (workouts.length === 0) {
-            Alert.alert(t('settings.noData'), t('settings.noDataMessage'));
+            showModal(t('settings.noData'), t('settings.noDataMessage'), undefined, 'primary');
             return;
         }
 
@@ -81,26 +122,23 @@ export const SettingsScreen = () => {
                 title: `GymLog_Export_${format(Date.now(), 'yyyy-MM-dd')}`,
             });
         } catch (error: any) {
-            Alert.alert(t('settings.exportError'), error.message);
+            showModal(t('settings.exportError'), error.message, undefined, 'danger');
         }
     };
 
     const handleReset = () => {
-        Alert.alert(
+        showModal(
             t('settings.resetTitle'),
             t('settings.resetMessage'),
-            [
-                { text: t('common.cancel'), style: 'cancel' },
-                {
-                    text: t('settings.deleteEverything'),
-                    style: 'destructive',
-                    onPress: async () => {
-                        await AsyncStorage.clear();
-                        await refreshData();
-                        Alert.alert(t('settings.dataCleared'), t('settings.dataClearedMessage'));
-                    },
-                },
-            ]
+            async () => {
+                await AsyncStorage.clear();
+                await refreshData();
+                showModal(t('settings.dataCleared'), t('settings.dataClearedMessage'), undefined, 'success');
+            },
+            'danger',
+            t('settings.deleteEverything'),
+            t('common.cancel'),
+            () => { }
         );
     };
 
@@ -109,38 +147,33 @@ export const SettingsScreen = () => {
         const newIsRTL = isRTL(lang);
 
         if (currentIsRTL !== newIsRTL) {
-            Alert.alert(
+            showModal(
                 t('settings.restartRequired'),
                 t('settings.restartMessage'),
-                [
-                    {
-                        text: t('common.cancel'),
-                        style: 'cancel',
-                    },
-                    {
-                        text: t('common.ok'),
-                        onPress: async () => {
-                            // 1. Save preference first
-                            await saveLanguagePreference(lang);
+                async () => {
+                    // 1. Save preference first
+                    await saveLanguagePreference(lang);
 
-                            // 2. Enforce new RTL setting (DO NOT change i18n instance yet to avoid flicker)
-                            I18nManager.allowRTL(newIsRTL);
-                            I18nManager.forceRTL(newIsRTL);
+                    // 2. Enforce new RTL setting (DO NOT change i18n instance yet to avoid flicker)
+                    I18nManager.allowRTL(newIsRTL);
+                    I18nManager.forceRTL(newIsRTL);
 
-                            // 3. Reload app
-                            try {
-                                await Updates.reloadAsync();
-                            } catch (e) {
-                                // Fallback for dev mode
-                                if (__DEV__ && NativeModules.DevSettings) {
-                                    NativeModules.DevSettings.reload();
-                                } else {
-                                    Alert.alert('Restart Required', 'Please close and reopen the app manually.');
-                                }
-                            }
-                        },
-                    },
-                ]
+                    // 3. Reload app
+                    try {
+                        await Updates.reloadAsync();
+                    } catch (e) {
+                        // Fallback for dev mode
+                        if (__DEV__ && NativeModules.DevSettings) {
+                            NativeModules.DevSettings.reload();
+                        } else {
+                            showModal('Restart Required', 'Please close and reopen the app manually.', undefined, 'danger');
+                        }
+                    }
+                },
+                'primary', // Restart is a primary action here, or arguably danger/warning. Primary is fine.
+                t('common.ok'),
+                t('common.cancel'),
+                () => { }
             );
         } else {
             // No RTL change needed, just update immediately
@@ -296,6 +329,17 @@ export const SettingsScreen = () => {
                     </Typography>
                 </View>
             </ScrollView>
+
+            <ConfirmationModal
+                visible={modalVisible}
+                title={modalConfig.title}
+                message={modalConfig.message}
+                confirmText={modalConfig.confirmText}
+                cancelText={modalConfig.cancelText}
+                onConfirm={modalConfig.onConfirm}
+                onCancel={modalConfig.onCancel}
+                variant={modalConfig.variant}
+            />
         </ScreenLayout>
     );
 };

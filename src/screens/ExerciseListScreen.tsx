@@ -11,6 +11,7 @@ import { generateId } from '../utils/generateId';
 import { Exercise } from '../types';
 import { MUSCLE_GROUPS } from '../constants/exercises';
 import { useTranslation } from 'react-i18next';
+import { ConfirmationModal } from '../components/ConfirmationModal';
 
 export const ExerciseListScreen = ({ navigation }: any) => {
     const { t } = useTranslation();
@@ -22,6 +23,46 @@ export const ExerciseListScreen = ({ navigation }: any) => {
     const [newExName, setNewExName] = useState('');
     const [newExMuscle, setNewExMuscle] = useState('My Exercises');
     const [newExCategory, setNewExCategory] = useState<'strength' | 'cardio'>('strength');
+
+    const [alertVisible, setAlertVisible] = useState(false);
+    const [alertConfig, setAlertConfig] = useState({
+        title: '',
+        message: '',
+        confirmText: 'OK',
+        cancelText: '',
+        onConfirm: () => { },
+        onCancel: undefined as (() => void) | undefined,
+        variant: 'primary' as 'primary' | 'danger' | 'success',
+    });
+
+    const showAlert = (
+        title: string,
+        message: string,
+        onConfirm: () => void = () => setAlertVisible(false),
+        variant: 'primary' | 'danger' | 'success' = 'primary',
+        confirmText: string = t('common.ok'),
+        cancelText?: string,
+        onCancel?: () => void
+    ) => {
+        setAlertConfig({
+            title,
+            message,
+            onConfirm: () => {
+                onConfirm();
+                setAlertVisible(false);
+            },
+            variant,
+            confirmText,
+            cancelText: cancelText || (onCancel ? t('common.cancel') : ''),
+            onCancel: onCancel
+                ? () => {
+                    onCancel();
+                    setAlertVisible(false);
+                }
+                : undefined,
+        });
+        setAlertVisible(true);
+    };
 
     // Muscle groups available for selection (exclude 'All')
     const selectableMuscleGroups = useMemo(() =>
@@ -44,7 +85,7 @@ export const ExerciseListScreen = ({ navigation }: any) => {
 
     const handleCreateExercise = async () => {
         if (!newExName.trim() || !newExMuscle) {
-            Alert.alert(t('exerciseList.error'), t('exerciseList.errorMessage'));
+            showAlert(t('exerciseList.error'), t('exerciseList.errorMessage'), undefined, 'danger');
             return;
         }
 
@@ -261,6 +302,17 @@ export const ExerciseListScreen = ({ navigation }: any) => {
                     </Card>
                 </View>
             </Modal>
+
+            <ConfirmationModal
+                visible={alertVisible}
+                title={alertConfig.title}
+                message={alertConfig.message}
+                confirmText={alertConfig.confirmText}
+                cancelText={alertConfig.cancelText}
+                onConfirm={alertConfig.onConfirm}
+                onCancel={alertConfig.onCancel}
+                variant={alertConfig.variant}
+            />
         </ScreenLayout>
     );
 };
