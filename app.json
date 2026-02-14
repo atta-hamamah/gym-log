@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "gym-log",
+    "name": "Gym Log Tracker",
     "slug": "gym-log",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -16,14 +16,25 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.gymlog.tracker",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "INTERNET",
+        "VIBRATE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "d71a00ed-26f2-4a68-8836-65aab6c163c9"
+      }
     }
   }
 }
