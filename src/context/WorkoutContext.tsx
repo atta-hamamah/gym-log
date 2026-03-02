@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { WorkoutSession, Exercise, UserStats, Set, ExerciseLog } from '../types';
+import { WorkoutSession, Exercise, UserStats, Set, ExerciseLog, DetectedPR, PersonalRecord } from '../types';
 import { StorageService } from '../services/storage';
 import { generateId } from '../utils/generateId';
 import { EXERCISES } from '../constants/exercises';
+import { detectPRs, createPRRecords } from '../utils/prDetection';
 
 interface WorkoutContextType {
     workouts: WorkoutSession[];
@@ -10,6 +11,8 @@ interface WorkoutContextType {
     currentWorkout: WorkoutSession | null;
     userStats: UserStats | null;
     loading: boolean;
+    lastDetectedPRs: DetectedPR[];
+    personalRecords: PersonalRecord[];
 
     startWorkout: (name?: string) => void;
     finishWorkout: (notes?: string) => Promise<void>;
@@ -25,6 +28,7 @@ interface WorkoutContextType {
     refreshData: () => Promise<void>;
     updateUserStats: (stats: Partial<UserStats>) => Promise<void>;
     deleteWorkout: (id: string) => Promise<void>;
+    clearDetectedPRs: () => void;
 }
 
 const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
@@ -35,18 +39,22 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [currentWorkout, setCurrentWorkout] = useState<WorkoutSession | null>(null);
     const [userStats, setUserStats] = useState<UserStats | null>(null);
     const [loading, setLoading] = useState(true);
+    const [lastDetectedPRs, setLastDetectedPRs] = useState<DetectedPR[]>([]);
+    const [personalRecords, setPersonalRecords] = useState<PersonalRecord[]>([]);
 
     const refreshData = useCallback(async () => {
         setLoading(true);
         try {
-            const [loadedWorkouts, loadedExercises, loadedStats] = await Promise.all([
+            const [loadedWorkouts, loadedExercises, loadedStats, loadedPRs] = await Promise.all([
                 StorageService.getWorkouts(),
                 StorageService.getExercises(),
                 StorageService.getUserStats(),
+                StorageService.getPersonalRecords(),
             ]);
             setWorkouts(loadedWorkouts);
             setExercises(loadedExercises);
             setUserStats(loadedStats);
+            setPersonalRecords(loadedPRs);
 
             const savedSession = await StorageService.getCurrentWorkout();
             if (savedSession) {
@@ -89,12 +97,24 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
             notes,
         };
 
+        // ── PR Detection ──
+        const detected = detectPRs(completedSession, workouts);
+        if (detected.length > 0) {
+            const prRecords = createPRRecords(detected, completedSession.id, completedSession.endTime!);
+            await StorageService.addPersonalRecords(prRecords);
+            setPersonalRecords(prev => [...prev, ...prRecords]);
+            setLastDetectedPRs(detected);
+        } else {
+            setLastDetectedPRs([]);
+        }
+        // ─────────────────────
+
         await StorageService.saveWorkout(completedSession);
         setWorkouts(prev => [completedSession, ...prev]);
 
         setCurrentWorkout(null);
         await StorageService.saveCurrentWorkout(null);
-    }, [currentWorkout]);
+    }, [currentWorkout, workouts]);
 
     const cancelWorkout = useCallback(async () => {
         setCurrentWorkout(null);
@@ -190,6 +210,10 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setWorkouts(prev => prev.filter(w => w.id !== id));
     }, []);
 
+    const clearDetectedPRs = useCallback(() => {
+        setLastDetectedPRs([]);
+    }, []);
+
     return (
         <WorkoutContext.Provider
             value={{
@@ -198,6 +222,8 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 currentWorkout,
                 userStats,
                 loading,
+                lastDetectedPRs,
+                personalRecords,
                 startWorkout,
                 finishWorkout,
                 cancelWorkout,
@@ -209,6 +235,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 refreshData,
                 updateUserStats,
                 deleteWorkout,
+                clearDetectedPRs,
             }}
         >
             {children}

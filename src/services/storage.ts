@@ -1,6 +1,6 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { WorkoutSession, Exercise, UserStats } from '../types';
+import { WorkoutSession, Exercise, UserStats, PersonalRecord } from '../types';
 import { EXERCISES } from '../constants/exercises';
 
 const KEYS = {
@@ -8,6 +8,7 @@ const KEYS = {
   CUSTOM_EXERCISES: '@gym_log_custom_exercises',
   USER_STATS: '@gym_log_user_stats',
   CURRENT_WORKOUT: '@gym_log_current_workout', // For resuming if app crashes
+  PERSONAL_RECORDS: '@gym_log_personal_records',
 };
 
 export const StorageService = {
@@ -84,7 +85,7 @@ export const StorageService = {
       console.error('Failed to update stats', e);
     }
   },
-  
+
   // CURRENT ACTIVE WORKOUT (Resume on restart)
   async saveCurrentWorkout(workout: WorkoutSession | null): Promise<void> {
     if (!workout) {
@@ -101,5 +102,30 @@ export const StorageService = {
     } catch (e) {
       return null;
     }
-  }
+  },
+
+  // PERSONAL RECORDS
+  async getPersonalRecords(): Promise<PersonalRecord[]> {
+    try {
+      const json = await AsyncStorage.getItem(KEYS.PERSONAL_RECORDS);
+      return json ? JSON.parse(json) : [];
+    } catch (e) {
+      console.error('Failed to load PRs', e);
+      return [];
+    }
+  },
+
+  async savePersonalRecords(records: PersonalRecord[]): Promise<void> {
+    try {
+      await AsyncStorage.setItem(KEYS.PERSONAL_RECORDS, JSON.stringify(records));
+    } catch (e) {
+      console.error('Failed to save PRs', e);
+    }
+  },
+
+  async addPersonalRecords(newRecords: PersonalRecord[]): Promise<void> {
+    const existing = await this.getPersonalRecords();
+    const combined = [...existing, ...newRecords];
+    await this.savePersonalRecords(combined);
+  },
 };

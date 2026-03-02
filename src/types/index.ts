@@ -77,6 +77,29 @@ export interface WorkoutProgram {
 }
 // ──────────────────────────────────────────────────────
 
+// ── Personal Records ─────────────────────────────────
+export type PRType = 'max_weight' | 'best_volume' | 'est_1rm';
+
+export interface PersonalRecord {
+  exerciseId: string;
+  exerciseName: string;
+  type: PRType;
+  value: number;
+  reps?: number;         // reps at that weight (for max_weight)
+  date: number;          // timestamp
+  workoutId: string;
+}
+
+export interface DetectedPR {
+  exerciseId: string;
+  exerciseName: string;
+  type: PRType;
+  newValue: number;
+  previousValue: number | null;
+  reps?: number;
+}
+// ──────────────────────────────────────────────────────
+
 export type RootStackParamList = {
   Main: undefined;
   WorkoutSession: { workoutId?: string };

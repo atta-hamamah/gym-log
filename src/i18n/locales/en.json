@@ -188,5 +188,17 @@
     "restComplete": "Rest complete!",
     "skip": "Skip",
     "dismiss": "Done"
+  },
+  "pr": {
+    "newPR": "NEW PERSONAL RECORD!",
+    "singlePR": "You just crushed a new record! 🎉",
+    "multiplePRs": "You smashed {{count}} new records! 🎉",
+    "fromPrevious": "from previous best",
+    "keepGoing": "LET'S GO! 🔥",
+    "types": {
+      "max_weight": "Max Weight",
+      "best_volume": "Best Volume",
+      "est_1rm": "Est. 1RM"
+    }
   }
 }

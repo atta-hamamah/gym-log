@@ -8,13 +8,16 @@ import { Card } from '../components/Card';
 import { PlateCalculator } from '../components/PlateCalculator';
 import { RestTimer } from '../components/RestTimer';
 import { ConfirmationModal } from '../components/ConfirmationModal';
+import { PRCelebration } from '../components/PRCelebration';
 import { colors, borderRadius, spacing, shadows } from '../theme/colors';
 import { ExerciseLog, Set } from '../types';
 import { useTranslation } from 'react-i18next';
 
 export const WorkoutSessionScreen = ({ navigation }: any) => {
     const { t } = useTranslation();
-    const { currentWorkout, finishWorkout, cancelWorkout } = useWorkout();
+    const { currentWorkout, finishWorkout, cancelWorkout, lastDetectedPRs, clearDetectedPRs } = useWorkout();
+    const [showPRCelebration, setShowPRCelebration] = useState(false);
+    const [pendingGoBack, setPendingGoBack] = useState(false);
     const [notes, setNotes] = useState('');
     const [elapsed, setElapsed] = useState(0);
     const [showRestTimer, setShowRestTimer] = useState(false);
@@ -115,6 +118,23 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
         );
     }
 
+    // When finishWorkout completes, check for PRs
+    useEffect(() => {
+        if (pendingGoBack && lastDetectedPRs.length > 0) {
+            setShowPRCelebration(true);
+            setPendingGoBack(false);
+        } else if (pendingGoBack && lastDetectedPRs.length === 0) {
+            setPendingGoBack(false);
+            navigation.goBack();
+        }
+    }, [pendingGoBack, lastDetectedPRs]);
+
+    const handleDismissPR = () => {
+        setShowPRCelebration(false);
+        clearDetectedPRs();
+        navigation.goBack();
+    };
+
     const handleFinish = () => {
         if (currentWorkout.exercises.length === 0) {
             showModal(
@@ -130,7 +150,7 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
             t('workoutSession.finishMessage'),
             async () => {
                 await finishWorkout(notes);
-                navigation.goBack();
+                setPendingGoBack(true);
             },
             'success',
             t('workoutSession.finishConfirm'),
@@ -276,6 +296,12 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
                 defaultDuration={restDuration}
                 onDismiss={handleDismissRest}
                 onTimeChange={(newRemaining) => setRestCountdown(newRemaining)}
+            />
+
+            <PRCelebration
+                visible={showPRCelebration}
+                prs={lastDetectedPRs}
+                onDismiss={handleDismissPR}
             />
 
             <ConfirmationModal

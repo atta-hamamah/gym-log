@@ -188,5 +188,17 @@
     "restComplete": "انتهت الراحة!",
     "skip": "تخطي",
     "dismiss": "تم"
+  },
+  "pr": {
+    "newPR": "رقم قياسي جديد!",
+    "singlePR": "لقد حطمت رقمًا قياسيًا جديدًا! 🎉",
+    "multiplePRs": "لقد حطمت {{count}} أرقام قياسية جديدة! 🎉",
+    "fromPrevious": "من أفضل سابق",
+    "keepGoing": "هيا بنا! 🔥",
+    "types": {
+      "max_weight": "أقصى وزن",
+      "best_volume": "أفضل حجم",
+      "est_1rm": "تقدير 1RM"
+    }
   }
 }
