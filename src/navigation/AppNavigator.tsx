@@ -10,8 +10,10 @@ import { ProgressScreen } from '../screens/ProgressScreen';
 import { ExerciseListScreen } from '../screens/ExerciseListScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { WorkoutDetailsScreen } from '../screens/WorkoutDetailsScreen';
+import { ProgramsScreen } from '../screens/ProgramsScreen';
+import { ProgramDetailScreen } from '../screens/ProgramDetailScreen';
 import { colors, borderRadius } from '../theme/colors';
-import { Home, History, TrendingUp, Settings } from 'lucide-react-native';
+import { Home, History, TrendingUp, Settings, BookOpen } from 'lucide-react-native';
 import { RootStackParamList, TabParamList } from '../types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -65,6 +67,14 @@ const TabNavigator = () => {
                 options={{
                     tabBarIcon: ({ color, size }) => <Home color={color} size={size - 2} />,
                     tabBarLabel: t('tabs.dashboard'),
+                }}
+            />
+            <Tab.Screen
+                name="Programs"
+                component={ProgramsScreen}
+                options={{
+                    tabBarIcon: ({ color, size }) => <BookOpen color={color} size={size - 2} />,
+                    tabBarLabel: t('tabs.programs'),
                 }}
             />
             <Tab.Screen
@@ -140,6 +150,15 @@ export const AppNavigator = () => {
                         headerStyle: { backgroundColor: colors.surface },
                         headerTintColor: colors.text,
                         headerTitleStyle: { fontWeight: '600' },
+                    }}
+                />
+                <Stack.Screen
+                    name="ProgramDetail"
+                    component={ProgramDetailScreen}
+                    options={{
+                        presentation: 'card',
+                        headerShown: false,
+                        animation: 'slide_from_right',
                     }}
                 />
             </Stack.Navigator>

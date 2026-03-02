@@ -24,6 +24,7 @@
   },
   "tabs": {
     "dashboard": "Inicio",
+    "programs": "Programas",
     "history": "Historial",
     "progress": "Progreso",
     "settings": "Ajustes"
@@ -47,6 +48,31 @@
     "giveSessionName": "Dale un nombre a tu sesión",
     "namePlaceholder": "ej. Push Day, Leg Day...",
     "letsGo": "¡Vamos! 🔥"
+  },
+  "programs": {
+    "title": "Programas",
+    "subtitle": "Elige un programa. Sigue el plan.",
+    "daysPerWeek": "días/semana",
+    "duration": "Duración",
+    "schedule": "Calendario de Entrenamientos",
+    "exercise": "EJERCICIO",
+    "rest": "DESCANSO",
+    "startDay": "Iniciar Entrenamiento",
+    "notFound": "Programa no encontrado",
+    "noResults": "No hay programas que coincidan con tus filtros.",
+    "workoutActiveTitle": "Entrenamiento en curso",
+    "workoutActiveMessage": "Termina o cancela tu entrenamiento actual antes de iniciar uno nuevo.",
+    "levels": {
+      "beginner": "Principiante",
+      "intermediate": "Intermedio",
+      "advanced": "Avanzado"
+    },
+    "goals": {
+      "strength": "Fuerza",
+      "hypertrophy": "Hipertrofia",
+      "general": "General",
+      "fat_loss": "Quema de grasa"
+    }
   },
   "history": {
     "title": "Historial",

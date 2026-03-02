@@ -24,6 +24,7 @@
   },
   "tabs": {
     "dashboard": "डैशबोर्ड",
+    "programs": "प्रोग्राम",
     "history": "इतिहास",
     "progress": "प्रगति",
     "settings": "सेटिंग्स"
@@ -47,6 +48,31 @@
     "giveSessionName": "अपने सत्र को नाम दें",
     "namePlaceholder": "जैसे Push Day, Leg Day...",
     "letsGo": "चलो शुरू करें! 🔥"
+  },
+  "programs": {
+    "title": "प्रोग्राम",
+    "subtitle": "एक प्रोग्राम चुनें। योजना का पालन करें।",
+    "daysPerWeek": "दिन/सप्ताह",
+    "duration": "अवधि",
+    "schedule": "वर्कआउट अनुसूची",
+    "exercise": "अभ्यास",
+    "rest": "आराम",
+    "startDay": "वर्कआउट शुरू करें",
+    "notFound": "प्रोग्राम नहीं मिला",
+    "noResults": "आपके फिल्टर से कोई प्रोग्राम मेल नहीं खाता।",
+    "workoutActiveTitle": "वर्कआउट जारी है",
+    "workoutActiveMessage": "नया शुरू करने से पहले अपना वर्तमान वर्कआउट समाप्त या रद्द करें।",
+    "levels": {
+      "beginner": "शुरुआती",
+      "intermediate": "मध्यम",
+      "advanced": "उन्नत"
+    },
+    "goals": {
+      "strength": "शक्ति",
+      "hypertrophy": "मांसपेशी वृद्धि",
+      "general": "सामान्य",
+      "fat_loss": "वसा हानि"
+    }
   },
   "history": {
     "title": "इतिहास",

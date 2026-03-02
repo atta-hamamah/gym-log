@@ -47,15 +47,47 @@ export interface UserStats {
   lastUpdated: number;
 }
 
+// ── Programs ──────────────────────────────────────────
+export interface ProgramExercise {
+  exerciseId: string;
+  exerciseName: string;
+  sets: number;
+  reps: string;       // e.g. "8-12", "5", "AMRAP"
+  restSeconds: number;
+  notes?: string;
+}
+
+export interface ProgramDay {
+  dayLabel: string;     // e.g. "Day 1", "Monday"
+  name: string;         // e.g. "Push", "Upper Body"
+  exercises: ProgramExercise[];
+}
+
+export interface WorkoutProgram {
+  id: string;
+  name: string;
+  description: string;
+  level: 'beginner' | 'intermediate' | 'advanced';
+  daysPerWeek: number;
+  goal: 'strength' | 'hypertrophy' | 'general' | 'fat_loss';
+  duration: string;     // e.g. "8 weeks", "Ongoing"
+  icon: string;         // emoji
+  color: string;        // accent color for card
+  days: ProgramDay[];
+}
+// ──────────────────────────────────────────────────────
+
 export type RootStackParamList = {
   Main: undefined;
   WorkoutSession: { workoutId?: string };
   ExerciseList: undefined;
   WorkoutDetails: { workoutId: string };
+  ProgramDetail: { programId: string };
 };
 
 export type TabParamList = {
   Home: undefined;
+  Programs: undefined;
   History: undefined;
   Progress: undefined;
   Settings: undefined;

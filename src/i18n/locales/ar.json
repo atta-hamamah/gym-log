@@ -24,6 +24,7 @@
   },
   "tabs": {
     "dashboard": "الرئيسية",
+    "programs": "البرامج",
     "history": "السجل",
     "progress": "التقدم",
     "settings": "الإعدادات"
@@ -47,6 +48,31 @@
     "giveSessionName": "أعطِ جلستك اسماً",
     "namePlaceholder": "مثال: يوم الدفع، يوم الأرجل...",
     "letsGo": "هيا بنا! 🔥"
+  },
+  "programs": {
+    "title": "البرامج",
+    "subtitle": "اختر برنامجاً. اتبع الخطة.",
+    "daysPerWeek": "أيام/أسبوع",
+    "duration": "المدة",
+    "schedule": "جدول التمارين",
+    "exercise": "التمرين",
+    "rest": "الراحة",
+    "startDay": "ابدأ التمرين",
+    "notFound": "البرنامج غير موجود",
+    "noResults": "لا توجد برامج تطابق الفلاتر.",
+    "workoutActiveTitle": "تمرين قيد التنفيذ",
+    "workoutActiveMessage": "أنهِ أو ألغِ تمرينك الحالي قبل بدء تمرين جديد.",
+    "levels": {
+      "beginner": "مبتدئ",
+      "intermediate": "متوسط",
+      "advanced": "متقدم"
+    },
+    "goals": {
+      "strength": "قوة",
+      "hypertrophy": "تضخم",
+      "general": "عام",
+      "fat_loss": "حرق دهون"
+    }
   },
   "history": {
     "title": "السجل",
