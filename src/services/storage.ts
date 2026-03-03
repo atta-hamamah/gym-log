@@ -1,6 +1,6 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { WorkoutSession, Exercise, UserStats, PersonalRecord } from '../types';
+import { WorkoutSession, Exercise, UserStats, PersonalRecord, BodyMeasurement } from '../types';
 import { EXERCISES } from '../constants/exercises';
 
 const KEYS = {
@@ -9,6 +9,7 @@ const KEYS = {
   USER_STATS: '@gym_log_user_stats',
   CURRENT_WORKOUT: '@gym_log_current_workout', // For resuming if app crashes
   PERSONAL_RECORDS: '@gym_log_personal_records',
+  BODY_MEASUREMENTS: '@gym_log_body_measurements',
 };
 
 export const StorageService = {
@@ -127,5 +128,34 @@ export const StorageService = {
     const existing = await this.getPersonalRecords();
     const combined = [...existing, ...newRecords];
     await this.savePersonalRecords(combined);
+  },
+
+  // BODY MEASUREMENTS
+  async getBodyMeasurements(): Promise<BodyMeasurement[]> {
+    try {
+      const json = await AsyncStorage.getItem(KEYS.BODY_MEASUREMENTS);
+      return json ? JSON.parse(json) : [];
+    } catch (e) {
+      console.error('Failed to load measurements', e);
+      return [];
+    }
+  },
+
+  async saveBodyMeasurement(measurement: BodyMeasurement): Promise<void> {
+    try {
+      const existing = await this.getBodyMeasurements();
+      existing.push(measurement);
+      // Sort by date descending
+      existing.sort((a, b) => b.date - a.date);
+      await AsyncStorage.setItem(KEYS.BODY_MEASUREMENTS, JSON.stringify(existing));
+    } catch (e) {
+      console.error('Failed to save measurement', e);
+    }
+  },
+
+  async deleteBodyMeasurement(id: string): Promise<void> {
+    const existing = await this.getBodyMeasurements();
+    const filtered = existing.filter(m => m.id !== id);
+    await AsyncStorage.setItem(KEYS.BODY_MEASUREMENTS, JSON.stringify(filtered));
   },
 };

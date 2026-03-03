@@ -45,6 +45,8 @@ function buildRenderList(exercises: ExerciseLog[]): RenderItem[] {
     return result;
 }
 
+const MOOD_EMOJIS = ['😴', '😕', '😐', '💪', '🔥'];
+
 export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
     const { t } = useTranslation();
     const { workoutId } = route.params as { workoutId: string };
@@ -194,6 +196,15 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
                         {log.sets.length} {t('common.sets')} • {exVolume.toLocaleString()} {t('workoutDetails.kgTotal')}
                     </Typography>
                 </View>
+
+                {/* Exercise notes */}
+                {log.notes ? (
+                    <View style={styles.exNotes}>
+                        <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 11 }}>
+                            📝 {log.notes}
+                        </Typography>
+                    </View>
+                ) : null}
             </Card>
         );
     };
@@ -203,9 +214,21 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
                 {/* Title */}
                 <Typography variant="h1" style={{ marginBottom: 4 }}>{workout.name}</Typography>
-                <Typography variant="caption" style={{ marginBottom: 20 }}>
+                <Typography variant="caption" style={{ marginBottom: 4 }}>
                     {format(workout.startTime, 'EEEE, MMM dd, yyyy • HH:mm')}
                 </Typography>
+
+                {/* Mood Badge */}
+                {workout.mood ? (
+                    <View style={styles.moodBadge}>
+                        <Typography variant="caption" style={{ fontSize: 16 }}>
+                            {MOOD_EMOJIS[workout.mood - 1] || ''}
+                        </Typography>
+                        <Typography variant="caption" color={colors.textSecondary} style={{ marginLeft: 6, fontSize: 11 }}>
+                            {t('workoutDetails.energy')}: {workout.mood}/5
+                        </Typography>
+                    </View>
+                ) : null}
 
                 {/* Summary Stats */}
                 <View style={styles.summaryRow}>
@@ -406,5 +429,24 @@ const styles = StyleSheet.create({
     },
     supersetExercises: {
         flex: 1,
+    },
+    // ── Mood & notes styles ─────────────────────────────
+    moodBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 20,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        backgroundColor: colors.surfaceLight,
+        borderRadius: borderRadius.s,
+        borderWidth: 1,
+        borderColor: colors.border,
+        alignSelf: 'flex-start',
+    },
+    exNotes: {
+        marginTop: 6,
+        paddingTop: 6,
+        borderTopWidth: 1,
+        borderTopColor: colors.border + '40',
     },
 });

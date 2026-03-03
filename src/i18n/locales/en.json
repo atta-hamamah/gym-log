@@ -100,7 +100,11 @@
     "cancelWorkout": "Cancel Workout",
     "remove": "REMOVE",
     "invalidInput": "Invalid Input",
-    "invalidInputMessage": "Enter valid weight and reps."
+    "invalidInputMessage": "Enter valid weight and reps.",
+    "howFeeling": "How are you feeling?",
+    "addNote": "Add note",
+    "hideNotes": "Hide note",
+    "exerciseNotePlaceholder": "e.g. felt strong, left shoulder sore..."
   },
   "workoutDetails": {
     "workoutNotFound": "Workout not found",
@@ -110,7 +114,25 @@
     "kgTotal": "kg total",
     "deleteWorkout": "Delete Workout",
     "deleteTitle": "Delete Workout?",
-    "deleteMessage": "This action cannot be undone."
+    "deleteMessage": "This action cannot be undone.",
+    "energy": "Energy"
+  },
+  "measurements": {
+    "title": "Body Measurements",
+    "subtitle": "Track your body over time",
+    "save": "Save Measurements",
+    "history": "Recent Entries",
+    "error": "Missing Data",
+    "errorEmpty": "Enter at least one measurement.",
+    "saved": "✅ Saved",
+    "savedMessage": "Measurements recorded successfully.",
+    "neck": "Neck",
+    "chest": "Chest",
+    "waist": "Waist",
+    "hips": "Hips",
+    "biceps": "Biceps",
+    "thighs": "Thighs",
+    "calves": "Calves"
   },
   "progress": {
     "title": "Progress",

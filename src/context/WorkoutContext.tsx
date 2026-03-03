@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { WorkoutSession, Exercise, UserStats, Set, ExerciseLog, DetectedPR, PersonalRecord } from '../types';
+import { WorkoutSession, Exercise, UserStats, Set, ExerciseLog, DetectedPR, PersonalRecord, BodyMeasurement } from '../types';
 import { StorageService } from '../services/storage';
 import { generateId } from '../utils/generateId';
 import { EXERCISES } from '../constants/exercises';
@@ -13,9 +13,10 @@ interface WorkoutContextType {
     loading: boolean;
     lastDetectedPRs: DetectedPR[];
     personalRecords: PersonalRecord[];
+    bodyMeasurements: BodyMeasurement[];
 
     startWorkout: (name?: string) => void;
-    finishWorkout: (notes?: string) => Promise<void>;
+    finishWorkout: (notes?: string, mood?: number) => Promise<void>;
     cancelWorkout: () => Promise<void>;
 
     addExerciseToWorkout: (exercise: Exercise) => void;
@@ -29,6 +30,12 @@ interface WorkoutContextType {
     linkSuperset: (exerciseLogIds: string[]) => void;
     unlinkSuperset: (exerciseLogId: string) => void;
     reorderExercise: (fromIndex: number, toIndex: number) => void;
+
+    // Notes & measurements
+    updateExerciseNotes: (exerciseLogId: string, notes: string) => void;
+    setWorkoutMood: (mood: number) => void;
+    addBodyMeasurement: (measurement: BodyMeasurement) => Promise<void>;
+    deleteBodyMeasurement: (id: string) => Promise<void>;
 
     refreshData: () => Promise<void>;
     updateUserStats: (stats: Partial<UserStats>) => Promise<void>;
@@ -46,20 +53,23 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [loading, setLoading] = useState(true);
     const [lastDetectedPRs, setLastDetectedPRs] = useState<DetectedPR[]>([]);
     const [personalRecords, setPersonalRecords] = useState<PersonalRecord[]>([]);
+    const [bodyMeasurements, setBodyMeasurements] = useState<BodyMeasurement[]>([]);
 
     const refreshData = useCallback(async () => {
         setLoading(true);
         try {
-            const [loadedWorkouts, loadedExercises, loadedStats, loadedPRs] = await Promise.all([
+            const [loadedWorkouts, loadedExercises, loadedStats, loadedPRs, loadedMeasurements] = await Promise.all([
                 StorageService.getWorkouts(),
                 StorageService.getExercises(),
                 StorageService.getUserStats(),
                 StorageService.getPersonalRecords(),
+                StorageService.getBodyMeasurements(),
             ]);
             setWorkouts(loadedWorkouts);
             setExercises(loadedExercises);
             setUserStats(loadedStats);
             setPersonalRecords(loadedPRs);
+            setBodyMeasurements(loadedMeasurements);
 
             const savedSession = await StorageService.getCurrentWorkout();
             if (savedSession) {
@@ -93,13 +103,14 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         StorageService.saveCurrentWorkout(newSession);
     }, []);
 
-    const finishWorkout = useCallback(async (notes?: string) => {
+    const finishWorkout = useCallback(async (notes?: string, mood?: number) => {
         if (!currentWorkout) return;
 
         const completedSession: WorkoutSession = {
             ...currentWorkout,
             endTime: Date.now(),
             notes,
+            ...(mood ? { mood } : {}),
         };
 
         // ── PR Detection ──
@@ -280,6 +291,40 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setLastDetectedPRs([]);
     }, []);
 
+    // ── Exercise notes ───────────────────────────────────
+    const updateExerciseNotes = useCallback((exerciseLogId: string, notes: string) => {
+        setCurrentWorkout(prev => {
+            if (!prev) return prev;
+            const updatedExercises = prev.exercises.map(ex => {
+                if (ex.id === exerciseLogId) {
+                    return { ...ex, notes: notes || undefined };
+                }
+                return ex;
+            });
+            return { ...prev, exercises: updatedExercises };
+        });
+    }, []);
+
+    const setWorkoutMood = useCallback((mood: number) => {
+        setCurrentWorkout(prev => {
+            if (!prev) return prev;
+            return { ...prev, mood };
+        });
+    }, []);
+    // ─────────────────────────────────────────────────────
+
+    // ── Body measurements ────────────────────────────────
+    const addBodyMeasurement = useCallback(async (measurement: BodyMeasurement) => {
+        await StorageService.saveBodyMeasurement(measurement);
+        setBodyMeasurements(prev => [measurement, ...prev].sort((a, b) => b.date - a.date));
+    }, []);
+
+    const deleteBodyMeasurement = useCallback(async (id: string) => {
+        await StorageService.deleteBodyMeasurement(id);
+        setBodyMeasurements(prev => prev.filter(m => m.id !== id));
+    }, []);
+    // ─────────────────────────────────────────────────────
+
     return (
         <WorkoutContext.Provider
             value={{
@@ -290,6 +335,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 loading,
                 lastDetectedPRs,
                 personalRecords,
+                bodyMeasurements,
                 startWorkout,
                 finishWorkout,
                 cancelWorkout,
@@ -301,6 +347,10 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 linkSuperset,
                 unlinkSuperset,
                 reorderExercise,
+                updateExerciseNotes,
+                setWorkoutMood,
+                addBodyMeasurement,
+                deleteBodyMeasurement,
                 refreshData,
                 updateUserStats,
                 deleteWorkout,

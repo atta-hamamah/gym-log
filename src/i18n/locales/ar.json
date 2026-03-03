@@ -100,7 +100,11 @@
     "cancelWorkout": "إلغاء التمرين",
     "remove": "إزالة",
     "invalidInput": "إدخال غير صالح",
-    "invalidInputMessage": "أدخل وزناً وتكرارات صالحة."
+    "invalidInputMessage": "أدخل وزناً وتكرارات صالحة.",
+    "howFeeling": "كيف تشعر؟",
+    "addNote": "إضافة ملاحظة",
+    "hideNotes": "إخفاء الملاحظة",
+    "exerciseNotePlaceholder": "مثال: شعرت بالقوة، ألم في الكتف الأيسر..."
   },
   "workoutDetails": {
     "workoutNotFound": "التمرين غير موجود",
@@ -110,7 +114,25 @@
     "kgTotal": "كغ إجمالي",
     "deleteWorkout": "حذف التمرين",
     "deleteTitle": "حذف التمرين؟",
-    "deleteMessage": "لا يمكن التراجع عن هذا الإجراء."
+    "deleteMessage": "لا يمكن التراجع عن هذا الإجراء.",
+    "energy": "الطاقة"
+  },
+  "measurements": {
+    "title": "قياسات الجسم",
+    "subtitle": "تتبع جسمك عبر الزمن",
+    "save": "حفظ القياسات",
+    "history": "السجلات الأخيرة",
+    "error": "بيانات ناقصة",
+    "errorEmpty": "أدخل قياساً واحداً على الأقل.",
+    "saved": "✅ تم الحفظ",
+    "savedMessage": "تم تسجيل القياسات بنجاح.",
+    "neck": "الرقبة",
+    "chest": "الصدر",
+    "waist": "الخصر",
+    "hips": "الوركين",
+    "biceps": "العضلة",
+    "thighs": "الفخذين",
+    "calves": "الساقين"
   },
   "progress": {
     "title": "التقدم",

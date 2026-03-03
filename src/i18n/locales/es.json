@@ -100,7 +100,11 @@
     "cancelWorkout": "Cancelar entrenamiento",
     "remove": "QUITAR",
     "invalidInput": "Entrada inválida",
-    "invalidInputMessage": "Ingresa peso y reps válidos."
+    "invalidInputMessage": "Ingresa peso y reps válidos.",
+    "howFeeling": "¿Cómo te sientes?",
+    "addNote": "Agregar nota",
+    "hideNotes": "Ocultar nota",
+    "exerciseNotePlaceholder": "ej. me sentí fuerte, dolor en hombro izquierdo..."
   },
   "workoutDetails": {
     "workoutNotFound": "Entrenamiento no encontrado",
@@ -110,7 +114,25 @@
     "kgTotal": "kg total",
     "deleteWorkout": "Eliminar entrenamiento",
     "deleteTitle": "¿Eliminar entrenamiento?",
-    "deleteMessage": "Esta acción no se puede deshacer."
+    "deleteMessage": "Esta acción no se puede deshacer.",
+    "energy": "Energía"
+  },
+  "measurements": {
+    "title": "Medidas Corporales",
+    "subtitle": "Seguí tu cuerpo a lo largo del tiempo",
+    "save": "Guardar Medidas",
+    "history": "Entradas Recientes",
+    "error": "Datos Faltantes",
+    "errorEmpty": "Ingresa al menos una medida.",
+    "saved": "✅ Guardado",
+    "savedMessage": "Medidas registradas correctamente.",
+    "neck": "Cuello",
+    "chest": "Pecho",
+    "waist": "Cintura",
+    "hips": "Cadera",
+    "biceps": "Bíceps",
+    "thighs": "Muslos",
+    "calves": "Pantorrillas"
   },
   "progress": {
     "title": "Progreso",

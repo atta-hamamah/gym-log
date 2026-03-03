@@ -100,7 +100,11 @@
     "cancelWorkout": "वर्कआउट रद्द करें",
     "remove": "हटाएं",
     "invalidInput": "अमान्य इनपुट",
-    "invalidInputMessage": "वैध वजन और रेप्स दर्ज करें।"
+    "invalidInputMessage": "वैध वजन और रेप्स दर्ज करें।",
+    "howFeeling": "आज कैसा महसूस हो रहा है?",
+    "addNote": "नोट जोड़ें",
+    "hideNotes": "नोट छुपाएं",
+    "exerciseNotePlaceholder": "जैसे मजबूत महसूस किया, बाएं कंधे में दर्द..."
   },
   "workoutDetails": {
     "workoutNotFound": "वर्कआउट नहीं मिला",
@@ -110,7 +114,25 @@
     "kgTotal": "kg कुल",
     "deleteWorkout": "वर्कआउट हटाएं",
     "deleteTitle": "वर्कआउट हटाएं?",
-    "deleteMessage": "यह क्रिया पूर्ववत नहीं की जा सकती।"
+    "deleteMessage": "यह क्रिया पूर्ववत नहीं की जा सकती।",
+    "energy": "ऊर्जा"
+  },
+  "measurements": {
+    "title": "शरीर माप",
+    "subtitle": "समय के साथ अपने शरीर को ट्रैक करें",
+    "save": "माप सहेजें",
+    "history": "हाल के रिकॉर्ड",
+    "error": "डेटा गायब",
+    "errorEmpty": "कम से कम एक माप दर्ज करें।",
+    "saved": "✅ सहेजा गया",
+    "savedMessage": "माप सफलतापूर्वक दर्ज किए गए।",
+    "neck": "गर्दन",
+    "chest": "छाती",
+    "waist": "कमर",
+    "hips": "कूल्हे",
+    "biceps": "बाइसेप्स",
+    "thighs": "जांघें",
+    "calves": "पिंडली"
   },
   "progress": {
     "title": "प्रगति",

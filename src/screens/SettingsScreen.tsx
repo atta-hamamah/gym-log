@@ -12,13 +12,25 @@ import { useTranslation } from 'react-i18next';
 import { LANGUAGE_LABELS, SupportedLanguage, isRTL, saveLanguagePreference } from '../i18n';
 import * as Updates from 'expo-updates';
 import { ConfirmationModal } from '../components/ConfirmationModal';
+import { BodyMeasurement, MeasurementKey } from '../types';
+import { generateId } from '../utils/generateId';
 
 export const SettingsScreen = () => {
     const { t, i18n } = useTranslation();
-    const { updateUserStats, userStats, workouts, refreshData } = useWorkout();
+    const { updateUserStats, userStats, workouts, refreshData, bodyMeasurements, addBodyMeasurement } = useWorkout();
     const [weight, setWeight] = useState('');
     const [bodyFat, setBodyFat] = useState('');
     const [height, setHeight] = useState('');
+
+    // Body measurements state
+    const [showMeasurements, setShowMeasurements] = useState(false);
+    const [mNeck, setMNeck] = useState('');
+    const [mChest, setMChest] = useState('');
+    const [mWaist, setMWaist] = useState('');
+    const [mHips, setMHips] = useState('');
+    const [mBiceps, setMBiceps] = useState('');
+    const [mThighs, setMThighs] = useState('');
+    const [mCalves, setMCalves] = useState('');
 
     const [modalVisible, setModalVisible] = useState(false);
     const [modalConfig, setModalConfig] = useState({
@@ -201,6 +213,46 @@ export const SettingsScreen = () => {
 
     const currentLang = i18n.language as SupportedLanguage;
 
+    const handleSaveMeasurements = async () => {
+        const vals = {
+            neck: parseFloat(mNeck) || undefined,
+            chest: parseFloat(mChest) || undefined,
+            waist: parseFloat(mWaist) || undefined,
+            hips: parseFloat(mHips) || undefined,
+            biceps: parseFloat(mBiceps) || undefined,
+            thighs: parseFloat(mThighs) || undefined,
+            calves: parseFloat(mCalves) || undefined,
+        };
+
+        const hasAny = Object.values(vals).some(v => v !== undefined);
+        if (!hasAny) {
+            showModal(t('measurements.error'), t('measurements.errorEmpty'), undefined, 'danger');
+            return;
+        }
+
+        const measurement: BodyMeasurement = {
+            id: generateId(),
+            date: Date.now(),
+            ...vals,
+        };
+
+        await addBodyMeasurement(measurement);
+        // Clear fields
+        setMNeck(''); setMChest(''); setMWaist(''); setMHips('');
+        setMBiceps(''); setMThighs(''); setMCalves('');
+        showModal(t('measurements.saved'), t('measurements.savedMessage'), undefined, 'success');
+    };
+
+    const MEASUREMENT_FIELDS: { key: MeasurementKey; label: string; state: string; setter: (v: string) => void }[] = [
+        { key: 'neck', label: t('measurements.neck'), state: mNeck, setter: setMNeck },
+        { key: 'chest', label: t('measurements.chest'), state: mChest, setter: setMChest },
+        { key: 'waist', label: t('measurements.waist'), state: mWaist, setter: setMWaist },
+        { key: 'hips', label: t('measurements.hips'), state: mHips, setter: setMHips },
+        { key: 'biceps', label: t('measurements.biceps'), state: mBiceps, setter: setMBiceps },
+        { key: 'thighs', label: t('measurements.thighs'), state: mThighs, setter: setMThighs },
+        { key: 'calves', label: t('measurements.calves'), state: mCalves, setter: setMCalves },
+    ];
+
     return (
         <ScreenLayout>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
@@ -306,6 +358,100 @@ export const SettingsScreen = () => {
                     </View>
                 </Card>
 
+                {/* Body Measurements */}
+                <Card>
+                    <TouchableOpacity
+                        onPress={() => setShowMeasurements(!showMeasurements)}
+                        activeOpacity={0.7}
+                        style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+                    >
+                        <View>
+                            <Typography variant="h3">{t('measurements.title')}</Typography>
+                            <Typography variant="caption" style={{ marginTop: 2 }}>
+                                {t('measurements.subtitle')}
+                            </Typography>
+                        </View>
+                        <Typography variant="body" color={colors.textMuted}>
+                            {showMeasurements ? '▲' : '▼'}
+                        </Typography>
+                    </TouchableOpacity>
+
+                    {showMeasurements && (
+                        <View style={{ marginTop: 16 }}>
+                            <View style={styles.measureGrid}>
+                                {MEASUREMENT_FIELDS.map(field => (
+                                    <View key={field.key} style={styles.measureItem}>
+                                        <Typography variant="caption" style={{ marginBottom: 4, fontSize: 10 }}>
+                                            {field.label}
+                                        </Typography>
+                                        <TextInput
+                                            style={styles.measureInput}
+                                            placeholder="cm"
+                                            keyboardType="numeric"
+                                            placeholderTextColor={colors.textMuted}
+                                            value={field.state}
+                                            onChangeText={field.setter}
+                                        />
+                                    </View>
+                                ))}
+                            </View>
+
+                            <Button
+                                title={t('measurements.save')}
+                                onPress={handleSaveMeasurements}
+                                size="small"
+                                style={{ marginTop: 12 }}
+                            />
+
+                            {/* Mini History */}
+                            {bodyMeasurements.length > 0 && (
+                                <View style={{ marginTop: 16 }}>
+                                    <Typography variant="label" style={{ marginBottom: 8 }}>
+                                        {t('measurements.history')}
+                                    </Typography>
+                                    {bodyMeasurements.slice(0, 5).map((m, i) => {
+                                        const prev = bodyMeasurements[i + 1];
+                                        return (
+                                            <View key={m.id} style={styles.measureHistoryRow}>
+                                                <Typography variant="caption" color={colors.textSecondary} style={{ width: 72, fontSize: 10 }}>
+                                                    {format(m.date, 'MMM dd')}
+                                                </Typography>
+                                                <View style={styles.measureHistoryValues}>
+                                                    {MEASUREMENT_FIELDS.map(f => {
+                                                        const val = m[f.key];
+                                                        const prevVal = prev?.[f.key];
+                                                        if (!val) return null;
+                                                        const diff = prevVal ? val - prevVal : 0;
+                                                        return (
+                                                            <View key={f.key} style={styles.measureHistoryChip}>
+                                                                <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 8 }}>
+                                                                    {f.label}
+                                                                </Typography>
+                                                                <Typography variant="caption" bold style={{ fontSize: 11 }}>
+                                                                    {val}
+                                                                    {diff !== 0 && (
+                                                                        <Typography
+                                                                            variant="caption"
+                                                                            color={diff > 0 ? colors.error : colors.success}
+                                                                            style={{ fontSize: 9 }}
+                                                                        >
+                                                                            {' '}{diff > 0 ? '↑' : '↓'}{Math.abs(diff).toFixed(1)}
+                                                                        </Typography>
+                                                                    )}
+                                                                </Typography>
+                                                            </View>
+                                                        );
+                                                    })}
+                                                </View>
+                                            </View>
+                                        );
+                                    })}
+                                </View>
+                            )}
+                        </View>
+                    )}
+                </Card>
+
                 {/* Data Management */}
                 <Card>
                     <Typography variant="h3" style={{ marginBottom: 4 }}>{t('settings.dataManagement')}</Typography>
@@ -400,5 +546,46 @@ const styles = StyleSheet.create({
     footer: {
         marginTop: 24,
         paddingVertical: 16,
+    },
+    // ── Measurement styles ────────────────────────────────
+    measureGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    measureItem: {
+        width: '30%',
+        flexGrow: 1,
+    },
+    measureInput: {
+        height: 38,
+        backgroundColor: colors.surfaceLight,
+        borderRadius: borderRadius.s,
+        paddingHorizontal: 10,
+        color: colors.text,
+        textAlign: 'center',
+        fontSize: 14,
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    measureHistoryRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 6,
+        borderBottomWidth: 1,
+        borderBottomColor: colors.border + '30',
+    },
+    measureHistoryValues: {
+        flex: 1,
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 6,
+    },
+    measureHistoryChip: {
+        alignItems: 'center',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        backgroundColor: colors.surfaceLight,
+        borderRadius: borderRadius.xs,
     },
 });

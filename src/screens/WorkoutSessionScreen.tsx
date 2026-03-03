@@ -30,7 +30,10 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
         clearDetectedPRs,
         linkSuperset,
         unlinkSuperset,
+        updateExerciseNotes,
+        setWorkoutMood,
     } = useWorkout();
+    const [mood, setMood] = useState<number>(0);
     const [showPRCelebration, setShowPRCelebration] = useState(false);
     const [pendingGoBack, setPendingGoBack] = useState(false);
     const [notes, setNotes] = useState('');
@@ -207,7 +210,7 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
             t('workoutSession.finishTitle'),
             t('workoutSession.finishMessage'),
             async () => {
-                await finishWorkout(notes);
+                await finishWorkout(notes, mood || undefined);
                 setPendingGoBack(true);
             },
             'success',
@@ -480,6 +483,37 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
                     )}
                 </View>
 
+                {/* Mood/Energy Selector */}
+                <View style={styles.moodSection}>
+                    <Typography variant="label" style={{ marginBottom: 8 }}>
+                        {t('workoutSession.howFeeling')}
+                    </Typography>
+                    <View style={styles.moodRow}>
+                        {MOOD_OPTIONS.map(opt => (
+                            <TouchableOpacity
+                                key={opt.value}
+                                style={[
+                                    styles.moodChip,
+                                    mood === opt.value && styles.moodChipActive,
+                                ]}
+                                onPress={() => {
+                                    const newMood = mood === opt.value ? 0 : opt.value;
+                                    setMood(newMood);
+                                    if (newMood > 0) setWorkoutMood(newMood);
+                                }}
+                                activeOpacity={0.7}
+                            >
+                                <Typography variant="body" style={{ fontSize: 20 }}>{opt.emoji}</Typography>
+                                {mood === opt.value && (
+                                    <Typography variant="caption" color={colors.primary} bold style={{ fontSize: 9, marginTop: 2 }}>
+                                        {opt.label}
+                                    </Typography>
+                                )}
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </View>
+
                 <TextInput
                     style={styles.notesInput}
                     placeholder={t('workoutSession.sessionNotes')}
@@ -584,12 +618,14 @@ const ExerciseCard = ({
     isLastInGroup?: boolean;
 }) => {
     const { t } = useTranslation();
-    const { logSet, deleteSet, removeExerciseFromWorkout } = useWorkout();
+    const { logSet, deleteSet, removeExerciseFromWorkout, updateExerciseNotes } = useWorkout();
     const [weight, setWeight] = useState('');
     const [reps, setReps] = useState('');
     const [rpe, setRpe] = useState<number | null>(null);
     const [showRpeSelector, setShowRpeSelector] = useState(false);
     const [showPlateCalc, setShowPlateCalc] = useState(false);
+    const [showNotes, setShowNotes] = useState(!!log.notes);
+    const [exerciseNotes, setExerciseNotes] = useState(log.notes || '');
 
     const handleAddSet = () => {
         const w = parseFloat(weight);
@@ -805,6 +841,36 @@ const ExerciseCard = ({
                 </View>
             )}
 
+            {/* Per-Exercise Notes */}
+            <TouchableOpacity
+                onPress={() => setShowNotes(!showNotes)}
+                style={styles.notesToggle}
+                activeOpacity={0.7}
+            >
+                <Typography variant="caption" color={colors.textSecondary} style={{ fontSize: 11 }}>
+                    {showNotes ? '📝 ' + t('workoutSession.hideNotes') : '📝 ' + t('workoutSession.addNote')}
+                </Typography>
+                {log.notes && !showNotes && (
+                    <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 10, marginLeft: 6 }} numberOfLines={1}>
+                        {log.notes}
+                    </Typography>
+                )}
+            </TouchableOpacity>
+            {showNotes && (
+                <TextInput
+                    style={styles.exerciseNotesInput}
+                    placeholder={t('workoutSession.exerciseNotePlaceholder')}
+                    placeholderTextColor={colors.textMuted}
+                    value={exerciseNotes}
+                    onChangeText={(text) => {
+                        setExerciseNotes(text);
+                        updateExerciseNotes(log.id, text);
+                    }}
+                    multiline
+                    numberOfLines={2}
+                />
+            )}
+
             {/* Plate Calculator Modal */}
             <PlateCalculator
                 visible={showPlateCalc}
@@ -814,6 +880,15 @@ const ExerciseCard = ({
         </Card>
     );
 };
+
+// ── Mood options ────────────────────────────────────────
+const MOOD_OPTIONS = [
+    { value: 1, emoji: '😴', label: 'Low' },
+    { value: 2, emoji: '😕', label: 'Meh' },
+    { value: 3, emoji: '😐', label: 'OK' },
+    { value: 4, emoji: '💪', label: 'Good' },
+    { value: 5, emoji: '🔥', label: 'Great' },
+];
 
 const styles = StyleSheet.create({
     header: {
@@ -1136,5 +1211,53 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginTop: 20,
+    },
+
+    // ── Mood styles ──────────────────────────────────────
+    moodSection: {
+        marginTop: 20,
+        marginBottom: 4,
+    },
+    moodRow: {
+        flexDirection: 'row',
+        gap: 8,
+    },
+    moodChip: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 10,
+        borderRadius: borderRadius.m,
+        backgroundColor: colors.surfaceLight,
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    moodChipActive: {
+        backgroundColor: colors.primary + '18',
+        borderColor: colors.primary + '50',
+    },
+
+    // ── Exercise notes styles ────────────────────────────
+    notesToggle: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 10,
+        paddingTop: 10,
+        borderTopWidth: 1,
+        borderTopColor: colors.border + '40',
+    },
+    exerciseNotesInput: {
+        backgroundColor: colors.surfaceLight,
+        color: colors.text,
+        width: '100%',
+        minHeight: 48,
+        borderRadius: borderRadius.s,
+        paddingHorizontal: 12,
+        paddingTop: 10,
+        marginTop: 8,
+        textAlignVertical: 'top',
+        fontSize: 13,
+        borderWidth: 1,
+        borderColor: colors.border,
     },
 });

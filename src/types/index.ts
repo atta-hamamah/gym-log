@@ -34,7 +34,24 @@ export interface WorkoutSession {
   exercises: ExerciseLog[];
   notes?: string;
   bodyWeight?: number;
+  mood?: number;  // 1-5 energy/mood rating
 }
+
+// ── Body Measurements ────────────────────────────────
+export interface BodyMeasurement {
+  id: string;
+  date: number;       // timestamp
+  neck?: number;      // cm
+  chest?: number;
+  waist?: number;
+  hips?: number;
+  biceps?: number;
+  thighs?: number;
+  calves?: number;
+}
+
+export type MeasurementKey = 'neck' | 'chest' | 'waist' | 'hips' | 'biceps' | 'thighs' | 'calves';
+// ──────────────────────────────────────────────────────
 
 export interface Exercise {
   id: string;
