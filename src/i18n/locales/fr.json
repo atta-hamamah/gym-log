@@ -200,5 +200,16 @@
       "best_volume": "Meilleur Volume",
       "est_1rm": "Est. 1RM"
     }
+  },
+  "superset": {
+    "superset": "Superset",
+    "circuit": "Circuit",
+    "giantSet": "Série Géante",
+    "linkExercises": "Lier",
+    "selectExercises": "Sélectionnez les exercices à lier",
+    "selectHint": "Choisissez 2+ exercices pour créer un superset ou circuit",
+    "link": "Lier",
+    "unlink": "DÉLIER",
+    "linked": "Lié"
   }
 }

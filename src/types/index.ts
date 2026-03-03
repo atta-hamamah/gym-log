@@ -13,6 +13,8 @@ export interface CardioData {
   calories?: number;
 }
 
+export type SupersetType = 'superset' | 'circuit' | 'giant_set';
+
 export interface ExerciseLog {
   id: string;
   exerciseId: string;
@@ -20,7 +22,9 @@ export interface ExerciseLog {
   sets: Set[];
   cardio?: CardioData;
   notes?: string;
+  supersetGroupId?: string;  // shared ID to link exercises in a superset/circuit/giant set
 }
+
 
 export interface WorkoutSession {
   id: string;

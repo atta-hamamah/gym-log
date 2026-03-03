@@ -200,5 +200,16 @@
       "best_volume": "सर्वश्रेष्ठ वॉल्यूम",
       "est_1rm": "अनु. 1RM"
     }
+  },
+  "superset": {
+    "superset": "सुपरसेट",
+    "circuit": "सर्किट",
+    "giantSet": "जायंट सेट",
+    "linkExercises": "जोड़ें",
+    "selectExercises": "जोड़ने के लिए अभ्यास चुनें",
+    "selectHint": "सुपरसेट या सर्किट बनाने के लिए 2+ अभ्यास चुनें",
+    "link": "जोड़ें",
+    "unlink": "अलग करें",
+    "linked": "जुड़ा हुआ"
   }
 }

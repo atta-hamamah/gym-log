@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { ScrollView, View, StyleSheet, TextInput, Alert, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { ScrollView, View, StyleSheet, TextInput, Alert, TouchableOpacity, Image, Animated } from 'react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { useWorkout } from '../context/WorkoutContext';
@@ -12,10 +12,25 @@ import { PRCelebration } from '../components/PRCelebration';
 import { colors, borderRadius, spacing, shadows } from '../theme/colors';
 import { ExerciseLog, Set } from '../types';
 import { useTranslation } from 'react-i18next';
+import {
+    getSupersetType,
+    getSupersetColor,
+    getSupersetEmoji,
+    getSupersetPositionLabel,
+    getExerciseGroups,
+} from '../utils/supersetUtils';
 
 export const WorkoutSessionScreen = ({ navigation }: any) => {
     const { t } = useTranslation();
-    const { currentWorkout, finishWorkout, cancelWorkout, lastDetectedPRs, clearDetectedPRs } = useWorkout();
+    const {
+        currentWorkout,
+        finishWorkout,
+        cancelWorkout,
+        lastDetectedPRs,
+        clearDetectedPRs,
+        linkSuperset,
+        unlinkSuperset,
+    } = useWorkout();
     const [showPRCelebration, setShowPRCelebration] = useState(false);
     const [pendingGoBack, setPendingGoBack] = useState(false);
     const [notes, setNotes] = useState('');
@@ -23,6 +38,10 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
     const [showRestTimer, setShowRestTimer] = useState(false);
     const [restDuration, setRestDuration] = useState(90); // default 90s
     const [restCountdown, setRestCountdown] = useState<number | null>(null); // header countdown
+
+    // ── Superset linking state ──
+    const [isLinkMode, setIsLinkMode] = useState(false);
+    const [selectedForLink, setSelectedForLink] = useState<string[]>([]);
 
     const [modalVisible, setModalVisible] = useState(false);
     const [modalConfig, setModalConfig] = useState({
@@ -107,6 +126,45 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
         setRestCountdown(null);
     }, []);
 
+    // ── Superset linking handlers ──
+    const handleToggleLinkMode = () => {
+        if (isLinkMode) {
+            // Cancel link mode
+            setIsLinkMode(false);
+            setSelectedForLink([]);
+        } else {
+            setIsLinkMode(true);
+            setSelectedForLink([]);
+        }
+    };
+
+    const handleSelectForLink = (exerciseLogId: string) => {
+        setSelectedForLink(prev => {
+            if (prev.includes(exerciseLogId)) {
+                return prev.filter(id => id !== exerciseLogId);
+            }
+            return [...prev, exerciseLogId];
+        });
+    };
+
+    const handleConfirmLink = () => {
+        if (selectedForLink.length >= 2) {
+            linkSuperset(selectedForLink);
+        }
+        setIsLinkMode(false);
+        setSelectedForLink([]);
+    };
+
+    const handleUnlink = (exerciseLogId: string) => {
+        unlinkSuperset(exerciseLogId);
+    };
+
+    // ── Grouping logic for rendering ──
+    const exerciseGroups = useMemo(() => {
+        if (!currentWorkout) return [];
+        return getExerciseGroups(currentWorkout.exercises);
+    }, [currentWorkout?.exercises]);
+
     if (!currentWorkout) {
         return (
             <ScreenLayout>
@@ -179,6 +237,9 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
         (acc, e) => acc + e.sets.reduce((a, s) => a + s.weight * s.reps, 0),
         0
     );
+
+    // Build grouped render list: consecutive exercises with same groupId are rendered together
+    const renderList = buildRenderList(currentWorkout.exercises);
 
     return (
         <ScreenLayout>
@@ -254,24 +315,170 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
                         </Typography>
                     </Card>
                 ) : (
-                    currentWorkout.exercises.map((log, index) => (
-                        <ExerciseCard
-                            key={log.id}
-                            log={log}
-                            index={index}
-                            onSetLogged={handleSetLogged}
-                            showModal={showModal}
-                        />
-                    ))
+                    <>
+                        {/* Link Mode Banner */}
+                        {isLinkMode && (
+                            <View style={styles.linkBanner}>
+                                <View style={styles.linkBannerContent}>
+                                    <Typography variant="bodySmall" color={colors.secondary} bold>
+                                        🔗 {t('superset.selectExercises')}
+                                    </Typography>
+                                    <Typography variant="caption" color={colors.textSecondary} style={{ marginTop: 2 }}>
+                                        {t('superset.selectHint')}
+                                    </Typography>
+                                </View>
+                                <View style={styles.linkBannerActions}>
+                                    <TouchableOpacity
+                                        onPress={() => { setIsLinkMode(false); setSelectedForLink([]); }}
+                                        style={styles.linkCancelBtn}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Typography variant="bodySmall" color={colors.textSecondary}>
+                                            {t('common.cancel')}
+                                        </Typography>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        onPress={handleConfirmLink}
+                                        style={[
+                                            styles.linkConfirmBtn,
+                                            selectedForLink.length < 2 && { opacity: 0.4 },
+                                        ]}
+                                        activeOpacity={0.7}
+                                        disabled={selectedForLink.length < 2}
+                                    >
+                                        <Typography variant="bodySmall" color={colors.black} bold>
+                                            {t('superset.link')} ({selectedForLink.length})
+                                        </Typography>
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+                        )}
+
+                        {renderList.map((item) => {
+                            if (item.type === 'single') {
+                                const log = item.exercises[0];
+                                const globalIndex = currentWorkout.exercises.findIndex(e => e.id === log.id);
+                                return (
+                                    <View key={log.id}>
+                                        {/* Link mode checkbox overlay */}
+                                        {isLinkMode && (
+                                            <TouchableOpacity
+                                                style={[
+                                                    styles.linkCheckbox,
+                                                    selectedForLink.includes(log.id) && styles.linkCheckboxActive,
+                                                ]}
+                                                onPress={() => handleSelectForLink(log.id)}
+                                                activeOpacity={0.7}
+                                            >
+                                                <Typography variant="bodySmall" color={selectedForLink.includes(log.id) ? colors.black : colors.textMuted}>
+                                                    {selectedForLink.includes(log.id) ? '✓' : '○'}
+                                                </Typography>
+                                            </TouchableOpacity>
+                                        )}
+                                        <ExerciseCard
+                                            log={log}
+                                            index={globalIndex}
+                                            onSetLogged={handleSetLogged}
+                                            showModal={showModal}
+                                            positionLabel={null}
+                                            supersetColor={undefined}
+                                            isLinkMode={isLinkMode}
+                                            isSelected={selectedForLink.includes(log.id)}
+                                            onUnlink={undefined}
+                                        />
+                                    </View>
+                                );
+                            } else {
+                                // Superset group
+                                const groupExercises = item.exercises;
+                                const groupSize = groupExercises.length;
+                                const ssType = getSupersetType(groupSize);
+                                const ssColor = getSupersetColor(ssType);
+                                const ssEmoji = getSupersetEmoji(ssType);
+                                const ssLabel = groupSize === 2
+                                    ? t('superset.superset')
+                                    : groupSize >= 3
+                                        ? t('superset.circuit')
+                                        : t('superset.superset');
+
+                                return (
+                                    <View key={item.groupId} style={styles.supersetContainer}>
+                                        {/* Superset group header */}
+                                        <View style={[styles.supersetHeader, { borderColor: ssColor + '50' }]}>
+                                            <View style={[styles.supersetHeaderDot, { backgroundColor: ssColor }]} />
+                                            <Typography variant="caption" color={ssColor} bold style={{ fontSize: 11 }}>
+                                                {ssEmoji} {ssLabel.toUpperCase()} • {groupSize} {t('common.exercises')}
+                                            </Typography>
+                                        </View>
+
+                                        {/* Colored side bar + exercises */}
+                                        <View style={styles.supersetBody}>
+                                            <View style={[styles.supersetSidebar, { backgroundColor: ssColor }]} />
+                                            <View style={styles.supersetExercises}>
+                                                {groupExercises.map((log, i) => {
+                                                    const globalIndex = currentWorkout.exercises.findIndex(e => e.id === log.id);
+                                                    const posLabel = getSupersetPositionLabel(log, currentWorkout.exercises);
+
+                                                    return (
+                                                        <View key={log.id}>
+                                                            {isLinkMode && (
+                                                                <TouchableOpacity
+                                                                    style={[
+                                                                        styles.linkCheckbox,
+                                                                        selectedForLink.includes(log.id) && styles.linkCheckboxActive,
+                                                                    ]}
+                                                                    onPress={() => handleSelectForLink(log.id)}
+                                                                    activeOpacity={0.7}
+                                                                >
+                                                                    <Typography variant="bodySmall" color={selectedForLink.includes(log.id) ? colors.black : colors.textMuted}>
+                                                                        {selectedForLink.includes(log.id) ? '✓' : '○'}
+                                                                    </Typography>
+                                                                </TouchableOpacity>
+                                                            )}
+                                                            <ExerciseCard
+                                                                log={log}
+                                                                index={globalIndex}
+                                                                onSetLogged={handleSetLogged}
+                                                                showModal={showModal}
+                                                                positionLabel={posLabel}
+                                                                supersetColor={ssColor}
+                                                                isLinkMode={isLinkMode}
+                                                                isSelected={selectedForLink.includes(log.id)}
+                                                                onUnlink={() => handleUnlink(log.id)}
+                                                                isLastInGroup={i === groupExercises.length - 1}
+                                                            />
+                                                        </View>
+                                                    );
+                                                })}
+                                            </View>
+                                        </View>
+                                    </View>
+                                );
+                            }
+                        })}
+                    </>
                 )}
 
-                <Button
-                    title={t('workoutSession.addExercise')}
-                    variant="secondary"
-                    onPress={() => navigation.navigate('ExerciseList')}
-                    fullWidth
-                    style={{ marginTop: 20 }}
-                />
+                {/* Action buttons below exercises */}
+                <View style={styles.actionRow}>
+                    <Button
+                        title={t('workoutSession.addExercise')}
+                        variant="secondary"
+                        onPress={() => navigation.navigate('ExerciseList')}
+                        style={{ flex: 1 }}
+                    />
+                    {currentWorkout.exercises.length >= 2 && !isLinkMode && (
+                        <TouchableOpacity
+                            onPress={handleToggleLinkMode}
+                            style={styles.linkModeBtn}
+                            activeOpacity={0.7}
+                        >
+                            <Typography variant="bodySmall" color={colors.secondary} bold>
+                                🔗 {t('superset.linkExercises')}
+                            </Typography>
+                        </TouchableOpacity>
+                    )}
+                </View>
 
                 <TextInput
                     style={styles.notesInput}
@@ -318,6 +525,33 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
     );
 };
 
+// ── Build groupable render list ──────────────────────────
+interface RenderItem {
+    type: 'single' | 'group';
+    groupId?: string;
+    exercises: ExerciseLog[];
+}
+
+function buildRenderList(exercises: ExerciseLog[]): RenderItem[] {
+    const result: RenderItem[] = [];
+    const processedGroupIds = new Set<string>();
+
+    exercises.forEach((ex) => {
+        if (ex.supersetGroupId) {
+            if (processedGroupIds.has(ex.supersetGroupId)) return;
+            processedGroupIds.add(ex.supersetGroupId);
+            const groupExercises = exercises.filter(
+                e => e.supersetGroupId === ex.supersetGroupId
+            );
+            result.push({ type: 'group', groupId: ex.supersetGroupId, exercises: groupExercises });
+        } else {
+            result.push({ type: 'single', exercises: [ex] });
+        }
+    });
+
+    return result;
+}
+
 // RPE Color based on exertion level
 const getRpeColor = (rpe: number): string => {
     if (rpe <= 5) return colors.success;
@@ -330,12 +564,24 @@ const ExerciseCard = ({
     log,
     index,
     onSetLogged,
-    showModal
+    showModal,
+    positionLabel,
+    supersetColor,
+    isLinkMode,
+    isSelected,
+    onUnlink,
+    isLastInGroup,
 }: {
     log: ExerciseLog;
     index: number;
     onSetLogged: () => void;
     showModal: (title: string, message: string, onConfirm?: () => void, variant?: any) => void;
+    positionLabel: string | null;
+    supersetColor: string | undefined;
+    isLinkMode: boolean;
+    isSelected: boolean;
+    onUnlink: (() => void) | undefined;
+    isLastInGroup?: boolean;
 }) => {
     const { t } = useTranslation();
     const { logSet, deleteSet, removeExerciseFromWorkout } = useWorkout();
@@ -370,25 +616,54 @@ const ExerciseCard = ({
     const exerciseVolume = log.sets.reduce((a, s) => a + s.weight * s.reps, 0);
 
     return (
-        <Card style={styles.exerciseCard}>
+        <Card
+            style={[
+                styles.exerciseCard,
+                isLinkMode && isSelected && { borderColor: colors.secondary, borderWidth: 2 },
+                positionLabel && !isLastInGroup && { marginBottom: 4, borderBottomLeftRadius: 4, borderBottomRightRadius: 4 },
+                positionLabel && isLastInGroup && { marginBottom: 12 },
+                positionLabel && { borderLeftWidth: 0 },
+            ]}
+        >
             {/* Exercise Header */}
             <View style={styles.cardHeader}>
-                <View style={{ flex: 1 }}>
-                    <Typography variant="h3">{log.exerciseName}</Typography>
-                    {log.sets.length > 0 && (
-                        <Typography variant="caption" style={{ marginTop: 2 }}>
-                            {log.sets.length} {t('common.sets')} • {exerciseVolume} {t('common.kg')}
-                        </Typography>
+                <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+                    {positionLabel && (
+                        <View style={[styles.positionBadge, { backgroundColor: supersetColor + '25', borderColor: supersetColor + '50' }]}>
+                            <Typography variant="caption" color={supersetColor} bold style={{ fontSize: 11 }}>
+                                {positionLabel}
+                            </Typography>
+                        </View>
                     )}
+                    <View style={{ flex: 1 }}>
+                        <Typography variant="h3">{log.exerciseName}</Typography>
+                        {log.sets.length > 0 && (
+                            <Typography variant="caption" style={{ marginTop: 2 }}>
+                                {log.sets.length} {t('common.sets')} • {exerciseVolume} {t('common.kg')}
+                            </Typography>
+                        )}
+                    </View>
                 </View>
-                <TouchableOpacity
-                    onPress={() => removeExerciseFromWorkout(log.id)}
-                    style={styles.removeBtn}
-                >
-                    <Typography variant="caption" color={colors.error} style={{ fontSize: 11 }}>
-                        {t('workoutSession.remove')}
-                    </Typography>
-                </TouchableOpacity>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    {onUnlink && (
+                        <TouchableOpacity
+                            onPress={onUnlink}
+                            style={styles.unlinkBtn}
+                        >
+                            <Typography variant="caption" color={colors.secondary} style={{ fontSize: 10 }}>
+                                {t('superset.unlink')}
+                            </Typography>
+                        </TouchableOpacity>
+                    )}
+                    <TouchableOpacity
+                        onPress={() => removeExerciseFromWorkout(log.id)}
+                        style={styles.removeBtn}
+                    >
+                        <Typography variant="caption" color={colors.error} style={{ fontSize: 11 }}>
+                            {t('workoutSession.remove')}
+                        </Typography>
+                    </TouchableOpacity>
+                </View>
             </View>
 
             {/* Table Header */}
@@ -594,6 +869,13 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: colors.error + '40',
     },
+    unlinkBtn: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: borderRadius.xs,
+        borderWidth: 1,
+        borderColor: colors.secondary + '40',
+    },
     row: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -750,5 +1032,109 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         marginLeft: 4,
+    },
+
+    // ── Superset styles ──────────────────────────────────
+    supersetContainer: {
+        marginBottom: 4,
+    },
+    supersetHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderWidth: 1,
+        borderBottomWidth: 0,
+        borderTopLeftRadius: borderRadius.m,
+        borderTopRightRadius: borderRadius.m,
+        backgroundColor: colors.surfaceLight + '60',
+    },
+    supersetHeaderDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        marginRight: 8,
+    },
+    supersetBody: {
+        flexDirection: 'row',
+    },
+    supersetSidebar: {
+        width: 3,
+        borderBottomLeftRadius: 3,
+        marginBottom: 12,
+    },
+    supersetExercises: {
+        flex: 1,
+    },
+    positionBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: borderRadius.xs,
+        borderWidth: 1,
+        marginRight: 10,
+    },
+
+    // ── Link mode styles ──────────────────────────────────
+    linkBanner: {
+        backgroundColor: colors.secondary + '12',
+        borderWidth: 1,
+        borderColor: colors.secondary + '30',
+        borderRadius: borderRadius.m,
+        padding: 14,
+        marginBottom: 16,
+    },
+    linkBannerContent: {
+        marginBottom: 10,
+    },
+    linkBannerActions: {
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        gap: 8,
+    },
+    linkCancelBtn: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: borderRadius.s,
+        backgroundColor: colors.surfaceLight,
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    linkConfirmBtn: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: borderRadius.s,
+        backgroundColor: colors.secondary,
+    },
+    linkCheckbox: {
+        position: 'absolute',
+        top: 10,
+        left: -4,
+        zIndex: 10,
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: colors.surfaceLight,
+        borderWidth: 2,
+        borderColor: colors.border,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    linkCheckboxActive: {
+        backgroundColor: colors.secondary,
+        borderColor: colors.secondary,
+    },
+    linkModeBtn: {
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        borderRadius: borderRadius.s,
+        backgroundColor: colors.secondary + '15',
+        borderWidth: 1,
+        borderColor: colors.secondary + '30',
+        marginLeft: 8,
+    },
+    actionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 20,
     },
 });

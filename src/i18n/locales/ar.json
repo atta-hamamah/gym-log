@@ -200,5 +200,16 @@
       "best_volume": "أفضل حجم",
       "est_1rm": "تقدير 1RM"
     }
+  },
+  "superset": {
+    "superset": "سوبرسيت",
+    "circuit": "دائرة",
+    "giantSet": "مجموعة عملاقة",
+    "linkExercises": "ربط",
+    "selectExercises": "اختر التمارين للربط",
+    "selectHint": "اختر 2+ تمارين لإنشاء سوبرسيت أو دائرة",
+    "link": "ربط",
+    "unlink": "فك الربط",
+    "linked": "مرتبط"
   }
 }

@@ -25,6 +25,11 @@ interface WorkoutContextType {
     updateSet: (exerciseLogId: string, setId: string, updates: Partial<Set>) => void;
     deleteSet: (exerciseLogId: string, setId: string) => void;
 
+    // Superset management
+    linkSuperset: (exerciseLogIds: string[]) => void;
+    unlinkSuperset: (exerciseLogId: string) => void;
+    reorderExercise: (fromIndex: number, toIndex: number) => void;
+
     refreshData: () => Promise<void>;
     updateUserStats: (stats: Partial<UserStats>) => Promise<void>;
     deleteWorkout: (id: string) => Promise<void>;
@@ -199,6 +204,67 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         });
     }, []);
 
+    // ── Superset management ──────────────────────────────
+    const linkSuperset = useCallback((exerciseLogIds: string[]) => {
+        if (exerciseLogIds.length < 2) return;
+        const groupId = generateId();
+        setCurrentWorkout(prev => {
+            if (!prev) return prev;
+            const updatedExercises = prev.exercises.map(ex => {
+                if (exerciseLogIds.includes(ex.id)) {
+                    return { ...ex, supersetGroupId: groupId };
+                }
+                return ex;
+            });
+            // Reorder: put linked exercises adjacent to each other
+            const firstLinkedIdx = updatedExercises.findIndex(ex => exerciseLogIds.includes(ex.id));
+            const linked = updatedExercises.filter(ex => exerciseLogIds.includes(ex.id));
+            const rest = updatedExercises.filter(ex => !exerciseLogIds.includes(ex.id));
+            const reordered = [
+                ...rest.slice(0, firstLinkedIdx > rest.length ? rest.length : firstLinkedIdx),
+                ...linked,
+                ...rest.slice(firstLinkedIdx > rest.length ? rest.length : firstLinkedIdx),
+            ];
+            return { ...prev, exercises: reordered };
+        });
+    }, []);
+
+    const unlinkSuperset = useCallback((exerciseLogId: string) => {
+        setCurrentWorkout(prev => {
+            if (!prev) return prev;
+            const target = prev.exercises.find(ex => ex.id === exerciseLogId);
+            if (!target?.supersetGroupId) return prev;
+            const groupId = target.supersetGroupId;
+            const groupMembers = prev.exercises.filter(
+                ex => ex.supersetGroupId === groupId && ex.id !== exerciseLogId
+            );
+            const updatedExercises = prev.exercises.map(ex => {
+                if (ex.id === exerciseLogId) {
+                    const { supersetGroupId, ...rest } = ex;
+                    return rest as typeof ex;
+                }
+                // If only 1 member left in group, unlink them too
+                if (groupMembers.length <= 1 && ex.supersetGroupId === groupId) {
+                    const { supersetGroupId, ...rest } = ex;
+                    return rest as typeof ex;
+                }
+                return ex;
+            });
+            return { ...prev, exercises: updatedExercises };
+        });
+    }, []);
+
+    const reorderExercise = useCallback((fromIndex: number, toIndex: number) => {
+        setCurrentWorkout(prev => {
+            if (!prev) return prev;
+            const exercises = [...prev.exercises];
+            const [moved] = exercises.splice(fromIndex, 1);
+            exercises.splice(toIndex, 0, moved);
+            return { ...prev, exercises };
+        });
+    }, []);
+    // ─────────────────────────────────────────────────────
+
     const updateUserStats = useCallback(async (stats: Partial<UserStats>) => {
         await StorageService.updateUserStats(stats);
         const current = userStats || { weight: 0, lastUpdated: Date.now() };
@@ -232,6 +298,9 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 logSet,
                 updateSet,
                 deleteSet,
+                linkSuperset,
+                unlinkSuperset,
+                reorderExercise,
                 refreshData,
                 updateUserStats,
                 deleteWorkout,

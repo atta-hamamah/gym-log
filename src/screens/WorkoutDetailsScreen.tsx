@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ScrollView, View, StyleSheet, Alert } from 'react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
@@ -11,6 +11,39 @@ import { colors, spacing, borderRadius } from '../theme/colors';
 import { WorkoutSession, ExerciseLog, Set } from '../types';
 import { useTranslation } from 'react-i18next';
 import { ConfirmationModal } from '../components/ConfirmationModal';
+import {
+    getSupersetType,
+    getSupersetColor,
+    getSupersetEmoji,
+    getSupersetPositionLabel,
+} from '../utils/supersetUtils';
+
+// ── Build groupable render list ──────────────────────────
+interface RenderItem {
+    type: 'single' | 'group';
+    groupId?: string;
+    exercises: ExerciseLog[];
+}
+
+function buildRenderList(exercises: ExerciseLog[]): RenderItem[] {
+    const result: RenderItem[] = [];
+    const processedGroupIds = new Set<string>();
+
+    exercises.forEach((ex) => {
+        if (ex.supersetGroupId) {
+            if (processedGroupIds.has(ex.supersetGroupId)) return;
+            processedGroupIds.add(ex.supersetGroupId);
+            const groupExercises = exercises.filter(
+                e => e.supersetGroupId === ex.supersetGroupId
+            );
+            result.push({ type: 'group', groupId: ex.supersetGroupId, exercises: groupExercises });
+        } else {
+            result.push({ type: 'single', exercises: [ex] });
+        }
+    });
+
+    return result;
+}
 
 export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
     const { t } = useTranslation();
@@ -95,6 +128,76 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
         );
     };
 
+    const renderList = buildRenderList(workout.exercises);
+
+    const renderExerciseCard = (log: ExerciseLog, posLabel: string | null, ssColor: string | undefined, isLastInGroup?: boolean) => {
+        const exVolume = log.sets.reduce((a, s) => a + s.weight * s.reps, 0);
+        const bestWeight = log.sets.length > 0 ? Math.max(...log.sets.map(s => s.weight)) : 0;
+
+        return (
+            <Card
+                key={log.id}
+                style={[
+                    { marginBottom: posLabel && !isLastInGroup ? 4 : 12 },
+                    posLabel && { borderLeftWidth: 0, borderBottomLeftRadius: 4, borderBottomRightRadius: 4 },
+                    posLabel && isLastInGroup && { marginBottom: 12 },
+                ]}
+            >
+                <View style={styles.exHeader}>
+                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+                        {posLabel && (
+                            <View style={[styles.positionBadge, { backgroundColor: (ssColor || colors.secondary) + '25', borderColor: (ssColor || colors.secondary) + '50' }]}>
+                                <Typography variant="caption" color={ssColor || colors.secondary} bold style={{ fontSize: 11 }}>
+                                    {posLabel}
+                                </Typography>
+                            </View>
+                        )}
+                        <Typography variant="h3" style={{ flex: 1 }}>{log.exerciseName}</Typography>
+                    </View>
+                    {bestWeight > 0 && (
+                        <View style={styles.prBadge}>
+                            <Typography variant="label" color={colors.primary} style={{ fontSize: 10 }}>
+                                {t('workoutDetails.best')} {bestWeight}{t('common.kg')}
+                            </Typography>
+                        </View>
+                    )}
+                </View>
+
+                {/* Table */}
+                <View style={styles.tableHeader}>
+                    <Typography variant="label" style={styles.colSet}>{t('common.set')}</Typography>
+                    <Typography variant="label" style={styles.colData}>{t('common.kgLabel')}</Typography>
+                    <Typography variant="label" style={styles.colData}>{t('common.repsLabel')}</Typography>
+                    <Typography variant="label" style={styles.colData}>{t('common.rpe')}</Typography>
+                    <Typography variant="label" style={[styles.colData, { textAlign: 'right' }]}>{t('common.vol')}</Typography>
+                </View>
+
+                {log.sets.map((set: Set, index: number) => (
+                    <View key={set.id} style={[styles.row, index % 2 === 0 && styles.rowAlt]}>
+                        <View style={styles.setBadge}>
+                            <Typography variant="bodySmall" bold align="center">{index + 1}</Typography>
+                        </View>
+                        <Typography variant="body" style={styles.colData} bold>{set.weight}</Typography>
+                        <Typography variant="body" style={styles.colData}>{set.reps}</Typography>
+                        <Typography variant="body" style={styles.colData} color={set.rpe ? (set.rpe <= 5 ? colors.success : set.rpe <= 7 ? colors.warning : set.rpe <= 8 ? '#FF9800' : colors.error) : colors.textMuted}>
+                            {set.rpe || '—'}
+                        </Typography>
+                        <Typography variant="bodySmall" color={colors.textMuted} style={[styles.colData, { textAlign: 'right' }]}>
+                            {set.weight * set.reps}
+                        </Typography>
+                    </View>
+                ))}
+
+                {/* Exercise totals */}
+                <View style={styles.exFooter}>
+                    <Typography variant="caption" color={colors.textSecondary}>
+                        {log.sets.length} {t('common.sets')} • {exVolume.toLocaleString()} {t('workoutDetails.kgTotal')}
+                    </Typography>
+                </View>
+            </Card>
+        );
+    };
+
     return (
         <ScreenLayout>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
@@ -136,56 +239,43 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
 
                 {/* Exercises */}
                 <Typography variant="h3" style={{ marginBottom: 12 }}>{t('workoutDetails.exercises')}</Typography>
-                {workout.exercises.map((log: ExerciseLog) => {
-                    const exVolume = log.sets.reduce((a, s) => a + s.weight * s.reps, 0);
-                    const bestWeight = log.sets.length > 0 ? Math.max(...log.sets.map(s => s.weight)) : 0;
 
-                    return (
-                        <Card key={log.id} style={{ marginBottom: 12 }}>
-                            <View style={styles.exHeader}>
-                                <Typography variant="h3" style={{ flex: 1 }}>{log.exerciseName}</Typography>
-                                {bestWeight > 0 && (
-                                    <View style={styles.prBadge}>
-                                        <Typography variant="label" color={colors.primary} style={{ fontSize: 10 }}>
-                                            {t('workoutDetails.best')} {bestWeight}{t('common.kg')}
-                                        </Typography>
-                                    </View>
-                                )}
-                            </View>
+                {renderList.map((item) => {
+                    if (item.type === 'single') {
+                        return renderExerciseCard(item.exercises[0], null, undefined);
+                    } else {
+                        const groupExercises = item.exercises;
+                        const groupSize = groupExercises.length;
+                        const ssType = getSupersetType(groupSize);
+                        const ssColor = getSupersetColor(ssType);
+                        const ssEmoji = getSupersetEmoji(ssType);
+                        const ssLabel = groupSize === 2
+                            ? t('superset.superset')
+                            : t('superset.circuit');
 
-                            {/* Table */}
-                            <View style={styles.tableHeader}>
-                                <Typography variant="label" style={styles.colSet}>{t('common.set')}</Typography>
-                                <Typography variant="label" style={styles.colData}>{t('common.kgLabel')}</Typography>
-                                <Typography variant="label" style={styles.colData}>{t('common.repsLabel')}</Typography>
-                                <Typography variant="label" style={styles.colData}>{t('common.rpe')}</Typography>
-                                <Typography variant="label" style={[styles.colData, { textAlign: 'right' }]}>{t('common.vol')}</Typography>
-                            </View>
-
-                            {log.sets.map((set: Set, index: number) => (
-                                <View key={set.id} style={[styles.row, index % 2 === 0 && styles.rowAlt]}>
-                                    <View style={styles.setBadge}>
-                                        <Typography variant="bodySmall" bold align="center">{index + 1}</Typography>
-                                    </View>
-                                    <Typography variant="body" style={styles.colData} bold>{set.weight}</Typography>
-                                    <Typography variant="body" style={styles.colData}>{set.reps}</Typography>
-                                    <Typography variant="body" style={styles.colData} color={set.rpe ? (set.rpe <= 5 ? colors.success : set.rpe <= 7 ? colors.warning : set.rpe <= 8 ? '#FF9800' : colors.error) : colors.textMuted}>
-                                        {set.rpe || '—'}
-                                    </Typography>
-                                    <Typography variant="bodySmall" color={colors.textMuted} style={[styles.colData, { textAlign: 'right' }]}>
-                                        {set.weight * set.reps}
+                        return (
+                            <View key={item.groupId} style={styles.supersetContainer}>
+                                {/* Superset group header */}
+                                <View style={[styles.supersetHeader, { borderColor: ssColor + '50' }]}>
+                                    <View style={[styles.supersetHeaderDot, { backgroundColor: ssColor }]} />
+                                    <Typography variant="caption" color={ssColor} bold style={{ fontSize: 11 }}>
+                                        {ssEmoji} {ssLabel.toUpperCase()} • {groupSize} {t('common.exercises')}
                                     </Typography>
                                 </View>
-                            ))}
 
-                            {/* Exercise totals */}
-                            <View style={styles.exFooter}>
-                                <Typography variant="caption" color={colors.textSecondary}>
-                                    {log.sets.length} {t('common.sets')} • {exVolume.toLocaleString()} {t('workoutDetails.kgTotal')}
-                                </Typography>
+                                {/* Colored side bar + exercises */}
+                                <View style={styles.supersetBody}>
+                                    <View style={[styles.supersetSidebar, { backgroundColor: ssColor }]} />
+                                    <View style={styles.supersetExercises}>
+                                        {groupExercises.map((log, i) => {
+                                            const posLabel = getSupersetPositionLabel(log, workout.exercises);
+                                            return renderExerciseCard(log, posLabel, ssColor, i === groupExercises.length - 1);
+                                        })}
+                                    </View>
+                                </View>
                             </View>
-                        </Card>
-                    );
+                        );
+                    }
                 })}
 
                 {/* Delete */}
@@ -237,6 +327,13 @@ const styles = StyleSheet.create({
         borderColor: colors.primary + '40',
         backgroundColor: colors.primary + '10',
     },
+    positionBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: borderRadius.xs,
+        borderWidth: 1,
+        marginRight: 10,
+    },
     tableHeader: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -277,5 +374,37 @@ const styles = StyleSheet.create({
         paddingTop: 8,
         borderTopWidth: 1,
         borderTopColor: colors.border,
+    },
+    // ── Superset styles ──────────────────────────────────
+    supersetContainer: {
+        marginBottom: 4,
+    },
+    supersetHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderWidth: 1,
+        borderBottomWidth: 0,
+        borderTopLeftRadius: borderRadius.m,
+        borderTopRightRadius: borderRadius.m,
+        backgroundColor: colors.surfaceLight + '60',
+    },
+    supersetHeaderDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        marginRight: 8,
+    },
+    supersetBody: {
+        flexDirection: 'row',
+    },
+    supersetSidebar: {
+        width: 3,
+        borderBottomLeftRadius: 3,
+        marginBottom: 12,
+    },
+    supersetExercises: {
+        flex: 1,
     },
 });
