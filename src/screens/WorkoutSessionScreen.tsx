@@ -10,7 +10,7 @@ import { RestTimer } from '../components/RestTimer';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { PRCelebration } from '../components/PRCelebration';
 import { colors, borderRadius, spacing, shadows } from '../theme/colors';
-import { ExerciseLog, Set } from '../types';
+import { ExerciseLog, Set as WorkoutSet } from '../types';
 import { useTranslation } from 'react-i18next';
 import {
     getSupersetType,
@@ -168,17 +168,6 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
         return getExerciseGroups(currentWorkout.exercises);
     }, [currentWorkout?.exercises]);
 
-    if (!currentWorkout) {
-        return (
-            <ScreenLayout>
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                    <Typography variant="h2" style={{ marginBottom: 16 }}>{t('workoutSession.noActiveWorkout')}</Typography>
-                    <Button title={t('common.goBack')} variant="outline" onPress={() => navigation.goBack()} />
-                </View>
-            </ScreenLayout>
-        );
-    }
-
     // When finishWorkout completes, check for PRs
     useEffect(() => {
         if (pendingGoBack && lastDetectedPRs.length > 0) {
@@ -189,6 +178,17 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
             navigation.goBack();
         }
     }, [pendingGoBack, lastDetectedPRs]);
+
+    if (!currentWorkout) {
+        return (
+            <ScreenLayout>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <Typography variant="h2" style={{ marginBottom: 16 }}>{t('workoutSession.noActiveWorkout')}</Typography>
+                    <Button title={t('common.goBack')} variant="outline" onPress={() => navigation.goBack()} />
+                </View>
+            </ScreenLayout>
+        );
+    }
 
     const handleDismissPR = () => {
         setShowPRCelebration(false);
@@ -712,7 +712,7 @@ const ExerciseCard = ({
             </View>
 
             {/* Logged Sets */}
-            {log.sets.map((set: Set, i: number) => (
+            {log.sets.map((set: WorkoutSet, i: number) => (
                 <View key={set.id} style={[styles.row, i % 2 === 0 && styles.rowAlt]}>
                     <View style={[styles.colSet, styles.setBadge]}>
                         <Typography variant="bodySmall" color={colors.text} bold align="center">

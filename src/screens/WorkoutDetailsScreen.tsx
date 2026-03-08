@@ -8,7 +8,7 @@ import { StatBadge } from '../components/StatBadge';
 import { Button } from '../components/Button';
 import { format } from 'date-fns';
 import { colors, spacing, borderRadius } from '../theme/colors';
-import { WorkoutSession, ExerciseLog, Set } from '../types';
+import { WorkoutSession, ExerciseLog, Set as WorkoutSet } from '../types';
 import { useTranslation } from 'react-i18next';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import {
@@ -174,7 +174,7 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
                     <Typography variant="label" style={[styles.colData, { textAlign: 'right' }]}>{t('common.vol')}</Typography>
                 </View>
 
-                {log.sets.map((set: Set, index: number) => (
+                {log.sets.map((set: WorkoutSet, index: number) => (
                     <View key={set.id} style={[styles.row, index % 2 === 0 && styles.rowAlt]}>
                         <View style={styles.setBadge}>
                             <Typography variant="bodySmall" bold align="center">{index + 1}</Typography>

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, StyleSheet, TouchableOpacity, Animated, Vibration } from 'react-native';
 import { Typography } from './Typography';
 import { colors, borderRadius } from '../theme/colors';
-import { Audio } from 'expo-av';
+import { useAudioPlayer } from 'expo-audio';
 import { useTranslation } from 'react-i18next';
 
 const REST_PRESETS = [30, 60, 90, 120, 180, 240, 300];
@@ -22,7 +22,7 @@ export const RestTimer: React.FC<RestTimerProps> = ({ visible, defaultDuration, 
     const [isFinished, setIsFinished] = useState(false);
     const pulseAnim = useRef(new Animated.Value(1)).current;
     const slideAnim = useRef(new Animated.Value(100)).current;
-    const soundRef = useRef<Audio.Sound | null>(null);
+    const player = useAudioPlayer(require('../../assets/alert.mp3'));
 
     // Slide in animation
     useEffect(() => {
@@ -87,39 +87,21 @@ export const RestTimer: React.FC<RestTimerProps> = ({ visible, defaultDuration, 
         }
     }, [isFinished]);
 
-    const playAlertSound = useCallback(async () => {
+    const playAlertSound = useCallback(() => {
         try {
-            // Play alert.mp3 twice
-            const { sound } = await Audio.Sound.createAsync(
-                require('../../assets/alert.mp3')
-            );
-            soundRef.current = sound;
-            await sound.playAsync();
+            // Play first time
+            player.seekTo(0);
+            player.play();
 
             // Play second time after a short delay
-            sound.setOnPlaybackStatusUpdate((status) => {
-                if (status.isLoaded && status.didJustFinish) {
-                    // Play again
-                    sound.replayAsync().then(() => {
-                        sound.setOnPlaybackStatusUpdate((status2) => {
-                            if (status2.isLoaded && status2.didJustFinish) {
-                                sound.unloadAsync();
-                            }
-                        });
-                    });
-                }
-            });
+            setTimeout(() => {
+                player.seekTo(0);
+                player.play();
+            }, 1000);
         } catch (e) {
             console.warn('Could not play alert sound:', e);
         }
-    }, []);
-
-    // Cleanup sound on unmount
-    useEffect(() => {
-        return () => {
-            soundRef.current?.unloadAsync();
-        };
-    }, []);
+    }, [player]);
 
     const handleDurationChange = (duration: number) => {
         setTotalDuration(duration);
@@ -144,8 +126,7 @@ export const RestTimer: React.FC<RestTimerProps> = ({ visible, defaultDuration, 
 
     const handleDismiss = () => {
         setIsRunning(false);
-        soundRef.current?.stopAsync();
-        soundRef.current?.unloadAsync();
+        player.pause();
         onDismiss();
     };
 
