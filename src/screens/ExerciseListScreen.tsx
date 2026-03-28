@@ -9,7 +9,7 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { generateId } from '../utils/generateId';
 import { Exercise } from '../types';
-import { MUSCLE_GROUPS } from '../constants/exercises';
+import { MUSCLE_GROUPS, getExerciseName, getMuscleGroupName } from '../constants/exercises';
 import { useTranslation } from 'react-i18next';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 
@@ -70,13 +70,15 @@ export const ExerciseListScreen = ({ navigation }: any) => {
 
     const filtered = useMemo(() => {
         return exercises.filter((e: Exercise) => {
+            const translatedName = getExerciseName(e.id, t, e.name);
+            const translatedGroup = getMuscleGroupName(e.muscleGroup, t);
             const matchesSearch =
-                e.name.toLowerCase().includes(search.toLowerCase()) ||
-                e.muscleGroup.toLowerCase().includes(search.toLowerCase());
+                translatedName.toLowerCase().includes(search.toLowerCase()) ||
+                translatedGroup.toLowerCase().includes(search.toLowerCase());
             const matchesGroup = selectedGroup === 'All' || e.muscleGroup === selectedGroup;
             return matchesSearch && matchesGroup;
         });
-    }, [exercises, search, selectedGroup]);
+    }, [exercises, search, selectedGroup, t]);
 
     const handleSelect = (exercise: Exercise) => {
         addExerciseToWorkout(exercise);
@@ -156,7 +158,7 @@ export const ExerciseListScreen = ({ navigation }: any) => {
                                 fontSize: 12,
                             }}
                         >
-                            {group}
+                            {getMuscleGroupName(group, t)}
                         </Typography>
                     </TouchableOpacity>
                 ))}
@@ -175,9 +177,9 @@ export const ExerciseListScreen = ({ navigation }: any) => {
                         activeOpacity={0.6}
                     >
                         <View style={{ flex: 1 }}>
-                            <Typography variant="body" bold>{item.name}</Typography>
+                            <Typography variant="body" bold>{getExerciseName(item.id, t, item.name)}</Typography>
                             <View style={styles.tagRow}>
-                                <Typography variant="caption" style={{ fontSize: 12 }}>{item.muscleGroup}</Typography>
+                                <Typography variant="caption" style={{ fontSize: 12 }}>{getMuscleGroupName(item.muscleGroup, t)}</Typography>
                                 {item.category === 'cardio' && (
                                     <View style={[styles.badge, { borderColor: colors.primary }]}>
                                         <Typography variant="label" color={colors.primary} style={{ fontSize: 9 }}>
@@ -257,7 +259,7 @@ export const ExerciseListScreen = ({ navigation }: any) => {
                                             fontSize: 12,
                                         }}
                                     >
-                                        {group}
+                                        {getMuscleGroupName(group, t)}
                                     </Typography>
                                 </TouchableOpacity>
                             ))}

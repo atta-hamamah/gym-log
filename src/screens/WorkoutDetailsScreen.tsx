@@ -17,6 +17,7 @@ import {
     getSupersetEmoji,
     getSupersetPositionLabel,
 } from '../utils/supersetUtils';
+import { getExerciseName } from '../constants/exercises';
 
 // ── Build groupable render list ──────────────────────────
 interface RenderItem {
@@ -154,7 +155,7 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
                                 </Typography>
                             </View>
                         )}
-                        <Typography variant="h3" style={{ flex: 1 }}>{log.exerciseName}</Typography>
+                        <Typography variant="h3" style={{ flex: 1 }}>{getExerciseName(log.exerciseId, t, log.exerciseName)}</Typography>
                     </View>
                     {bestWeight > 0 && (
                         <View style={styles.prBadge}>

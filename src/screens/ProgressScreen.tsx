@@ -11,6 +11,7 @@ import { useWorkout } from '../context/WorkoutContext';
 import { format } from 'date-fns';
 import { Exercise, WorkoutSession, ExerciseLog, Set as WorkoutSet } from '../types';
 import { useTranslation } from 'react-i18next';
+import { getExerciseName, getMuscleGroupName } from '../constants/exercises';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -107,10 +108,10 @@ export const ProgressScreen = () => {
                         {/* Exercise Title */}
                         <View style={styles.exerciseHeader}>
                             <Typography variant="h2" color={colors.primary}>
-                                {selectedExercise.name}
+                                {getExerciseName(selectedExercise.id, t, selectedExercise.name)}
                             </Typography>
                             <Typography variant="caption" style={{ marginTop: 2 }}>
-                                {selectedExercise.muscleGroup} • {metricLabel[metric]}
+                                {getMuscleGroupName(selectedExercise.muscleGroup, t)} • {metricLabel[metric]}
                             </Typography>
                         </View>
 
@@ -231,8 +232,8 @@ export const ProgressScreen = () => {
                                     >
                                         <View style={styles.exDot} />
                                         <View style={{ flex: 1 }}>
-                                            <Typography variant="body" bold>{ex.name}</Typography>
-                                            <Typography variant="caption" style={{ fontSize: 12 }}>{ex.muscleGroup}</Typography>
+                                            <Typography variant="body" bold>{getExerciseName(ex.id, t, ex.name)}</Typography>
+                                            <Typography variant="caption" style={{ fontSize: 12 }}>{getMuscleGroupName(ex.muscleGroup, t)}</Typography>
                                         </View>
                                         {selectedExercise?.id === ex.id && (
                                             <Typography variant="body" color={colors.primary}>✓</Typography>

@@ -6,6 +6,7 @@ import { Card } from './Card';
 import { colors, borderRadius, spacing, shadows } from '../theme/colors';
 import { DetectedPR, PRType } from '../types';
 import { useTranslation } from 'react-i18next';
+import { getExerciseName } from '../constants/exercises';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -234,7 +235,7 @@ export const PRCelebration: React.FC<PRCelebrationProps> = ({ visible, prs, onDi
                                         <Typography variant="body" style={{ fontSize: 20 }}>{config.icon}</Typography>
                                     </View>
                                     <View style={{ flex: 1, marginLeft: 12 }}>
-                                        <Typography variant="body" bold numberOfLines={1}>{pr.exerciseName}</Typography>
+                                        <Typography variant="body" bold numberOfLines={1}>{getExerciseName(pr.exerciseId, t, pr.exerciseName)}</Typography>
                                         <View style={styles.prValueRow}>
                                             <Typography variant="h3" color={config.color} style={{ fontSize: 18 }}>
                                                 {pr.type === 'max_weight'

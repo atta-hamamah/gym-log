@@ -10,6 +10,7 @@ import { colors, spacing, borderRadius, shadows } from '../theme/colors';
 import { PROGRAMS } from '../constants/programs';
 import { ProgramDay, ProgramExercise, WorkoutProgram } from '../types';
 import { useTranslation } from 'react-i18next';
+import { getExerciseName } from '../constants/exercises';
 
 const LEVEL_ICONS: Record<string, string> = {
     beginner: '🟢',
@@ -212,7 +213,7 @@ export const ProgramDetailScreen = ({ route, navigation }: any) => {
                                     {day.exercises.map((ex, exIndex) => (
                                         <View key={exIndex}>
                                             <View style={[styles.exerciseRow, exIndex % 2 === 0 && styles.rowAlt]}>
-                                                <Typography variant="bodySmall" style={styles.colExercise} numberOfLines={1}>{ex.exerciseName}</Typography>
+                                                <Typography variant="bodySmall" style={styles.colExercise} numberOfLines={1}>{getExerciseName(ex.exerciseId, t, ex.exerciseName)}</Typography>
                                                 <Typography variant="bodySmall" style={styles.colSets} bold>{ex.sets}</Typography>
                                                 <Typography variant="bodySmall" style={styles.colReps} color={colors.primary}>{ex.reps}</Typography>
                                                 <Typography variant="caption" style={styles.colRest} color={colors.textMuted}>

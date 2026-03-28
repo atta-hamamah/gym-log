@@ -19,6 +19,7 @@ import {
     getSupersetPositionLabel,
     getExerciseGroups,
 } from '../utils/supersetUtils';
+import { getExerciseName } from '../constants/exercises';
 
 export const WorkoutSessionScreen = ({ navigation }: any) => {
     const { t } = useTranslation();
@@ -672,7 +673,7 @@ const ExerciseCard = ({
                         </View>
                     )}
                     <View style={{ flex: 1 }}>
-                        <Typography variant="h3">{log.exerciseName}</Typography>
+                        <Typography variant="h3">{getExerciseName(log.exerciseId, t, log.exerciseName)}</Typography>
                         {log.sets.length > 0 && (
                             <Typography variant="caption" style={{ marginTop: 2 }}>
                                 {log.sets.length} {t('common.sets')} • {exerciseVolume} {t('common.kg')}
