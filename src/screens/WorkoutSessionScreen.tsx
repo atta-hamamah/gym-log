@@ -180,6 +180,12 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
         }
     }, [pendingGoBack, lastDetectedPRs]);
 
+    const handleDismissPR = () => {
+        setShowPRCelebration(false);
+        clearDetectedPRs();
+        navigation.goBack();
+    };
+
     if (!currentWorkout) {
         return (
             <ScreenLayout>
@@ -187,15 +193,14 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
                     <Typography variant="h2" style={{ marginBottom: 16 }}>{t('workoutSession.noActiveWorkout')}</Typography>
                     <Button title={t('common.goBack')} variant="outline" onPress={() => navigation.goBack()} />
                 </View>
+                <PRCelebration
+                    visible={showPRCelebration}
+                    prs={lastDetectedPRs}
+                    onDismiss={handleDismissPR}
+                />
             </ScreenLayout>
         );
     }
-
-    const handleDismissPR = () => {
-        setShowPRCelebration(false);
-        clearDetectedPRs();
-        navigation.goBack();
-    };
 
     const handleFinish = () => {
         if (currentWorkout.exercises.length === 0) {
