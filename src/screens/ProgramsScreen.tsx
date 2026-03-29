@@ -115,7 +115,7 @@ export const ProgramsScreen = ({ navigation }: any) => {
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.filterRow}
-                style={{ flexGrow: 0, marginBottom: 6 }}
+                style={{ flexGrow: 0, marginBottom: 4, overflow: 'visible' }}
             >
                 {PROGRAM_LEVELS.map(level => (
                     <TouchableOpacity
@@ -131,7 +131,7 @@ export const ProgramsScreen = ({ navigation }: any) => {
                             variant="caption"
                             color={selectedLevel === level ? colors.black : colors.textSecondary}
                             bold={selectedLevel === level}
-                            style={{ fontSize: 12 }}
+                            style={{ fontSize: 10 }}
                         >
                             {level === 'all' ? t('common.all') : `${LEVEL_ICONS[level] || ''} ${t(`programs.levels.${level}`)}`}
                         </Typography>
@@ -144,7 +144,7 @@ export const ProgramsScreen = ({ navigation }: any) => {
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.filterRow}
-                style={{ flexGrow: 0, marginBottom: 12 }}
+                style={{ flexGrow: 0, marginBottom: 20, overflow: 'visible' }}
             >
                 {PROGRAM_GOALS.map(goal => (
                     <TouchableOpacity
@@ -160,7 +160,7 @@ export const ProgramsScreen = ({ navigation }: any) => {
                             variant="caption"
                             color={selectedGoal === goal ? colors.black : colors.textSecondary}
                             bold={selectedGoal === goal}
-                            style={{ fontSize: 12 }}
+                            style={{ fontSize: 10 }}
                         >
                             {goal === 'all' ? t('common.all') : `${GOAL_ICONS[goal] || ''} ${t(`programs.goals.${goal}`)}`}
                         </Typography>
@@ -176,7 +176,7 @@ export const ProgramsScreen = ({ navigation }: any) => {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: 24 }}
                 ListEmptyComponent={
-                    <Card variant="outlined" style={{ marginTop: 20, paddingVertical: 40 }}>
+                    <Card variant="outlined" style={{ paddingVertical: 40 }}>
                         <Typography variant="body" color={colors.textMuted} align="center">
                             {t('programs.noResults')}
                         </Typography>
@@ -199,14 +199,19 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         gap: 8,
         paddingRight: 16,
+        paddingVertical: 10,
+        overflow: 'visible',
     },
     filterChip: {
-        paddingHorizontal: 14,
-        paddingVertical: 6,
+        height: 40,
+        paddingHorizontal: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
         borderRadius: borderRadius.full,
         backgroundColor: colors.surfaceLight,
         borderWidth: 1,
         borderColor: colors.border,
+        overflow: 'visible',
     },
     filterChipActive: {
         backgroundColor: colors.primary,
