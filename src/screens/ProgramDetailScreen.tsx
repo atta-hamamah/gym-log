@@ -11,6 +11,8 @@ import { PROGRAMS } from '../constants/programs';
 import { ProgramDay, ProgramExercise, WorkoutProgram } from '../types';
 import { useTranslation } from 'react-i18next';
 import { getExerciseName } from '../constants/exercises';
+import { PlayCircle } from 'lucide-react-native';
+import { ExerciseInfoModal } from '../components/ExerciseInfoModal';
 
 const LEVEL_ICONS: Record<string, string> = {
     beginner: '🟢',
@@ -31,6 +33,9 @@ export const ProgramDetailScreen = ({ route, navigation }: any) => {
     const program = PROGRAMS.find(p => p.id === programId);
     const { currentWorkout, startWorkout, addExerciseToWorkout } = useWorkout();
     const [expandedDay, setExpandedDay] = useState<number>(0);
+
+    const [infoModalVisible, setInfoModalVisible] = useState(false);
+    const [selectedExercise, setSelectedExercise] = useState<{id: string, name: string} | null>(null);
 
     const [modalVisible, setModalVisible] = useState(false);
     const [modalConfig, setModalConfig] = useState({
@@ -213,7 +218,18 @@ export const ProgramDetailScreen = ({ route, navigation }: any) => {
                                     {day.exercises.map((ex, exIndex) => (
                                         <View key={exIndex}>
                                             <View style={[styles.exerciseRow, exIndex % 2 === 0 && styles.rowAlt]}>
-                                                <Typography variant="bodySmall" style={styles.colExercise} numberOfLines={1}>{getExerciseName(ex.exerciseId, t, ex.exerciseName)}</Typography>
+                                                <View style={[styles.colExercise, { flexDirection: 'row', alignItems: 'center', paddingRight: 8 }]}>
+                                                    <Typography variant="bodySmall" style={{ flex: 1 }} numberOfLines={2}>{getExerciseName(ex.exerciseId, t, ex.exerciseName)}</Typography>
+                                                    <TouchableOpacity 
+                                                        style={{ padding: 4 }}
+                                                        onPress={() => {
+                                                            setSelectedExercise({ id: ex.exerciseId, name: getExerciseName(ex.exerciseId, t, ex.exerciseName) });
+                                                            setInfoModalVisible(true);
+                                                        }}
+                                                    >
+                                                        <PlayCircle color={colors.primary} size={16} />
+                                                    </TouchableOpacity>
+                                                </View>
                                                 <Typography variant="bodySmall" style={styles.colSets} bold>{ex.sets}</Typography>
                                                 <Typography variant="bodySmall" style={styles.colReps} color={colors.primary}>{ex.reps}</Typography>
                                                 <Typography variant="caption" style={styles.colRest} color={colors.textMuted}>
@@ -255,6 +271,13 @@ export const ProgramDetailScreen = ({ route, navigation }: any) => {
                 onConfirm={modalConfig.onConfirm}
                 onCancel={modalConfig.onCancel}
                 variant={modalConfig.variant}
+            />
+
+            <ExerciseInfoModal
+                visible={infoModalVisible}
+                exerciseId={selectedExercise?.id || null}
+                exerciseName={selectedExercise?.name || ''}
+                onClose={() => setInfoModalVisible(false)}
             />
         </ScreenLayout>
     );

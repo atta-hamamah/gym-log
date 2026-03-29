@@ -1,0 +1,1 @@
+export const EXERCISE_GIFS: Record<string, any> = {};
