@@ -12,6 +12,8 @@ import { Exercise } from '../types';
 import { MUSCLE_GROUPS, getExerciseName, getMuscleGroupName } from '../constants/exercises';
 import { useTranslation } from 'react-i18next';
 import { ConfirmationModal } from '../components/ConfirmationModal';
+import { PlayCircle } from 'lucide-react-native';
+import { ExerciseInfoModal } from '../components/ExerciseInfoModal';
 
 export const ExerciseListScreen = ({ navigation }: any) => {
     const { t } = useTranslation();
@@ -23,6 +25,9 @@ export const ExerciseListScreen = ({ navigation }: any) => {
     const [newExName, setNewExName] = useState('');
     const [newExMuscle, setNewExMuscle] = useState('My Exercises');
     const [newExCategory, setNewExCategory] = useState<'strength' | 'cardio'>('strength');
+
+    const [infoModalVisible, setInfoModalVisible] = useState(false);
+    const [selectedExerciseInfo, setSelectedExerciseInfo] = useState<{ id: string, name: string } | null>(null);
 
     const [alertVisible, setAlertVisible] = useState(false);
     const [alertConfig, setAlertConfig] = useState({
@@ -177,7 +182,26 @@ export const ExerciseListScreen = ({ navigation }: any) => {
                         activeOpacity={0.6}
                     >
                         <View style={{ flex: 1 }}>
-                            <Typography variant="body" bold>{getExerciseName(item.id, t, item.name)}</Typography>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                <Typography variant="body" bold>{getExerciseName(item.id, t, item.name)}</Typography>
+                                <TouchableOpacity
+                                    style={{ 
+                                        backgroundColor: colors.surfaceLight,
+                                        paddingHorizontal: 20,
+                                        paddingVertical: 8,
+                                        borderRadius: borderRadius.s,
+                                        borderWidth: 1,
+                                        borderColor: colors.border,
+                                    }}
+                                    onPress={(e) => {
+                                        e.stopPropagation(); 
+                                        setSelectedExerciseInfo({ id: item.id, name: getExerciseName(item.id, t, item.name) });
+                                        setInfoModalVisible(true);
+                                    }}
+                                >
+                                    <PlayCircle color={colors.primary} size={20} />
+                                </TouchableOpacity>
+                            </View>
                             <View style={styles.tagRow}>
                                 <Typography variant="caption" style={{ fontSize: 12 }}>{getMuscleGroupName(item.muscleGroup, t)}</Typography>
                                 {item.category === 'cardio' && (
@@ -314,6 +338,13 @@ export const ExerciseListScreen = ({ navigation }: any) => {
                 onConfirm={alertConfig.onConfirm}
                 onCancel={alertConfig.onCancel}
                 variant={alertConfig.variant}
+            />
+
+            <ExerciseInfoModal
+                visible={infoModalVisible}
+                exerciseId={selectedExerciseInfo?.id || null}
+                exerciseName={selectedExerciseInfo?.name || ''}
+                onClose={() => setInfoModalVisible(false)}
             />
         </ScreenLayout>
     );

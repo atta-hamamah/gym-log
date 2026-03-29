@@ -221,13 +221,21 @@ export const ProgramDetailScreen = ({ route, navigation }: any) => {
                                                 <View style={[styles.colExercise, { flexDirection: 'row', alignItems: 'center', paddingRight: 8 }]}>
                                                     <Typography variant="bodySmall" style={{ flex: 1 }} numberOfLines={2}>{getExerciseName(ex.exerciseId, t, ex.exerciseName)}</Typography>
                                                     <TouchableOpacity 
-                                                        style={{ padding: 4 }}
-                                                        onPress={() => {
+                                                        style={{ 
+                                                            backgroundColor: colors.surfaceLight,
+                                                            paddingHorizontal: 20,
+                                                            paddingVertical: 8,
+                                                            borderRadius: borderRadius.s,
+                                                            borderWidth: 1,
+                                                            borderColor: colors.border,
+                                                        }}
+                                                        onPress={(e) => {
+                                                            e.stopPropagation();
                                                             setSelectedExercise({ id: ex.exerciseId, name: getExerciseName(ex.exerciseId, t, ex.exerciseName) });
                                                             setInfoModalVisible(true);
                                                         }}
                                                     >
-                                                        <PlayCircle color={colors.primary} size={16} />
+                                                        <PlayCircle color={colors.primary} size={20} />
                                                     </TouchableOpacity>
                                                 </View>
                                                 <Typography variant="bodySmall" style={styles.colSets} bold>{ex.sets}</Typography>
