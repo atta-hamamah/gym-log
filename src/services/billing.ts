@@ -1,37 +1,28 @@
 /**
- * Billing Abstraction Layer
+ * Billing Abstraction Layer — RevenueCat Implementation
  * 
- * This is the ONLY file that touches react-native-iap directly.
+ * This is the ONLY file that touches RevenueCat directly.
  * All other code interacts with billing through this service.
- * To swap to RevenueCat later, only this file needs to change.
  */
 
-import {
-  initConnection,
-  endConnection,
-  fetchProducts,
-  requestPurchase,
-  getAvailablePurchases,
-  finishTransaction,
-  purchaseUpdatedListener,
-  purchaseErrorListener,
-  type Product,
-  type Purchase,
-  type PurchaseError,
-  type EventSubscription,
-} from 'react-native-iap';
+import { Platform } from 'react-native';
+import Purchases, {
+  LOG_LEVEL,
+  type CustomerInfo,
+  type PurchasesOffering,
+} from 'react-native-purchases';
+import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 
-// ── Product IDs ──────────────────────────────────────────
-// These must match the product IDs created in Google Play Console
-export const PRODUCT_SKU = 'gym_log_premium_lifetime';
-const PRODUCT_SKUS = [PRODUCT_SKU];
+// ── Configuration ────────────────────────────────────────
+const REVENUECAT_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY || '';
+const ENTITLEMENT_ID = 'RepAI Pro';
 
 // ── Types ────────────────────────────────────────────────
 export interface BillingProduct {
   productId: string;
   title: string;
   description: string;
-  price: string;           // Formatted price string e.g. "$6.99"
+  price: string;
   localizedPrice: string;
   currency: string;
 }
@@ -39,81 +30,100 @@ export interface BillingProduct {
 export interface BillingPurchaseResult {
   success: boolean;
   productId?: string;
-  transactionId?: string;
   error?: string;
 }
 
 // ── State ────────────────────────────────────────────────
 let isInitialized = false;
-let purchaseUpdateSubscription: EventSubscription | null = null;
-let purchaseErrorSubscription: EventSubscription | null = null;
-let onPurchaseComplete: ((purchase: Purchase) => void) | null = null;
-let onPurchaseError: ((error: PurchaseError) => void) | null = null;
 
 // ── Public API ───────────────────────────────────────────
 
 /**
- * Initialize the billing connection. Must be called once on app start.
+ * Initialize RevenueCat. Must be called once on app start.
  */
 export async function initBilling(): Promise<boolean> {
   if (isInitialized) return true;
 
   try {
-    await initConnection();
+    if (__DEV__) {
+      Purchases.setLogLevel(LOG_LEVEL.VERBOSE);
+    }
+
+    Purchases.configure({ apiKey: REVENUECAT_API_KEY });
     isInitialized = true;
-
-    // Set up purchase listeners
-    purchaseUpdateSubscription = purchaseUpdatedListener(
-      async (purchase: Purchase) => {
-        // Acknowledge/finish the transaction (required by Google Play)
-        try {
-          await finishTransaction({
-            purchase,
-            isConsumable: false,
-          });
-        } catch (e) {
-          console.warn('[Billing] Failed to finish transaction:', e);
-        }
-
-        if (onPurchaseComplete) {
-          onPurchaseComplete(purchase);
-        }
-      }
-    );
-
-    purchaseErrorSubscription = purchaseErrorListener((error: PurchaseError) => {
-      if (onPurchaseError) {
-        onPurchaseError(error);
-      }
-    });
-
     return true;
   } catch (error) {
-    console.warn('[Billing] Failed to initialize:', error);
+    console.warn('[Billing] Failed to initialize RevenueCat:', error);
     return false;
   }
 }
 
 /**
- * Get available products from the store.
+ * Check if the user has an active premium entitlement.
+ */
+export async function checkEntitlement(): Promise<boolean> {
+  try {
+    const customerInfo = await Purchases.getCustomerInfo();
+    return typeof customerInfo.entitlements.active[ENTITLEMENT_ID] !== 'undefined';
+  } catch (error) {
+    console.warn('[Billing] Failed to check entitlement:', error);
+    return false;
+  }
+}
+
+/**
+ * Present the RevenueCat paywall UI.
+ * Returns true if user purchased or restored.
+ */
+export async function presentPaywall(): Promise<BillingPurchaseResult> {
+  try {
+    const result: PAYWALL_RESULT = await RevenueCatUI.presentPaywall();
+
+    switch (result) {
+      case PAYWALL_RESULT.PURCHASED:
+      case PAYWALL_RESULT.RESTORED:
+        return { success: true };
+      case PAYWALL_RESULT.NOT_PRESENTED:
+      case PAYWALL_RESULT.ERROR:
+      case PAYWALL_RESULT.CANCELLED:
+      default:
+        return { success: false, error: 'Purchase cancelled or failed' };
+    }
+  } catch (error: any) {
+    return { success: false, error: error?.message || 'Paywall error' };
+  }
+}
+
+/**
+ * Restore purchases (for users who reinstalled the app).
+ */
+export async function restorePurchasesRC(): Promise<{ success: boolean; restored: boolean }> {
+  try {
+    const customerInfo = await Purchases.restorePurchases();
+    const hasEntitlement = typeof customerInfo.entitlements.active[ENTITLEMENT_ID] !== 'undefined';
+    return { success: true, restored: hasEntitlement };
+  } catch (error) {
+    console.warn('[Billing] Failed to restore purchases:', error);
+    return { success: false, restored: false };
+  }
+}
+
+/**
+ * Get current offerings (products) from RevenueCat.
  */
 export async function getStoreProducts(): Promise<BillingProduct[]> {
-  if (!isInitialized) {
-    const connected = await initBilling();
-    if (!connected) return [];
-  }
-
   try {
-    const products = await fetchProducts({ skus: PRODUCT_SKUS });
-    if (!products) return [];
+    const offerings = await Purchases.getOfferings();
+    const current = offerings.current;
+    if (!current) return [];
 
-    return (products as Product[]).map((p: Product) => ({
-      productId: p.id,
-      title: p.title,
-      description: p.description,
-      price: p.displayPrice || '$6.99',
-      localizedPrice: p.displayPrice || '$6.99',
-      currency: p.currency || 'USD',
+    return current.availablePackages.map((pkg) => ({
+      productId: pkg.product.identifier,
+      title: pkg.product.title,
+      description: pkg.product.description,
+      price: pkg.product.priceString,
+      localizedPrice: pkg.product.priceString,
+      currency: pkg.product.currencyCode,
     }));
   } catch (error) {
     console.warn('[Billing] Failed to get products:', error);
@@ -122,98 +132,20 @@ export async function getStoreProducts(): Promise<BillingProduct[]> {
 }
 
 /**
- * Initiate the purchase flow for the premium lifetime unlock.
- * Returns a promise that resolves when the purchase completes or fails.
+ * Identify the user with RevenueCat (call after Clerk auth).
+ * Links purchases to a user account.
  */
-export function purchasePremium(): Promise<BillingPurchaseResult> {
-  return new Promise(async (resolve) => {
-    if (!isInitialized) {
-      const connected = await initBilling();
-      if (!connected) {
-        resolve({ success: false, error: 'Store connection failed' });
-        return;
-      }
-    }
-
-    // Set up one-time handlers for this purchase
-    onPurchaseComplete = (purchase) => {
-      onPurchaseComplete = null;
-      onPurchaseError = null;
-      resolve({
-        success: true,
-        productId: purchase.productId,
-        transactionId: purchase.transactionId ?? undefined,
-      });
-    };
-
-    onPurchaseError = (error) => {
-      onPurchaseComplete = null;
-      onPurchaseError = null;
-      resolve({
-        success: false,
-        error: error.message || 'Purchase failed',
-      });
-    };
-
-    try {
-      await requestPurchase({
-        request: {
-          android: { skus: [PRODUCT_SKU] },
-        },
-        type: 'in-app',
-      });
-    } catch (error: any) {
-      onPurchaseComplete = null;
-      onPurchaseError = null;
-      resolve({
-        success: false,
-        error: error?.message || 'Purchase request failed',
-      });
-    }
-  });
-}
-
-/**
- * Check if the user has previously purchased the premium unlock.
- * Used for "Restore Purchase" and silent checks on launch.
- */
-export async function checkExistingPurchases(): Promise<boolean> {
-  if (!isInitialized) {
-    const connected = await initBilling();
-    if (!connected) return false;
-  }
-
+export async function identifyUser(userId: string): Promise<void> {
   try {
-    const purchases = await getAvailablePurchases();
-    if (!purchases) return false;
-    return (purchases as Purchase[]).some((p: Purchase) => p.productId === PRODUCT_SKU);
+    await Purchases.logIn(userId);
   } catch (error) {
-    console.warn('[Billing] Failed to check purchases:', error);
-    return false;
+    console.warn('[Billing] Failed to identify user:', error);
   }
 }
 
 /**
- * Clean up billing connection. Call on app unmount.
+ * Clean up (no-op for RevenueCat, kept for API compatibility).
  */
 export function disposeBilling(): void {
-  if (purchaseUpdateSubscription) {
-    purchaseUpdateSubscription.remove();
-    purchaseUpdateSubscription = null;
-  }
-  if (purchaseErrorSubscription) {
-    purchaseErrorSubscription.remove();
-    purchaseErrorSubscription = null;
-  }
-
-  onPurchaseComplete = null;
-  onPurchaseError = null;
-
-  try {
-    endConnection();
-  } catch (e) {
-    // Ignore cleanup errors
-  }
-
-  isInitialized = false;
+  // RevenueCat handles its own lifecycle
 }

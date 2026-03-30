@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 import { StorageService } from '../services/storage';
-import { initBilling, purchasePremium, checkExistingPurchases, disposeBilling } from '../services/billing';
+import { initBilling, checkEntitlement, presentPaywall, restorePurchasesRC, disposeBilling } from '../services/billing';
 import { SubscriptionTier } from '../types';
 
 // ── Constants ────────────────────────────────────────────
@@ -51,18 +51,17 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         return;
       }
 
-      // 3. Silently check store for existing purchases (restore)
+      // 3. Check RevenueCat entitlement
       try {
-        const hasPurchase = await checkExistingPurchases();
-        if (hasPurchase) {
+        const hasEntitlement = await checkEntitlement();
+        if (hasEntitlement) {
           await StorageService.setPurchaseStatus('local_premium');
           setTier('local_premium');
           setTrialDaysRemaining(0);
           return;
         }
       } catch (e) {
-        // Store unavailable, fall through to trial check
-        console.warn('[Subscription] Store check failed:', e);
+        console.warn('[Subscription] RevenueCat check failed:', e);
       }
 
       // 4. Calculate trial status
@@ -71,7 +70,6 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
       setTier(remaining > 0 ? 'trial' : 'expired');
     } catch (error) {
       console.error('[Subscription] Failed to refresh state:', error);
-      // Default to trial on error so user isn't locked out
       setTier('trial');
       setTrialDaysRemaining(TRIAL_DURATION_DAYS);
     }
@@ -82,10 +80,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     let mounted = true;
 
     const init = async () => {
-      // Initialize billing connection
       await initBilling();
-
-      // Determine subscription state
       await refreshSubscriptionState();
 
       if (mounted) {
@@ -113,10 +108,10 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     return () => subscription.remove();
   }, [refreshSubscriptionState]);
 
-  // ── Purchase handler ────────────────────────────────
+  // ── Purchase handler (uses RevenueCat Paywall UI) ───
   const purchaseLocalPremium = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
     try {
-      const result = await purchasePremium();
+      const result = await presentPaywall();
 
       if (result.success) {
         await StorageService.setPurchaseStatus('local_premium');
@@ -134,16 +129,15 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   // ── Restore handler ─────────────────────────────────
   const restorePurchases = useCallback(async (): Promise<{ success: boolean; restored: boolean }> => {
     try {
-      const hasPurchase = await checkExistingPurchases();
+      const result = await restorePurchasesRC();
 
-      if (hasPurchase) {
+      if (result.restored) {
         await StorageService.setPurchaseStatus('local_premium');
         setTier('local_premium');
         setTrialDaysRemaining(0);
-        return { success: true, restored: true };
       }
 
-      return { success: true, restored: false };
+      return result;
     } catch (error) {
       return { success: false, restored: false };
     }

@@ -132,6 +132,7 @@ export type RootStackParamList = {
   WorkoutDetails: { workoutId: string };
   ProgramDetail: { programId: string };
   Paywall: undefined;
+  GoLive: undefined;
 };
 
 export type TabParamList = {

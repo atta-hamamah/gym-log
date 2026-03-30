@@ -13,13 +13,18 @@ import { LANGUAGE_LABELS, SupportedLanguage, isRTL, saveLanguagePreference } fro
 import * as Updates from 'expo-updates';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { useSubscription } from '../context/SubscriptionContext';
+import { StorageService } from '../services/storage';
 import { BodyMeasurement, MeasurementKey } from '../types';
 import { generateId } from '../utils/generateId';
+import { useAuth } from '@clerk/clerk-expo';
+import { Rocket } from 'lucide-react-native';
 
-export const SettingsScreen = () => {
+export const SettingsScreen = ({ navigation }: any) => {
     const { t, i18n } = useTranslation();
     const { updateUserStats, userStats, workouts, refreshData, bodyMeasurements, addBodyMeasurement } = useWorkout();
     const { tier, trialDaysRemaining, purchaseLocalPremium, restorePurchases } = useSubscription();
+    const { isSignedIn, signOut } = useAuth();
+    const [isLive, setIsLive] = useState(false);
     const [weight, setWeight] = useState('');
     const [bodyFat, setBodyFat] = useState('');
     const [height, setHeight] = useState('');
@@ -87,6 +92,10 @@ export const SettingsScreen = () => {
             setHeight(userStats.height?.toString() || '');
         }
     }, [userStats]);
+
+    useEffect(() => {
+        StorageService.getIsLive().then(setIsLive);
+    }, []);
 
     const handleSaveStats = async () => {
         const w = parseFloat(weight);
@@ -323,6 +332,48 @@ export const SettingsScreen = () => {
                             }}
                             style={{ marginTop: 8 }}
                         />
+                    )}
+                </Card>
+
+                {/* Go Live */}
+                <Card style={isLive ? styles.liveCard : styles.goLiveCard}>
+                    {isLive ? (
+                        <View>
+                            <View style={styles.liveBadge}>
+                                <Typography variant="body" bold color={colors.success}>
+                                    ✅ {t('goLive.youAreLive')}
+                                </Typography>
+                            </View>
+                            {isSignedIn && (
+                                <Button
+                                    title={t('goLive.signOut')}
+                                    variant="ghost"
+                                    size="small"
+                                    onPress={async () => {
+                                        await signOut();
+                                        await StorageService.setIsLive(false);
+                                        setIsLive(false);
+                                    }}
+                                    style={{ marginTop: 8 }}
+                                />
+                            )}
+                        </View>
+                    ) : (
+                        <TouchableOpacity
+                            style={styles.goLiveButton}
+                            onPress={() => navigation.navigate('GoLive')}
+                            activeOpacity={0.8}
+                        >
+                            <View style={styles.goLiveIconContainer}>
+                                <Rocket color={colors.primary} size={28} />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Typography variant="h3">{t('goLive.goLive')}</Typography>
+                                <Typography variant="caption" color={colors.textSecondary}>
+                                    {t('goLive.goLiveDesc')}
+                                </Typography>
+                            </View>
+                        </TouchableOpacity>
                     )}
                 </Card>
 
@@ -682,5 +733,35 @@ const styles = StyleSheet.create({
         paddingVertical: 2,
         backgroundColor: colors.surfaceLight,
         borderRadius: borderRadius.xs,
+    },
+    // ── Go Live styles ────────────────────────────────────
+    goLiveCard: {
+        borderWidth: 1,
+        borderColor: colors.primary + '30',
+    },
+    liveCard: {
+        borderWidth: 1,
+        borderColor: colors.success + '40',
+    },
+    goLiveButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+    },
+    goLiveIconContainer: {
+        width: 52,
+        height: 52,
+        borderRadius: 14,
+        backgroundColor: colors.primary + '15',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    liveBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        backgroundColor: colors.success + '12',
+        borderRadius: borderRadius.m,
     },
 });

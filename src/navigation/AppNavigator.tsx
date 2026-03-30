@@ -13,6 +13,7 @@ import { WorkoutDetailsScreen } from '../screens/WorkoutDetailsScreen';
 import { ProgramsScreen } from '../screens/ProgramsScreen';
 import { ProgramDetailScreen } from '../screens/ProgramDetailScreen';
 import { PaywallScreen } from '../screens/PaywallScreen';
+import { GoLiveScreen } from '../screens/GoLiveScreen';
 import { useSubscription } from '../context/SubscriptionContext';
 import { colors, borderRadius } from '../theme/colors';
 import { Home, History, TrendingUp, Settings, BookOpen } from 'lucide-react-native';
@@ -202,6 +203,15 @@ export const AppNavigator = () => {
                     component={PaywallScreen}
                     options={{
                         presentation: 'modal',
+                        animation: 'slide_from_bottom',
+                    }}
+                />
+                <Stack.Screen
+                    name="GoLive"
+                    component={GoLiveScreen}
+                    options={{
+                        presentation: 'fullScreenModal',
+                        headerShown: false,
                         animation: 'slide_from_bottom',
                     }}
                 />

@@ -78,7 +78,7 @@ export const PaywallScreen = () => {
             <Zap color={colors.primary} size={48} />
           </View>
           <Typography variant="h1" style={styles.appTitle}>
-            Gym Log Tracker
+            RepAI
           </Typography>
           <Typography variant="body" color={colors.textSecondary} align="center">
             {isTrialActive

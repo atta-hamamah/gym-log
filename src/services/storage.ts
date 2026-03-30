@@ -12,6 +12,7 @@ const KEYS = {
   BODY_MEASUREMENTS: '@gym_log_body_measurements',
   FIRST_OPEN: '@gym_log_first_open',
   PURCHASE_STATUS: '@gym_log_purchase_status',
+  IS_LIVE: '@gym_log_is_live',
 };
 
 export const StorageService = {
@@ -194,6 +195,34 @@ export const StorageService = {
       await AsyncStorage.setItem(KEYS.PURCHASE_STATUS, status);
     } catch (e) {
       console.error('Failed to set purchase status', e);
+    }
+  },
+
+  // GO LIVE
+  async getIsLive(): Promise<boolean> {
+    try {
+      const value = await AsyncStorage.getItem(KEYS.IS_LIVE);
+      return value === 'true';
+    } catch (e) {
+      return false;
+    }
+  },
+
+  async setIsLive(value: boolean): Promise<void> {
+    try {
+      await AsyncStorage.setItem(KEYS.IS_LIVE, value.toString());
+    } catch (e) {
+      console.error('Failed to set is live', e);
+    }
+  },
+
+  // CUSTOM EXERCISES (direct access for migration)
+  async getCustomExercises(): Promise<Exercise[]> {
+    try {
+      const json = await AsyncStorage.getItem(KEYS.CUSTOM_EXERCISES);
+      return json ? JSON.parse(json) : [];
+    } catch (e) {
+      return [];
     }
   },
 };
