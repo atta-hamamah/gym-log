@@ -365,5 +365,17 @@
       "sync": "Synchronisation Multi-Appareils",
       "syncDesc": "Accédez à vos données depuis n'importe quel appareil"
     }
+  },
+  "aiChat": {
+    "subtitle": "Votre coach fitness IA",
+    "placeholder": "Posez-moi des questions sur vos entraînements...",
+    "thinking": "Réflexion...",
+    "error": "Désolé, une erreur s'est produite. Veuillez réessayer.",
+    "welcomeTitle": "Salut ! Je suis RepAI 💪",
+    "welcomeDesc": "Je connais votre historique d'entraînements, vos records et vos progrès. Demandez-moi ce que vous voulez !",
+    "suggestion1": "Quel est mon meilleur développé couché ?",
+    "suggestion2": "Combien de fois me suis-je entraîné cette semaine ?",
+    "suggestion3": "Est-ce que je surentraîne un muscle ?",
+    "suggestion4": "Suggère un entraînement pour aujourd'hui"
   }
 }

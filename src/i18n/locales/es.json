@@ -365,5 +365,17 @@
       "sync": "Sincronización Multidispositivo",
       "syncDesc": "Accede a tus datos desde cualquier dispositivo"
     }
+  },
+  "aiChat": {
+    "subtitle": "Tu coach de fitness con IA",
+    "placeholder": "Pregúntame sobre tus entrenamientos...",
+    "thinking": "Pensando...",
+    "error": "Lo siento, algo salió mal. Inténtalo de nuevo.",
+    "welcomeTitle": "¡Hola! Soy RepAI 💪",
+    "welcomeDesc": "Conozco tu historial de entrenamientos, récords y progreso. ¡Pregúntame lo que quieras!",
+    "suggestion1": "¿Cuál fue mi mejor press de banca?",
+    "suggestion2": "¿Cuántas veces entrené esta semana?",
+    "suggestion3": "¿Estoy sobreentrenando algún músculo?",
+    "suggestion4": "Sugiere un entrenamiento para hoy"
   }
 }

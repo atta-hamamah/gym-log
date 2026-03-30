@@ -133,6 +133,7 @@ export type RootStackParamList = {
   ProgramDetail: { programId: string };
   Paywall: undefined;
   GoLive: undefined;
+  AIChat: undefined;
 };
 
 export type TabParamList = {

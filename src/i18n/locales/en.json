@@ -365,5 +365,17 @@
       "sync": "Multi-Device Sync",
       "syncDesc": "Access your data from any device"
     }
+  },
+  "aiChat": {
+    "subtitle": "Your AI fitness coach",
+    "placeholder": "Ask me anything about your workouts...",
+    "thinking": "Thinking...",
+    "error": "Sorry, something went wrong. Please try again.",
+    "welcomeTitle": "Hey! I'm RepAI 💪",
+    "welcomeDesc": "I know your workout history, PRs, and progress. Ask me anything!",
+    "suggestion1": "What was my best bench press?",
+    "suggestion2": "How many times did I train this week?",
+    "suggestion3": "Am I overtraining any muscle?",
+    "suggestion4": "Suggest a workout for today"
   }
 }

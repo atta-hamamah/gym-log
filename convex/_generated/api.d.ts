@@ -8,6 +8,8 @@
  * @module
  */
 
+import type * as ai from "../ai.js";
+import type * as aiHelpers from "../aiHelpers.js";
 import type * as migration from "../migration.js";
 import type * as users from "../users.js";
 import type * as workouts from "../workouts.js";
@@ -19,6 +21,8 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  ai: typeof ai;
+  aiHelpers: typeof aiHelpers;
   migration: typeof migration;
   users: typeof users;
   workouts: typeof workouts;
