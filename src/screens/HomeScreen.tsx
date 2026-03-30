@@ -2,7 +2,9 @@ import React, { useMemo, useState } from 'react';
 import { View, ScrollView, TouchableOpacity, StyleSheet, TextInput, Modal, Alert, Image } from 'react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
+import { TrialBanner } from '../components/TrialBanner';
 import { useWorkout } from '../context/WorkoutContext';
+import { useSubscription } from '../context/SubscriptionContext';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { StatBadge } from '../components/StatBadge';
@@ -14,6 +16,7 @@ import { useTranslation } from 'react-i18next';
 export const HomeScreen = ({ navigation }: any) => {
     const { t } = useTranslation();
     const { currentWorkout, startWorkout, workouts } = useWorkout();
+    const { tier } = useSubscription();
     const [nameModalVisible, setNameModalVisible] = useState(false);
     const [workoutName, setWorkoutName] = useState('');
 
@@ -77,6 +80,11 @@ export const HomeScreen = ({ navigation }: any) => {
                         </Typography>
                     </View>
                 </View>
+
+                {/* Trial Banner */}
+                {tier === 'trial' && (
+                    <TrialBanner onPress={() => navigation.navigate('Paywall')} />
+                )}
 
                 {/* Hero Card */}
                 <Card

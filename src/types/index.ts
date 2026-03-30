@@ -121,12 +121,17 @@ export interface DetectedPR {
 }
 // ──────────────────────────────────────────────────────
 
+// ── Subscription ─────────────────────────────────────────
+export type SubscriptionTier = 'trial' | 'expired' | 'local_premium';
+// ──────────────────────────────────────────────────────────
+
 export type RootStackParamList = {
   Main: undefined;
   WorkoutSession: { workoutId?: string };
   ExerciseList: undefined;
   WorkoutDetails: { workoutId: string };
   ProgramDetail: { programId: string };
+  Paywall: undefined;
 };
 
 export type TabParamList = {

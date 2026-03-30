@@ -10,6 +10,8 @@ const KEYS = {
   CURRENT_WORKOUT: '@gym_log_current_workout', // For resuming if app crashes
   PERSONAL_RECORDS: '@gym_log_personal_records',
   BODY_MEASUREMENTS: '@gym_log_body_measurements',
+  FIRST_OPEN: '@gym_log_first_open',
+  PURCHASE_STATUS: '@gym_log_purchase_status',
 };
 
 export const StorageService = {
@@ -157,5 +159,41 @@ export const StorageService = {
     const existing = await this.getBodyMeasurements();
     const filtered = existing.filter(m => m.id !== id);
     await AsyncStorage.setItem(KEYS.BODY_MEASUREMENTS, JSON.stringify(filtered));
+  },
+
+  // SUBSCRIPTION / TRIAL
+  async getFirstOpenDate(): Promise<number | null> {
+    try {
+      const value = await AsyncStorage.getItem(KEYS.FIRST_OPEN);
+      return value ? parseInt(value, 10) : null;
+    } catch (e) {
+      console.error('Failed to get first open date', e);
+      return null;
+    }
+  },
+
+  async setFirstOpenDate(timestamp: number): Promise<void> {
+    try {
+      await AsyncStorage.setItem(KEYS.FIRST_OPEN, timestamp.toString());
+    } catch (e) {
+      console.error('Failed to set first open date', e);
+    }
+  },
+
+  async getPurchaseStatus(): Promise<string | null> {
+    try {
+      return await AsyncStorage.getItem(KEYS.PURCHASE_STATUS);
+    } catch (e) {
+      console.error('Failed to get purchase status', e);
+      return null;
+    }
+  },
+
+  async setPurchaseStatus(status: string): Promise<void> {
+    try {
+      await AsyncStorage.setItem(KEYS.PURCHASE_STATUS, status);
+    } catch (e) {
+      console.error('Failed to set purchase status', e);
+    }
   },
 };

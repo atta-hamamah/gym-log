@@ -25,7 +25,8 @@
       "edgeToEdgeEnabled": true,
       "permissions": [
         "INTERNET",
-        "VIBRATE"
+        "VIBRATE",
+        "com.android.vending.BILLING"
       ]
     },
     "web": {

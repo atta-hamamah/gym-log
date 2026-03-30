@@ -293,5 +293,30 @@
     "Triceps": "Triceps",
     "Core": "Core",
     "Cardio": "Cardio"
+  },
+  "subscription": {
+    "statusTitle": "Subscription",
+    "trialBanner": "⏳ {{days}} days left in your free trial",
+    "tapToUnlock": "Tap to unlock premium",
+    "trialExpired": "Your free trial has ended",
+    "unlockForever": "Unlock Forever",
+    "restorePurchase": "Restore Purchase",
+    "premiumActive": "✅ Premium — Lifetime Access",
+    "premiumTagline": "Premium unlocked • Lifetime access",
+    "oneTimePayment": "One-time payment. No subscriptions.",
+    "everythingYouNeed": "Everything you need",
+    "processing": "Processing...",
+    "purchaseError": "Purchase Failed",
+    "noRestoreFound": "No Purchase Found",
+    "noRestoreFoundMessage": "No previous purchase was found on this account.",
+    "restored": "✅ Restored",
+    "restoredMessage": "Your premium purchase has been restored!",
+    "features": {
+      "tracking": "Unlimited Workout Tracking",
+      "programs": "All Training Programs",
+      "progress": "Full Progress Analytics",
+      "pr": "PR Detection & Celebrations",
+      "export": "CSV Data Export"
+    }
   }
 }

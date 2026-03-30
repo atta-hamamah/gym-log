@@ -12,12 +12,14 @@ import { useTranslation } from 'react-i18next';
 import { LANGUAGE_LABELS, SupportedLanguage, isRTL, saveLanguagePreference } from '../i18n';
 import * as Updates from 'expo-updates';
 import { ConfirmationModal } from '../components/ConfirmationModal';
+import { useSubscription } from '../context/SubscriptionContext';
 import { BodyMeasurement, MeasurementKey } from '../types';
 import { generateId } from '../utils/generateId';
 
 export const SettingsScreen = () => {
     const { t, i18n } = useTranslation();
     const { updateUserStats, userStats, workouts, refreshData, bodyMeasurements, addBodyMeasurement } = useWorkout();
+    const { tier, trialDaysRemaining, purchaseLocalPremium, restorePurchases } = useSubscription();
     const [weight, setWeight] = useState('');
     const [bodyFat, setBodyFat] = useState('');
     const [height, setHeight] = useState('');
@@ -258,6 +260,72 @@ export const SettingsScreen = () => {
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
                 <Typography variant="h1" style={{ marginBottom: 24 }}>{t('settings.title')}</Typography>
 
+                {/* Subscription Status */}
+                <Card style={tier === 'local_premium' ? styles.premiumCard : undefined}>
+                    <Typography variant="h3" style={{ marginBottom: 4 }}>{t('subscription.statusTitle')}</Typography>
+
+                    {tier === 'local_premium' ? (
+                        <View style={styles.premiumBadge}>
+                            <Typography variant="body" bold color={colors.success}>
+                                {t('subscription.premiumActive')}
+                            </Typography>
+                        </View>
+                    ) : tier === 'trial' ? (
+                        <View>
+                            <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 12 }}>
+                                {t('subscription.trialBanner', { days: trialDaysRemaining })}
+                            </Typography>
+                            <View style={styles.trialProgressBar}>
+                                <View style={[styles.trialProgressFill, { width: `${(trialDaysRemaining / 5) * 100}%` }]} />
+                            </View>
+                            <Button
+                                title={t('subscription.unlockForever')}
+                                onPress={async () => {
+                                    const result = await purchaseLocalPremium();
+                                    if (!result.success) {
+                                        showModal(t('subscription.purchaseError'), result.error || '', undefined, 'danger');
+                                    }
+                                }}
+                                size="medium"
+                                style={{ marginTop: 12 }}
+                            />
+                        </View>
+                    ) : (
+                        <View>
+                            <Typography variant="caption" color={colors.error} style={{ marginBottom: 12 }}>
+                                {t('subscription.trialExpired')}
+                            </Typography>
+                            <Button
+                                title={t('subscription.unlockForever')}
+                                onPress={async () => {
+                                    const result = await purchaseLocalPremium();
+                                    if (!result.success) {
+                                        showModal(t('subscription.purchaseError'), result.error || '', undefined, 'danger');
+                                    }
+                                }}
+                                size="medium"
+                            />
+                        </View>
+                    )}
+
+                    {tier !== 'local_premium' && (
+                        <Button
+                            title={t('subscription.restorePurchase')}
+                            variant="ghost"
+                            size="small"
+                            onPress={async () => {
+                                const result = await restorePurchases();
+                                if (result.restored) {
+                                    showModal(t('subscription.restored'), t('subscription.restoredMessage'), undefined, 'success');
+                                } else {
+                                    showModal(t('subscription.noRestoreFound'), t('subscription.noRestoreFoundMessage'), undefined, 'primary');
+                                }
+                            }}
+                            style={{ marginTop: 8 }}
+                        />
+                    )}
+                </Card>
+
                 {/* Language Selector */}
                 <Card>
                     <Typography variant="h3" style={{ marginBottom: 4 }}>{t('settings.language')}</Typography>
@@ -479,7 +547,10 @@ export const SettingsScreen = () => {
                         {t('settings.version')}
                     </Typography>
                     <Typography variant="caption" style={{ textAlign: 'center', marginTop: 4 }}>
-                        {t('settings.tagline')}
+                        {tier === 'local_premium'
+                            ? t('subscription.premiumTagline')
+                            : t('settings.tagline')
+                        }
                     </Typography>
                 </View>
             </ScrollView>
@@ -546,6 +617,30 @@ const styles = StyleSheet.create({
     footer: {
         marginTop: 24,
         paddingVertical: 16,
+    },
+    premiumCard: {
+        borderWidth: 1,
+        borderColor: colors.success + '40',
+    },
+    premiumBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 8,
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        backgroundColor: colors.success + '12',
+        borderRadius: borderRadius.m,
+    },
+    trialProgressBar: {
+        height: 6,
+        backgroundColor: colors.surfaceLight,
+        borderRadius: 3,
+        overflow: 'hidden',
+    },
+    trialProgressFill: {
+        height: '100%',
+        backgroundColor: colors.primary,
+        borderRadius: 3,
     },
     // ── Measurement styles ────────────────────────────────
     measureGrid: {

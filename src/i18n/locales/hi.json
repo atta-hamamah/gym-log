@@ -293,5 +293,30 @@
     "Triceps": "ट्राइसेप्स",
     "Core": "कोर",
     "Cardio": "कार्डियो"
+  },
+  "subscription": {
+    "statusTitle": "सदस्यता",
+    "trialBanner": "⏳ मुफ्त परीक्षण में {{days}} दिन बाकी",
+    "tapToUnlock": "प्रीमियम अनलॉक करने के लिए टैप करें",
+    "trialExpired": "आपका नि:शुल्क परीक्षण समाप्त हो गया है",
+    "unlockForever": "हमेशा के लिए अनलॉक करें",
+    "restorePurchase": "खरीदारी पुनर्स्थापित करें",
+    "premiumActive": "✅ प्रीमियम — आजीवन पहुँच",
+    "premiumTagline": "प्रीमियम अनलॉक • आजीवन पहुँच",
+    "oneTimePayment": "एकमुश्त भुगतान। कोई सदस्यता नहीं।",
+    "everythingYouNeed": "आपको जो कुछ भी चाहिए",
+    "processing": "प्रोसेसिंग...",
+    "purchaseError": "खरीदारी विफल",
+    "noRestoreFound": "कोई खरीदारी नहीं मिली",
+    "noRestoreFoundMessage": "इस खाते पर कोई पिछली खरीदारी नहीं मिली।",
+    "restored": "✅ पुनर्स्थापित",
+    "restoredMessage": "आपकी प्रीमियम खरीदारी पुनर्स्थापित कर दी गई है!",
+    "features": {
+      "tracking": "असीमित वर्कआउट ट्रैकिंग",
+      "programs": "सभी प्रशिक्षण कार्यक्रम",
+      "progress": "पूर्ण प्रगति विश्लेषण",
+      "pr": "PR पहचान और उत्सव",
+      "export": "CSV डेटा निर्यात"
+    }
   }
 }

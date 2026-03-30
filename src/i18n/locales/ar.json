@@ -290,8 +290,33 @@
     "Legs": "أرجل",
     "Shoulders": "أكتاف",
     "Biceps": "باي",
-    "Triceps": "تراي",
-    "Core": "بطن",
+    "Triceps": "عضلة ثلاثية الرؤوس",
+    "Core": "كور",
     "Cardio": "كارديو"
+  },
+  "subscription": {
+    "statusTitle": "الاشتراك",
+    "trialBanner": "⏳ {{days}} أيام متبقية في الفترة التجريبية",
+    "tapToUnlock": "اضغط لفتح النسخة المميزة",
+    "trialExpired": "انتهت الفترة التجريبية الخاصة بك",
+    "unlockForever": "افتح التطبيق مدى الحياة",
+    "restorePurchase": "استعادة المشتريات",
+    "premiumActive": "✅ النسخة المميزة — وصول مدى الحياة",
+    "premiumTagline": "نسخة مميزة • وصول مدى الحياة",
+    "oneTimePayment": "دفع لمرة واحدة. لا توجد اشتراكات.",
+    "everythingYouNeed": "كل ما تحتاجه",
+    "processing": "جاري المعالجة...",
+    "purchaseError": "فشل عملية الدفع",
+    "noRestoreFound": "لم يتم العثور على مشتريات",
+    "noRestoreFoundMessage": "لم يتم العثور على مشتريات سابقة لهذا الحساب.",
+    "restored": "✅ تم الاسترداد",
+    "restoredMessage": "تمت استعادة مشترياتك المميزة!",
+    "features": {
+      "tracking": "تتبع غير محدود للتمارين",
+      "programs": "جميع برامج التدريب",
+      "progress": "تحليلات كاملة للتقدم",
+      "pr": "اكتشاف السجلات الشخصية والاحتفال بها",
+      "export": "تصدير البيانات كـ CSV"
+    }
   }
 }

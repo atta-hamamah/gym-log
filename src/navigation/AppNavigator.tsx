@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet, Platform, ActivityIndicator } from 'react-native';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -12,6 +12,8 @@ import { SettingsScreen } from '../screens/SettingsScreen';
 import { WorkoutDetailsScreen } from '../screens/WorkoutDetailsScreen';
 import { ProgramsScreen } from '../screens/ProgramsScreen';
 import { ProgramDetailScreen } from '../screens/ProgramDetailScreen';
+import { PaywallScreen } from '../screens/PaywallScreen';
+import { useSubscription } from '../context/SubscriptionContext';
 import { colors, borderRadius } from '../theme/colors';
 import { Home, History, TrendingUp, Settings, BookOpen } from 'lucide-react-native';
 import { RootStackParamList, TabParamList } from '../types';
@@ -105,9 +107,43 @@ const TabNavigator = () => {
     );
 };
 
+// ── Loading Screen ────────────────────────────────────────
+const LoadingScreen = () => (
+    <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+    </View>
+);
+
 export const AppNavigator = () => {
     const { t } = useTranslation();
+    const { tier, loading } = useSubscription();
 
+    // Show loading while checking subscription state
+    if (loading) {
+        return (
+            <NavigationContainer theme={AppTheme}>
+                <LoadingScreen />
+            </NavigationContainer>
+        );
+    }
+
+    // If trial expired and not purchased, show paywall only
+    if (tier === 'expired') {
+        return (
+            <NavigationContainer theme={AppTheme}>
+                <Stack.Navigator
+                    screenOptions={{
+                        headerShown: false,
+                        contentStyle: { backgroundColor: colors.background },
+                    }}
+                >
+                    <Stack.Screen name="Paywall" component={PaywallScreen} />
+                </Stack.Navigator>
+            </NavigationContainer>
+        );
+    }
+
+    // Normal app flow (trial or premium)
     return (
         <NavigationContainer theme={AppTheme}>
             <Stack.Navigator
@@ -161,7 +197,24 @@ export const AppNavigator = () => {
                         animation: 'slide_from_right',
                     }}
                 />
+                <Stack.Screen
+                    name="Paywall"
+                    component={PaywallScreen}
+                    options={{
+                        presentation: 'modal',
+                        animation: 'slide_from_bottom',
+                    }}
+                />
             </Stack.Navigator>
         </NavigationContainer>
     );
 };
+
+const styles = StyleSheet.create({
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: colors.background,
+    },
+});

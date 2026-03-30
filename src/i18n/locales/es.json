@@ -291,7 +291,32 @@
     "Shoulders": "Hombros",
     "Biceps": "Bíceps",
     "Triceps": "Tríceps",
-    "Core": "Abdominales",
+    "Core": "Core",
     "Cardio": "Cardio"
+  },
+  "subscription": {
+    "statusTitle": "Suscripción",
+    "trialBanner": "⏳ {{days}} días restantes de prueba gratuita",
+    "tapToUnlock": "Toca para desbloquear premium",
+    "trialExpired": "Tu prueba gratuita ha terminado",
+    "unlockForever": "Desbloquear para siempre",
+    "restorePurchase": "Restaurar compra",
+    "premiumActive": "✅ Premium — Acceso de por vida",
+    "premiumTagline": "Premium desbloqueado • Acceso de por vida",
+    "oneTimePayment": "Pago único. Sin suscripciones.",
+    "everythingYouNeed": "Todo lo que necesitas",
+    "processing": "Procesando...",
+    "purchaseError": "Error en la compra",
+    "noRestoreFound": "No se encontró compra",
+    "noRestoreFoundMessage": "No se encontró ninguna compra previa en esta cuenta.",
+    "restored": "✅ Restaurada",
+    "restoredMessage": "¡Tu compra premium ha sido restaurada!",
+    "features": {
+      "tracking": "Seguimiento de rutinas ilimitado",
+      "programs": "Todos los programas de entrenamiento",
+      "progress": "Análisis completo de progreso",
+      "pr": "Detección y celebración de RPs",
+      "export": "Exportar datos CSV"
+    }
   }
 }
