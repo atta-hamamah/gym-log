@@ -6,7 +6,6 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   TextInput,
-  Alert,
 } from 'react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
@@ -19,18 +18,20 @@ import { api } from '../../convex/_generated/api';
 import { migrateLocalToConvex, type MigrationProgress } from '../services/migration';
 import { useConvex } from 'convex/react';
 import { useTranslation } from 'react-i18next';
-import { Rocket, Check, Shield, Brain, Cloud, ChevronRight, User, Calendar, Users } from 'lucide-react-native';
+import { Check, Brain, Cloud, ChevronRight, Calendar, Users, Sparkles, X } from 'lucide-react-native';
 
-type GoLiveStep = 'intro' | 'signup' | 'profile' | 'migrating' | 'complete';
+type OnboardingStep = 'signup' | 'profile' | 'migrating' | 'complete';
 
-export const GoLiveScreen = ({ navigation }: any) => {
+export const AIOnboardingScreen = ({ navigation }: any) => {
   const { t } = useTranslation();
-  const [step, setStep] = useState<GoLiveStep>('intro');
 
   // ── Clerk Auth State ──
   const { signUp, setActive, isLoaded: isSignUpLoaded } = useSignUp();
   const { isSignedIn } = useAuth();
   const { user } = useUser();
+
+  // Start at signup or skip to profile if already signed in
+  const [step, setStep] = useState<OnboardingStep>(isSignedIn ? 'profile' : 'signup');
 
   // ── Signup Fields ──
   const [email, setEmail] = useState('');
@@ -106,7 +107,7 @@ export const GoLiveScreen = ({ navigation }: any) => {
   // ══════════════════════════════════════════════════════
   const handleCompleteProfile = useCallback(async () => {
     if (!gender || !dateOfBirth) {
-      setError(t('goLive.fillAllFields'));
+      setError(t('aiOnboarding.fillAllFields'));
       return;
     }
     setLoading(true);
@@ -134,12 +135,12 @@ export const GoLiveScreen = ({ navigation }: any) => {
         setMigrationResult(result);
         setStep('complete');
       } else {
-        setError(result.error || t('goLive.migrationFailed'));
+        setError(result.error || t('aiOnboarding.migrationFailed'));
         setStep('profile');
       }
     } catch (err: any) {
-      console.error('[GoLive] Migration error:', err);
-      setError(err.message || t('goLive.migrationFailed'));
+      console.error('[AIOnboarding] Migration error:', err);
+      setError(err.message || t('aiOnboarding.migrationFailed'));
       setStep('profile');
     } finally {
       setLoading(false);
@@ -147,69 +148,32 @@ export const GoLiveScreen = ({ navigation }: any) => {
   }, [gender, dateOfBirth, createUser, user, convex, t]);
 
   // ══════════════════════════════════════════════════════
-  // RENDER: INTRO STEP
-  // ══════════════════════════════════════════════════════
-  const renderIntro = () => (
-    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
-      <View style={styles.heroSection}>
-        <View style={styles.rocketContainer}>
-          <Rocket color={colors.primary} size={56} />
-        </View>
-        <Typography variant="h1" align="center" style={{ marginTop: 16 }}>
-          {t('goLive.title')}
-        </Typography>
-        <Typography variant="body" color={colors.textSecondary} align="center" style={{ marginTop: 8 }}>
-          {t('goLive.subtitle')}
-        </Typography>
-      </View>
-
-      {/* Benefits */}
-      <View style={styles.benefitsContainer}>
-        {[
-          { icon: Cloud, title: t('goLive.benefit.backup'), desc: t('goLive.benefit.backupDesc') },
-          { icon: Brain, title: t('goLive.benefit.ai'), desc: t('goLive.benefit.aiDesc') },
-          { icon: Shield, title: t('goLive.benefit.sync'), desc: t('goLive.benefit.syncDesc') },
-        ].map((benefit, index) => (
-          <Card key={index} style={styles.benefitCard}>
-            <View style={styles.benefitRow}>
-              <View style={styles.benefitIconContainer}>
-                <benefit.icon color={colors.primary} size={24} />
-              </View>
-              <View style={styles.benefitText}>
-                <Typography variant="body" bold>{benefit.title}</Typography>
-                <Typography variant="caption" color={colors.textSecondary}>
-                  {benefit.desc}
-                </Typography>
-              </View>
-            </View>
-          </Card>
-        ))}
-      </View>
-
-      <Button
-        title={t('goLive.getStarted')}
-        onPress={() => setStep(isSignedIn ? 'profile' : 'signup')}
-        size="large"
-        style={{ marginTop: 24 }}
-      />
-    </ScrollView>
-  );
-
-  // ══════════════════════════════════════════════════════
   // RENDER: SIGNUP STEP
   // ══════════════════════════════════════════════════════
   const renderSignup = () => (
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
-      <Typography variant="h2" style={{ marginBottom: 24 }}>
-        {pendingVerification ? t('goLive.verifyEmail') : t('goLive.createAccount')}
-      </Typography>
+      {/* Header */}
+      <View style={styles.stepHeader}>
+        <View style={styles.stepIconContainer}>
+          <Sparkles color={colors.primary} size={24} />
+        </View>
+        <Typography variant="h2" style={{ marginTop: 12 }}>
+          {pendingVerification ? t('aiOnboarding.verifyEmail') : t('aiOnboarding.createAccount')}
+        </Typography>
+        <Typography variant="body" color={colors.textSecondary} style={{ marginTop: 4 }}>
+          {pendingVerification
+            ? t('aiOnboarding.verificationSent', { email })
+            : t('aiOnboarding.accountRequired')
+          }
+        </Typography>
+      </View>
 
       {!pendingVerification ? (
         <>
           <View style={styles.nameRow}>
             <View style={styles.nameField}>
               <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 4 }}>
-                {t('goLive.firstName')}
+                {t('aiOnboarding.firstName')}
               </Typography>
               <TextInput
                 style={styles.input}
@@ -222,7 +186,7 @@ export const GoLiveScreen = ({ navigation }: any) => {
             </View>
             <View style={styles.nameField}>
               <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 4 }}>
-                {t('goLive.lastName')}
+                {t('aiOnboarding.lastName')}
               </Typography>
               <TextInput
                 style={styles.input}
@@ -236,7 +200,7 @@ export const GoLiveScreen = ({ navigation }: any) => {
           </View>
 
           <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 4 }}>
-            {t('goLive.email')}
+            {t('aiOnboarding.email')}
           </Typography>
           <TextInput
             style={styles.input}
@@ -249,7 +213,7 @@ export const GoLiveScreen = ({ navigation }: any) => {
           />
 
           <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 4, marginTop: 12 }}>
-            {t('goLive.password')}
+            {t('aiOnboarding.password')}
           </Typography>
           <TextInput
             style={styles.input}
@@ -267,7 +231,7 @@ export const GoLiveScreen = ({ navigation }: any) => {
           ) : null}
 
           <Button
-            title={loading ? t('subscription.processing') : t('goLive.signUp')}
+            title={loading ? t('subscription.processing') : t('aiOnboarding.signUp')}
             onPress={handleSignUp}
             size="large"
             style={{ marginTop: 24 }}
@@ -276,10 +240,6 @@ export const GoLiveScreen = ({ navigation }: any) => {
         </>
       ) : (
         <>
-          <Typography variant="body" color={colors.textSecondary} style={{ marginBottom: 16 }}>
-            {t('goLive.verificationSent', { email })}
-          </Typography>
-
           <TextInput
             style={styles.input}
             value={verificationCode}
@@ -296,7 +256,7 @@ export const GoLiveScreen = ({ navigation }: any) => {
           ) : null}
 
           <Button
-            title={loading ? t('subscription.processing') : t('goLive.verify')}
+            title={loading ? t('subscription.processing') : t('aiOnboarding.verify')}
             onPress={handleVerifyEmail}
             size="large"
             style={{ marginTop: 24 }}
@@ -306,9 +266,9 @@ export const GoLiveScreen = ({ navigation }: any) => {
       )}
 
       <Button
-        title={t('goLive.back')}
+        title={t('common.cancel')}
         variant="ghost"
-        onPress={() => { setPendingVerification(false); setStep('intro'); setError(''); }}
+        onPress={() => { setPendingVerification(false); navigation.goBack(); setError(''); }}
         style={{ marginTop: 12 }}
       />
     </ScrollView>
@@ -319,16 +279,21 @@ export const GoLiveScreen = ({ navigation }: any) => {
   // ══════════════════════════════════════════════════════
   const renderProfile = () => (
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
-      <Typography variant="h2" style={{ marginBottom: 8 }}>
-        {t('goLive.completeProfile')}
-      </Typography>
-      <Typography variant="body" color={colors.textSecondary} style={{ marginBottom: 24 }}>
-        {t('goLive.profileDesc')}
-      </Typography>
+      <View style={styles.stepHeader}>
+        <View style={styles.stepIconContainer}>
+          <Brain color={colors.primary} size={24} />
+        </View>
+        <Typography variant="h2" style={{ marginTop: 12 }}>
+          {t('aiOnboarding.completeProfile')}
+        </Typography>
+        <Typography variant="body" color={colors.textSecondary} style={{ marginTop: 4 }}>
+          {t('aiOnboarding.profileDesc')}
+        </Typography>
+      </View>
 
       {/* Date of Birth */}
       <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 4 }}>
-        <Calendar color={colors.textSecondary} size={14} /> {t('goLive.dateOfBirth')}
+        <Calendar color={colors.textSecondary} size={14} /> {t('aiOnboarding.dateOfBirth')}
       </Typography>
       <TextInput
         style={styles.input}
@@ -341,7 +306,7 @@ export const GoLiveScreen = ({ navigation }: any) => {
 
       {/* Gender */}
       <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 8, marginTop: 16 }}>
-        <Users color={colors.textSecondary} size={14} /> {t('goLive.gender')}
+        <Users color={colors.textSecondary} size={14} /> {t('aiOnboarding.gender')}
       </Typography>
       <View style={styles.genderRow}>
         {(['male', 'female', 'other'] as const).map((g) => (
@@ -355,7 +320,7 @@ export const GoLiveScreen = ({ navigation }: any) => {
               color={gender === g ? colors.primary : colors.textSecondary}
               bold={gender === g}
             >
-              {t(`goLive.gender_${g}`)}
+              {t(`aiOnboarding.gender_${g}`)}
             </Typography>
           </TouchableOpacity>
         ))}
@@ -368,7 +333,7 @@ export const GoLiveScreen = ({ navigation }: any) => {
       ) : null}
 
       <Button
-        title={loading ? t('subscription.processing') : t('goLive.goLiveNow')}
+        title={loading ? t('subscription.processing') : t('aiOnboarding.continue')}
         onPress={handleCompleteProfile}
         size="large"
         style={{ marginTop: 24 }}
@@ -384,14 +349,14 @@ export const GoLiveScreen = ({ navigation }: any) => {
     <View style={styles.centerContainer}>
       <ActivityIndicator size="large" color={colors.primary} />
       <Typography variant="h3" align="center" style={{ marginTop: 24 }}>
-        {t('goLive.migratingTitle')}
+        {t('aiOnboarding.migratingTitle')}
       </Typography>
       <Typography variant="body" color={colors.textSecondary} align="center" style={{ marginTop: 8 }}>
         {migrationProgress?.step === 'reading'
-          ? t('goLive.migratingReading')
+          ? t('aiOnboarding.migratingReading')
           : migrationProgress?.step === 'uploading'
-            ? t('goLive.migratingUploading')
-            : t('goLive.migratingProcessing')}
+            ? t('aiOnboarding.migratingUploading')
+            : t('aiOnboarding.migratingProcessing')}
       </Typography>
 
       {/* Progress bar */}
@@ -412,29 +377,33 @@ export const GoLiveScreen = ({ navigation }: any) => {
         <Check color="#fff" size={48} />
       </View>
       <Typography variant="h1" align="center" style={{ marginTop: 24 }}>
-        {t('goLive.successTitle')}
+        {t('aiOnboarding.successTitle')}
       </Typography>
       <Typography variant="body" color={colors.textSecondary} align="center" style={{ marginTop: 8 }}>
-        {t('goLive.successDesc')}
+        {t('aiOnboarding.successDesc')}
       </Typography>
 
       {migrationResult && (
         <Card style={{ marginTop: 24, width: '100%' }}>
           <Typography variant="caption" color={colors.textSecondary}>
-            {t('goLive.migratedWorkouts', { count: migrationResult.workoutsInserted })}
+            {t('aiOnboarding.migratedWorkouts', { count: migrationResult.workoutsInserted })}
           </Typography>
           <Typography variant="caption" color={colors.textSecondary}>
-            {t('goLive.migratedPRs', { count: migrationResult.prsInserted })}
+            {t('aiOnboarding.migratedPRs', { count: migrationResult.prsInserted })}
           </Typography>
           <Typography variant="caption" color={colors.textSecondary}>
-            {t('goLive.migratedMeasurements', { count: migrationResult.measurementsInserted })}
+            {t('aiOnboarding.migratedMeasurements', { count: migrationResult.measurementsInserted })}
           </Typography>
         </Card>
       )}
 
       <Button
-        title={t('goLive.done')}
-        onPress={() => navigation.goBack()}
+        title={t('aiOnboarding.startChatting')}
+        onPress={() => {
+          navigation.goBack();
+          // Small delay for modal dismiss, then navigate to chat
+          setTimeout(() => navigation.navigate('AIChat'), 300);
+        }}
         size="large"
         style={{ marginTop: 32 }}
       />
@@ -446,7 +415,16 @@ export const GoLiveScreen = ({ navigation }: any) => {
   // ══════════════════════════════════════════════════════
   return (
     <ScreenLayout>
-      {step === 'intro' && renderIntro()}
+      {/* Close button */}
+      <View style={styles.closeRow}>
+        <TouchableOpacity
+          style={styles.closeButton}
+          onPress={() => navigation.goBack()}
+        >
+          <X color={colors.textSecondary} size={22} />
+        </TouchableOpacity>
+      </View>
+
       {step === 'signup' && renderSignup()}
       {step === 'profile' && renderProfile()}
       {step === 'migrating' && renderMigrating()}
@@ -457,40 +435,30 @@ export const GoLiveScreen = ({ navigation }: any) => {
 
 // ── Styles ────────────────────────────────────────────────
 const styles = StyleSheet.create({
-  heroSection: {
-    alignItems: 'center',
-    paddingVertical: 32,
+  closeRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginBottom: 8,
   },
-  rocketContainer: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: colors.primary + '15',
+  closeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.surfaceLight,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  benefitsContainer: {
-    gap: 12,
-  },
-  benefitCard: {
-    marginBottom: 0,
-  },
-  benefitRow: {
-    flexDirection: 'row',
+  stepHeader: {
     alignItems: 'center',
-    gap: 16,
+    marginBottom: 24,
   },
-  benefitIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+  stepIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
     backgroundColor: colors.primary + '12',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  benefitText: {
-    flex: 1,
-    gap: 2,
   },
   input: {
     backgroundColor: colors.surfaceLight,

@@ -17,14 +17,22 @@ import { StorageService } from '../services/storage';
 import { BodyMeasurement, MeasurementKey } from '../types';
 import { generateId } from '../utils/generateId';
 import { useAuth } from '@clerk/clerk-expo';
-import { Rocket } from 'lucide-react-native';
+import { Crown, Sparkles, Zap, CreditCard, LogOut } from 'lucide-react-native';
 
 export const SettingsScreen = ({ navigation }: any) => {
     const { t, i18n } = useTranslation();
     const { updateUserStats, userStats, workouts, refreshData, bodyMeasurements, addBodyMeasurement } = useWorkout();
-    const { tier, trialDaysRemaining, purchaseLocalPremium, restorePurchases } = useSubscription();
+    const {
+        tier,
+        isPro,
+        isAISubscriber,
+        trialDaysRemaining,
+        purchaseLocalPremium,
+        purchaseAISubscription,
+        openManageSubscription,
+        restorePurchases,
+    } = useSubscription();
     const { isSignedIn, signOut } = useAuth();
-    const [isLive, setIsLive] = useState(false);
     const [weight, setWeight] = useState('');
     const [bodyFat, setBodyFat] = useState('');
     const [height, setHeight] = useState('');
@@ -92,10 +100,6 @@ export const SettingsScreen = ({ navigation }: any) => {
             setHeight(userStats.height?.toString() || '');
         }
     }, [userStats]);
-
-    useEffect(() => {
-        StorageService.getIsLive().then(setIsLive);
-    }, []);
 
     const handleSaveStats = async () => {
         const w = parseFloat(weight);
@@ -182,18 +186,12 @@ export const SettingsScreen = ({ navigation }: any) => {
                 t('settings.restartRequired'),
                 t('settings.restartMessage'),
                 async () => {
-                    // 1. Save preference first
                     await saveLanguagePreference(lang);
-
-                    // 2. Enforce new RTL setting (DO NOT change i18n instance yet to avoid flicker)
                     I18nManager.allowRTL(newIsRTL);
                     I18nManager.forceRTL(newIsRTL);
-
-                    // 3. Reload app
                     try {
                         await Updates.reloadAsync();
                     } catch (e) {
-                        // Fallback for dev mode
                         if (__DEV__ && NativeModules.DevSettings) {
                             NativeModules.DevSettings.reload();
                         } else {
@@ -201,13 +199,12 @@ export const SettingsScreen = ({ navigation }: any) => {
                         }
                     }
                 },
-                'primary', // Restart is a primary action here, or arguably danger/warning. Primary is fine.
+                'primary',
                 t('common.ok'),
                 t('common.cancel'),
                 () => { }
             );
         } else {
-            // No RTL change needed, just update immediately
             i18n.changeLanguage(lang);
             saveLanguagePreference(lang);
         }
@@ -248,7 +245,6 @@ export const SettingsScreen = ({ navigation }: any) => {
         };
 
         await addBodyMeasurement(measurement);
-        // Clear fields
         setMNeck(''); setMChest(''); setMWaist(''); setMHips('');
         setMBiceps(''); setMThighs(''); setMCalves('');
         showModal(t('measurements.saved'), t('measurements.savedMessage'), undefined, 'success');
@@ -264,118 +260,160 @@ export const SettingsScreen = ({ navigation }: any) => {
         { key: 'calves', label: t('measurements.calves'), state: mCalves, setter: setMCalves },
     ];
 
+    // ── Determine what to show in subscription card ──
+    const renderSubscriptionCard = () => {
+        if (isAISubscriber) {
+            // ── AI Subscriber ──
+            return (
+                <Card style={styles.aiCard}>
+                    <View style={styles.tierHeader}>
+                        <View style={styles.tierBadgeAI}>
+                            <Sparkles color={colors.primary} size={16} />
+                            <Typography variant="body" bold color={colors.primary} style={{ marginLeft: 8 }}>
+                                {t('settings.aiActive')}
+                            </Typography>
+                        </View>
+                    </View>
+
+                    <Typography variant="caption" color={colors.textSecondary} style={{ marginTop: 8 }}>
+                        {t('settings.aiActiveDesc')}
+                    </Typography>
+
+                    {/* Manage Subscription */}
+                    <TouchableOpacity
+                        style={styles.manageRow}
+                        onPress={openManageSubscription}
+                        activeOpacity={0.7}
+                    >
+                        <CreditCard color={colors.textSecondary} size={18} />
+                        <Typography variant="body" color={colors.text} style={{ flex: 1, marginLeft: 12 }}>
+                            {t('settings.manageSubscription')}
+                        </Typography>
+                        <Typography variant="caption" color={colors.textMuted}>›</Typography>
+                    </TouchableOpacity>
+
+                    {/* Sign Out */}
+                    {isSignedIn && (
+                        <TouchableOpacity
+                            style={styles.manageRow}
+                            onPress={async () => {
+                                await signOut();
+                                await StorageService.setIsLive(false);
+                            }}
+                            activeOpacity={0.7}
+                        >
+                            <LogOut color={colors.error} size={18} />
+                            <Typography variant="body" color={colors.error} style={{ flex: 1, marginLeft: 12 }}>
+                                {t('settings.signOut')}
+                            </Typography>
+                        </TouchableOpacity>
+                    )}
+                </Card>
+            );
+        }
+
+        if (isPro) {
+            // ── Pro (one-time purchase) ──
+            return (
+                <Card style={styles.premiumCard}>
+                    <View style={styles.tierHeader}>
+                        <View style={styles.tierBadgePro}>
+                            <Crown color={colors.success} size={16} />
+                            <Typography variant="body" bold color={colors.success} style={{ marginLeft: 8 }}>
+                                {t('subscription.premiumActive')}
+                            </Typography>
+                        </View>
+                    </View>
+
+                    {/* Upsell to AI */}
+                    <TouchableOpacity
+                        style={styles.upgradeRow}
+                        onPress={() => navigation.navigate('AI')}
+                        activeOpacity={0.7}
+                    >
+                        <View style={styles.upgradeIconCircle}>
+                            <Sparkles color={colors.primary} size={18} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Typography variant="body" bold>{t('settings.upgradeToAI')}</Typography>
+                            <Typography variant="caption" color={colors.textSecondary}>
+                                {t('settings.upgradeToAIDesc')}
+                            </Typography>
+                        </View>
+                        <Typography variant="body" color={colors.primary}>›</Typography>
+                    </TouchableOpacity>
+                </Card>
+            );
+        }
+
+        // ── Trial / Expired ──
+        return (
+            <Card>
+                <Typography variant="h3" style={{ marginBottom: 4 }}>{t('subscription.statusTitle')}</Typography>
+
+                {tier === 'trial' ? (
+                    <View>
+                        <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 12 }}>
+                            {t('subscription.trialBanner', { days: trialDaysRemaining })}
+                        </Typography>
+                        <View style={styles.trialProgressBar}>
+                            <View style={[styles.trialProgressFill, { width: `${(trialDaysRemaining / 5) * 100}%` }]} />
+                        </View>
+                        <Button
+                            title={t('subscription.unlockForever')}
+                            onPress={async () => {
+                                const result = await purchaseLocalPremium();
+                                if (!result.success) {
+                                    showModal(t('subscription.purchaseError'), result.error || '', undefined, 'danger');
+                                }
+                            }}
+                            size="medium"
+                            style={{ marginTop: 12 }}
+                        />
+                    </View>
+                ) : (
+                    <View>
+                        <Typography variant="caption" color={colors.error} style={{ marginBottom: 12 }}>
+                            {t('subscription.trialExpired')}
+                        </Typography>
+                        <Button
+                            title={t('subscription.unlockForever')}
+                            onPress={async () => {
+                                const result = await purchaseLocalPremium();
+                                if (!result.success) {
+                                    showModal(t('subscription.purchaseError'), result.error || '', undefined, 'danger');
+                                }
+                            }}
+                            size="medium"
+                        />
+                    </View>
+                )}
+
+                <Button
+                    title={t('subscription.restorePurchase')}
+                    variant="ghost"
+                    size="small"
+                    onPress={async () => {
+                        const result = await restorePurchases();
+                        if (result.restoredPro || result.restoredAI) {
+                            showModal(t('subscription.restored'), t('subscription.restoredMessage'), undefined, 'success');
+                        } else {
+                            showModal(t('subscription.noRestoreFound'), t('subscription.noRestoreFoundMessage'), undefined, 'primary');
+                        }
+                    }}
+                    style={{ marginTop: 8 }}
+                />
+            </Card>
+        );
+    };
+
     return (
         <ScreenLayout>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
                 <Typography variant="h1" style={{ marginBottom: 24 }}>{t('settings.title')}</Typography>
 
-                {/* Subscription Status */}
-                <Card style={tier === 'local_premium' ? styles.premiumCard : undefined}>
-                    <Typography variant="h3" style={{ marginBottom: 4 }}>{t('subscription.statusTitle')}</Typography>
-
-                    {tier === 'local_premium' ? (
-                        <View style={styles.premiumBadge}>
-                            <Typography variant="body" bold color={colors.success}>
-                                {t('subscription.premiumActive')}
-                            </Typography>
-                        </View>
-                    ) : tier === 'trial' ? (
-                        <View>
-                            <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 12 }}>
-                                {t('subscription.trialBanner', { days: trialDaysRemaining })}
-                            </Typography>
-                            <View style={styles.trialProgressBar}>
-                                <View style={[styles.trialProgressFill, { width: `${(trialDaysRemaining / 5) * 100}%` }]} />
-                            </View>
-                            <Button
-                                title={t('subscription.unlockForever')}
-                                onPress={async () => {
-                                    const result = await purchaseLocalPremium();
-                                    if (!result.success) {
-                                        showModal(t('subscription.purchaseError'), result.error || '', undefined, 'danger');
-                                    }
-                                }}
-                                size="medium"
-                                style={{ marginTop: 12 }}
-                            />
-                        </View>
-                    ) : (
-                        <View>
-                            <Typography variant="caption" color={colors.error} style={{ marginBottom: 12 }}>
-                                {t('subscription.trialExpired')}
-                            </Typography>
-                            <Button
-                                title={t('subscription.unlockForever')}
-                                onPress={async () => {
-                                    const result = await purchaseLocalPremium();
-                                    if (!result.success) {
-                                        showModal(t('subscription.purchaseError'), result.error || '', undefined, 'danger');
-                                    }
-                                }}
-                                size="medium"
-                            />
-                        </View>
-                    )}
-
-                    {tier !== 'local_premium' && (
-                        <Button
-                            title={t('subscription.restorePurchase')}
-                            variant="ghost"
-                            size="small"
-                            onPress={async () => {
-                                const result = await restorePurchases();
-                                if (result.restored) {
-                                    showModal(t('subscription.restored'), t('subscription.restoredMessage'), undefined, 'success');
-                                } else {
-                                    showModal(t('subscription.noRestoreFound'), t('subscription.noRestoreFoundMessage'), undefined, 'primary');
-                                }
-                            }}
-                            style={{ marginTop: 8 }}
-                        />
-                    )}
-                </Card>
-
-                {/* Go Live */}
-                <Card style={isLive ? styles.liveCard : styles.goLiveCard}>
-                    {isLive ? (
-                        <View>
-                            <View style={styles.liveBadge}>
-                                <Typography variant="body" bold color={colors.success}>
-                                    ✅ {t('goLive.youAreLive')}
-                                </Typography>
-                            </View>
-                            {isSignedIn && (
-                                <Button
-                                    title={t('goLive.signOut')}
-                                    variant="ghost"
-                                    size="small"
-                                    onPress={async () => {
-                                        await signOut();
-                                        await StorageService.setIsLive(false);
-                                        setIsLive(false);
-                                    }}
-                                    style={{ marginTop: 8 }}
-                                />
-                            )}
-                        </View>
-                    ) : (
-                        <TouchableOpacity
-                            style={styles.goLiveButton}
-                            onPress={() => navigation.navigate('GoLive')}
-                            activeOpacity={0.8}
-                        >
-                            <View style={styles.goLiveIconContainer}>
-                                <Rocket color={colors.primary} size={28} />
-                            </View>
-                            <View style={{ flex: 1 }}>
-                                <Typography variant="h3">{t('goLive.goLive')}</Typography>
-                                <Typography variant="caption" color={colors.textSecondary}>
-                                    {t('goLive.goLiveDesc')}
-                                </Typography>
-                            </View>
-                        </TouchableOpacity>
-                    )}
-                </Card>
+                {/* Subscription / Plan Status */}
+                {renderSubscriptionCard()}
 
                 {/* Language Selector */}
                 <Card>
@@ -598,9 +636,11 @@ export const SettingsScreen = ({ navigation }: any) => {
                         {t('settings.version')}
                     </Typography>
                     <Typography variant="caption" style={{ textAlign: 'center', marginTop: 4 }}>
-                        {tier === 'local_premium'
-                            ? t('subscription.premiumTagline')
-                            : t('settings.tagline')
+                        {isAISubscriber
+                            ? t('settings.aiTagline')
+                            : isPro
+                                ? t('subscription.premiumTagline')
+                                : t('settings.tagline')
                         }
                     </Typography>
                 </View>
@@ -669,18 +709,62 @@ const styles = StyleSheet.create({
         marginTop: 24,
         paddingVertical: 16,
     },
+    // ── Subscription card styles ──────────────────────────
     premiumCard: {
         borderWidth: 1,
         borderColor: colors.success + '40',
     },
-    premiumBadge: {
+    aiCard: {
+        borderWidth: 1,
+        borderColor: colors.primary + '40',
+    },
+    tierHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 8,
-        paddingVertical: 10,
-        paddingHorizontal: 16,
+    },
+    tierBadgePro: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+        paddingHorizontal: 14,
         backgroundColor: colors.success + '12',
         borderRadius: borderRadius.m,
+    },
+    tierBadgeAI: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+        paddingHorizontal: 14,
+        backgroundColor: colors.primary + '12',
+        borderRadius: borderRadius.m,
+    },
+    upgradeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 16,
+        paddingVertical: 12,
+        paddingHorizontal: 12,
+        backgroundColor: colors.primary + '08',
+        borderRadius: borderRadius.m,
+        borderWidth: 1,
+        borderColor: colors.primary + '20',
+    },
+    upgradeIconCircle: {
+        width: 40,
+        height: 40,
+        borderRadius: 12,
+        backgroundColor: colors.primary + '15',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    manageRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 14,
+        borderTopWidth: 1,
+        borderTopColor: colors.border + '30',
+        marginTop: 8,
     },
     trialProgressBar: {
         height: 6,
@@ -733,35 +817,5 @@ const styles = StyleSheet.create({
         paddingVertical: 2,
         backgroundColor: colors.surfaceLight,
         borderRadius: borderRadius.xs,
-    },
-    // ── Go Live styles ────────────────────────────────────
-    goLiveCard: {
-        borderWidth: 1,
-        borderColor: colors.primary + '30',
-    },
-    liveCard: {
-        borderWidth: 1,
-        borderColor: colors.success + '40',
-    },
-    goLiveButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 16,
-    },
-    goLiveIconContainer: {
-        width: 52,
-        height: 52,
-        borderRadius: 14,
-        backgroundColor: colors.primary + '15',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    liveBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 10,
-        paddingHorizontal: 16,
-        backgroundColor: colors.success + '12',
-        borderRadius: borderRadius.m,
     },
 });

@@ -13,11 +13,12 @@ import { WorkoutDetailsScreen } from '../screens/WorkoutDetailsScreen';
 import { ProgramsScreen } from '../screens/ProgramsScreen';
 import { ProgramDetailScreen } from '../screens/ProgramDetailScreen';
 import { PaywallScreen } from '../screens/PaywallScreen';
-import { GoLiveScreen } from '../screens/GoLiveScreen';
+import { AIGateScreen } from '../screens/AIGateScreen';
+import { AIOnboardingScreen } from '../screens/AIOnboardingScreen';
 import { AIChatScreen } from '../screens/AIChatScreen';
 import { useSubscription } from '../context/SubscriptionContext';
 import { colors, borderRadius } from '../theme/colors';
-import { Home, History, TrendingUp, Settings, BookOpen } from 'lucide-react-native';
+import { Home, History, TrendingUp, Settings, BookOpen, Sparkles } from 'lucide-react-native';
 import { RootStackParamList, TabParamList } from '../types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -98,6 +99,14 @@ const TabNavigator = () => {
                 }}
             />
             <Tab.Screen
+                name="AI"
+                component={AIGateScreen}
+                options={{
+                    tabBarIcon: ({ color, size }) => <Sparkles color={color} size={size - 2} />,
+                    tabBarLabel: t('tabs.ai'),
+                }}
+            />
+            <Tab.Screen
                 name="Settings"
                 component={SettingsScreen}
                 options={{
@@ -145,7 +154,7 @@ export const AppNavigator = () => {
         );
     }
 
-    // Normal app flow (trial or premium)
+    // Normal app flow (trial, premium, or AI subscriber)
     return (
         <NavigationContainer theme={AppTheme}>
             <Stack.Navigator
@@ -208,8 +217,8 @@ export const AppNavigator = () => {
                     }}
                 />
                 <Stack.Screen
-                    name="GoLive"
-                    component={GoLiveScreen}
+                    name="AIOnboarding"
+                    component={AIOnboardingScreen}
                     options={{
                         presentation: 'fullScreenModal',
                         headerShown: false,

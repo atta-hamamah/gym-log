@@ -3,6 +3,10 @@
  * 
  * This is the ONLY file that touches RevenueCat directly.
  * All other code interacts with billing through this service.
+ * 
+ * Two products:
+ *  - "RepAI Pro"  → one-time purchase, full local features forever
+ *  - "RepAI AI"   → monthly subscription, AI coach + cloud sync
  */
 
 import { Platform } from 'react-native';
@@ -15,7 +19,8 @@ import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 
 // ── Configuration ────────────────────────────────────────
 const REVENUECAT_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY || '';
-const ENTITLEMENT_ID = 'RepAI Pro';
+const ENTITLEMENT_PRO = 'RepAI Pro';
+const ENTITLEMENT_AI  = 'RepAI AI';
 
 // ── Types ────────────────────────────────────────────────
 export interface BillingProduct {
@@ -59,20 +64,52 @@ export async function initBilling(): Promise<boolean> {
 }
 
 /**
- * Check if the user has an active premium entitlement.
+ * Check if the user has an active Pro (one-time) entitlement.
  */
-export async function checkEntitlement(): Promise<boolean> {
+export async function checkProEntitlement(): Promise<boolean> {
   try {
     const customerInfo = await Purchases.getCustomerInfo();
-    return typeof customerInfo.entitlements.active[ENTITLEMENT_ID] !== 'undefined';
+    return typeof customerInfo.entitlements.active[ENTITLEMENT_PRO] !== 'undefined';
   } catch (error) {
-    console.warn('[Billing] Failed to check entitlement:', error);
+    console.warn('[Billing] Failed to check Pro entitlement:', error);
     return false;
   }
 }
 
 /**
- * Present the RevenueCat paywall UI.
+ * Check if the user has an active AI subscription entitlement.
+ */
+export async function checkAIEntitlement(): Promise<boolean> {
+  try {
+    const customerInfo = await Purchases.getCustomerInfo();
+    return typeof customerInfo.entitlements.active[ENTITLEMENT_AI] !== 'undefined';
+  } catch (error) {
+    console.warn('[Billing] Failed to check AI entitlement:', error);
+    return false;
+  }
+}
+
+/**
+ * Check both entitlements at once (more efficient — single API call).
+ */
+export async function checkAllEntitlements(): Promise<{ hasPro: boolean; hasAI: boolean }> {
+  try {
+    const customerInfo = await Purchases.getCustomerInfo();
+    return {
+      hasPro: typeof customerInfo.entitlements.active[ENTITLEMENT_PRO] !== 'undefined',
+      hasAI:  typeof customerInfo.entitlements.active[ENTITLEMENT_AI]  !== 'undefined',
+    };
+  } catch (error) {
+    console.warn('[Billing] Failed to check entitlements:', error);
+    return { hasPro: false, hasAI: false };
+  }
+}
+
+// Keep backward-compatible alias
+export const checkEntitlement = checkProEntitlement;
+
+/**
+ * Present the RevenueCat paywall UI (for Pro one-time purchase).
  * Returns true if user purchased or restored.
  */
 export async function presentPaywall(): Promise<BillingPurchaseResult> {
@@ -95,16 +132,55 @@ export async function presentPaywall(): Promise<BillingPurchaseResult> {
 }
 
 /**
+ * Present the RevenueCat paywall for AI subscription.
+ */
+export async function presentAIPaywall(): Promise<BillingPurchaseResult> {
+  try {
+    // Use the same RevenueCat paywall — it will show offerings
+    // configured for the AI subscription in the RC dashboard.
+    const result: PAYWALL_RESULT = await RevenueCatUI.presentPaywall();
+
+    switch (result) {
+      case PAYWALL_RESULT.PURCHASED:
+      case PAYWALL_RESULT.RESTORED:
+        return { success: true };
+      case PAYWALL_RESULT.NOT_PRESENTED:
+      case PAYWALL_RESULT.ERROR:
+      case PAYWALL_RESULT.CANCELLED:
+      default:
+        return { success: false, error: 'Subscription cancelled or failed' };
+    }
+  } catch (error: any) {
+    return { success: false, error: error?.message || 'AI Paywall error' };
+  }
+}
+
+/**
  * Restore purchases (for users who reinstalled the app).
  */
-export async function restorePurchasesRC(): Promise<{ success: boolean; restored: boolean }> {
+export async function restorePurchasesRC(): Promise<{ success: boolean; restoredPro: boolean; restoredAI: boolean }> {
   try {
     const customerInfo = await Purchases.restorePurchases();
-    const hasEntitlement = typeof customerInfo.entitlements.active[ENTITLEMENT_ID] !== 'undefined';
-    return { success: true, restored: hasEntitlement };
+    const restoredPro = typeof customerInfo.entitlements.active[ENTITLEMENT_PRO] !== 'undefined';
+    const restoredAI  = typeof customerInfo.entitlements.active[ENTITLEMENT_AI]  !== 'undefined';
+    return { success: true, restoredPro, restoredAI };
   } catch (error) {
     console.warn('[Billing] Failed to restore purchases:', error);
-    return { success: false, restored: false };
+    return { success: false, restoredPro: false, restoredAI: false };
+  }
+}
+
+/**
+ * Get the management URL for the current user's subscriptions.
+ * This lets users cancel/modify their AI subscription.
+ */
+export async function getManagementURL(): Promise<string | null> {
+  try {
+    const customerInfo = await Purchases.getCustomerInfo();
+    return customerInfo.managementURL || null;
+  } catch (error) {
+    console.warn('[Billing] Failed to get management URL:', error);
+    return null;
   }
 }
 

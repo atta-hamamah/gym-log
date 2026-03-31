@@ -122,7 +122,7 @@ export interface DetectedPR {
 // ──────────────────────────────────────────────────────
 
 // ── Subscription ─────────────────────────────────────────
-export type SubscriptionTier = 'trial' | 'expired' | 'local_premium';
+export type SubscriptionTier = 'trial' | 'expired' | 'local_premium' | 'ai_subscriber';
 // ──────────────────────────────────────────────────────────
 
 export type RootStackParamList = {
@@ -132,7 +132,7 @@ export type RootStackParamList = {
   WorkoutDetails: { workoutId: string };
   ProgramDetail: { programId: string };
   Paywall: undefined;
-  GoLive: undefined;
+  AIOnboarding: undefined;
   AIChat: undefined;
 };
 
@@ -141,5 +141,6 @@ export type TabParamList = {
   Programs: undefined;
   History: undefined;
   Progress: undefined;
+  AI: undefined;
   Settings: undefined;
 };

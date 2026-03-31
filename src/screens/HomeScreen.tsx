@@ -1,5 +1,5 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { View, ScrollView, TouchableOpacity, StyleSheet, TextInput, Modal, Alert, Image, Animated } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, ScrollView, TouchableOpacity, StyleSheet, TextInput, Modal, Image } from 'react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { TrialBanner } from '../components/TrialBanner';
@@ -12,8 +12,6 @@ import { format, isThisWeek } from 'date-fns';
 import { colors, spacing, borderRadius, shadows } from '../theme/colors';
 import { WorkoutSession } from '../types';
 import { useTranslation } from 'react-i18next';
-import { StorageService } from '../services/storage';
-import { Bot } from 'lucide-react-native';
 
 export const HomeScreen = ({ navigation }: any) => {
     const { t } = useTranslation();
@@ -21,22 +19,6 @@ export const HomeScreen = ({ navigation }: any) => {
     const { tier } = useSubscription();
     const [nameModalVisible, setNameModalVisible] = useState(false);
     const [workoutName, setWorkoutName] = useState('');
-    const [isLive, setIsLive] = useState(false);
-    const fabScale = useState(new Animated.Value(0))[0];
-
-    useEffect(() => {
-        StorageService.getIsLive().then((live) => {
-            setIsLive(live);
-            if (live) {
-                Animated.spring(fabScale, {
-                    toValue: 1,
-                    tension: 80,
-                    friction: 8,
-                    useNativeDriver: true,
-                }).start();
-            }
-        });
-    }, []);
 
     const recentWorkouts = workouts.slice(0, 5);
 
@@ -244,19 +226,6 @@ export const HomeScreen = ({ navigation }: any) => {
                     </Card>
                 </View>
             </Modal>
-
-            {/* Floating AI Chat Button */}
-            {isLive && (
-                <Animated.View style={[styles.fab, { transform: [{ scale: fabScale }] }]}>
-                    <TouchableOpacity
-                        style={styles.fabButton}
-                        onPress={() => navigation.navigate('AIChat')}
-                        activeOpacity={0.85}
-                    >
-                        <Bot color="#fff" size={26} />
-                    </TouchableOpacity>
-                </Animated.View>
-            )}
         </ScreenLayout>
     );
 };
@@ -328,25 +297,5 @@ const styles = StyleSheet.create({
     modalButtons: {
         flexDirection: 'row',
         marginTop: 20,
-    },
-    // ── Floating AI Button ──────────────────────────────
-    fab: {
-        position: 'absolute',
-        bottom: 24,
-        right: 20,
-        zIndex: 100,
-    },
-    fabButton: {
-        width: 58,
-        height: 58,
-        borderRadius: 29,
-        backgroundColor: colors.primary,
-        justifyContent: 'center',
-        alignItems: 'center',
-        elevation: 8,
-        shadowColor: colors.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.35,
-        shadowRadius: 8,
     },
 });

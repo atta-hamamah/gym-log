@@ -13,6 +13,7 @@ const KEYS = {
   FIRST_OPEN: '@gym_log_first_open',
   PURCHASE_STATUS: '@gym_log_purchase_status',
   IS_LIVE: '@gym_log_is_live',
+  AI_SUBSCRIPTION_STATUS: '@gym_log_ai_sub_status',
 };
 
 export const StorageService = {
@@ -216,6 +217,24 @@ export const StorageService = {
     }
   },
 
+  // AI SUBSCRIPTION
+  async getAISubscriptionStatus(): Promise<string | null> {
+    try {
+      return await AsyncStorage.getItem(KEYS.AI_SUBSCRIPTION_STATUS);
+    } catch (e) {
+      console.error('Failed to get AI subscription status', e);
+      return null;
+    }
+  },
+
+  async setAISubscriptionStatus(status: string): Promise<void> {
+    try {
+      await AsyncStorage.setItem(KEYS.AI_SUBSCRIPTION_STATUS, status);
+    } catch (e) {
+      console.error('Failed to set AI subscription status', e);
+    }
+  },
+
   // CUSTOM EXERCISES (direct access for migration)
   async getCustomExercises(): Promise<Exercise[]> {
     try {
@@ -226,3 +245,4 @@ export const StorageService = {
     }
   },
 };
+

@@ -16,6 +16,7 @@ const FEATURES = [
   { icon: TrendingUp, labelKey: 'subscription.features.progress' },
   { icon: Trophy, labelKey: 'subscription.features.pr' },
   { icon: FileSpreadsheet, labelKey: 'subscription.features.export' },
+  { icon: Zap, labelKey: 'subscription.features.noLimits' },
 ];
 
 export const PaywallScreen = () => {
@@ -56,7 +57,7 @@ export const PaywallScreen = () => {
 
     const result = await restorePurchases();
 
-    if (result.success && !result.restored) {
+    if (result.success && !result.restoredPro && !result.restoredAI) {
       setError(t('subscription.noRestoreFound'));
     }
 
