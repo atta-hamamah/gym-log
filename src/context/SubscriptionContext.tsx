@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { AppState, AppStateStatus, Linking } from 'react-native';
+import { useUser } from '@clerk/clerk-expo';
 import { StorageService } from '../services/storage';
 import {
   initBilling,
@@ -233,13 +234,16 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
   }, []);
 
+  const { user } = useUser();
+  const isSuperAdmin = user?.primaryEmailAddress?.emailAddress === 'super@admin.com';
+
   return (
     <SubscriptionContext.Provider
       value={{
-        tier,
-        isPro,
-        isAISubscriber,
-        trialDaysRemaining,
+        tier: isSuperAdmin ? 'ai_subscriber' : tier,
+        isPro: isSuperAdmin ? true : isPro,
+        isAISubscriber: isSuperAdmin ? true : isAISubscriber,
+        trialDaysRemaining: isSuperAdmin ? 0 : trialDaysRemaining,
         loading,
         purchaseLocalPremium,
         purchaseAISubscription,
