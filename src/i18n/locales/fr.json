@@ -164,7 +164,6 @@
     "error": "Erreur",
     "errorMessage": "Veuillez entrer un nom et un groupe musculaire"
   },
-
   "plateCalculator": {
     "title": "Calculateur de Plaques",
     "subtitle": "Guide de chargement par côté",
@@ -366,7 +365,7 @@
     "dataCleared": "Données supprimées",
     "dataClearedMessage": "Toutes les données ont été supprimées.",
     "version": "RepAI v1.0.0",
-    "tagline": "Sans pub • Sans abonnement • Accès à vie",
+    "tagline": "Sans pub • Paiement unique • Accès à vie",
     "language": "Langue",
     "languageDescription": "Choisissez votre langue préférée",
     "restartRequired": "Redémarrage nécessaire",

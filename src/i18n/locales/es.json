@@ -164,7 +164,6 @@
     "error": "Error",
     "errorMessage": "Ingresa nombre y grupo muscular"
   },
-
   "plateCalculator": {
     "title": "Calculadora de Discos",
     "subtitle": "Guía de carga por lado",
@@ -366,7 +365,7 @@
     "dataCleared": "Datos eliminados",
     "dataClearedMessage": "Todos los datos han sido eliminados.",
     "version": "RepAI v1.0.0",
-    "tagline": "Sin anuncios • Sin suscripciones • Acceso de por vida",
+    "tagline": "Sin anuncios • Pago único • Acceso de por vida",
     "language": "Idioma",
     "languageDescription": "Elige tu idioma preferido",
     "restartRequired": "Reinicio necesario",
