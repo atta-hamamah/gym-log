@@ -14,7 +14,7 @@ import {
 import { SubscriptionTier } from '../types';
 
 // ── Constants ────────────────────────────────────────────
-const TRIAL_DURATION_DAYS = 5;
+const TRIAL_DURATION_DAYS = 30;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 // ── Context Type ─────────────────────────────────────────
