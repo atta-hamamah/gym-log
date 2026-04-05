@@ -376,7 +376,13 @@
     "manageSubscription": "Gestionar suscripción",
     "signOut": "Cerrar sesión",
     "upgradeToAI": "Mejorar a Coach IA",
-    "upgradeToAIDesc": "Coaching personalizado y sincronización en la nube"
+    "upgradeToAIDesc": "Coaching personalizado y sincronización en la nube",
+    "deleteAccountTitle": "Eliminar cuenta",
+    "deleteAccountMessage": "¿Estás seguro de que deseas eliminar tu cuenta y todos los datos asociados de forma permanente? Esta acción no se puede deshacer.",
+    "confirmDeleteAccount": "Eliminar cuenta",
+    "understandDelete": "Entiendo que esto es permanente",
+    "deleteAccount": "Eliminar cuenta",
+    "deleteError": "Error al eliminar la cuenta."
   },
   "aiChat": {
     "subtitle": "Tu coach de fitness con IA",

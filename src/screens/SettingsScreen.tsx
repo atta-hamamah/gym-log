@@ -16,7 +16,9 @@ import { useSubscription } from '../context/SubscriptionContext';
 import { StorageService } from '../services/storage';
 import { BodyMeasurement, MeasurementKey } from '../types';
 import { generateId } from '../utils/generateId';
-import { useAuth } from '@clerk/clerk-expo';
+import { useAuth, useUser } from '@clerk/clerk-expo';
+import { useMutation } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { Crown, Sparkles, Zap, CreditCard, LogOut } from 'lucide-react-native';
 
 export const SettingsScreen = ({ navigation }: any) => {
@@ -33,6 +35,8 @@ export const SettingsScreen = ({ navigation }: any) => {
         restorePurchases,
     } = useSubscription();
     const { isSignedIn, signOut } = useAuth();
+    const { user } = useUser();
+    const deleteUser = useMutation(api.users.deleteUser);
     const [weight, setWeight] = useState('');
     const [bodyFat, setBodyFat] = useState('');
     const [height, setHeight] = useState('');
@@ -174,6 +178,37 @@ export const SettingsScreen = ({ navigation }: any) => {
             () => { },
             true,
             t('settings.confirmDelete')
+        );
+    };
+
+    const handleDeleteAccount = () => {
+        showModal(
+            t('settings.deleteAccountTitle', 'Delete Account'),
+            t('settings.deleteAccountMessage', 'Are you sure you want to delete your account and all associated data permanently? This action cannot be undone.'),
+            async () => {
+                try {
+                    if (user) {
+                        try {
+                            await deleteUser({ clerkId: user.id });
+                        } catch (convexError) {
+                            console.error("Failed to delete from Convex", convexError);
+                        }
+                        await user.delete();
+                    }
+                    await AsyncStorage.clear();
+                    await StorageService.setIsLive(false);
+                    await signOut();
+                } catch (error) {
+                    console.error("Error deleting account:", error);
+                    showModal(t('common.error', 'Error'), t('settings.deleteError', 'Failed to delete account.'), undefined, 'danger');
+                }
+            },
+            'danger',
+            t('settings.confirmDeleteAccount', 'Delete Account'),
+            t('common.cancel'),
+            () => { },
+            true,
+            t('settings.understandDelete', 'I understand this is permanent')
         );
     };
 
@@ -627,8 +662,17 @@ export const SettingsScreen = ({ navigation }: any) => {
                         title={t('settings.clearAllData')}
                         onPress={handleReset}
                         variant="outline"
-                        style={{ borderColor: colors.error }}
+                        style={{ borderColor: colors.error, marginBottom: 12 }}
                     />
+
+                    {isSignedIn && (
+                        <Button
+                            title={t('settings.deleteAccount', 'Delete Account')}
+                            onPress={handleDeleteAccount}
+                            variant="outline"
+                            style={{ borderColor: colors.error, backgroundColor: colors.error + '10' }}
+                        />
+                    )}
                 </Card>
 
                 <View style={styles.footer}>

@@ -98,3 +98,78 @@ export const markMigrationComplete = mutation({
     await ctx.db.patch(args.userId, { migrationComplete: true });
   },
 });
+
+/**
+ * Delete a user and all their associated data
+ */
+export const deleteUser = mutation({
+  args: { clerkId: v.string() },
+  handler: async (ctx, args) => {
+    // 1. Find the user
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
+      .first();
+
+    if (!user) return;
+
+    const userId = user._id;
+
+    // 2. Delete all sets associated with the user
+    const sets = await ctx.db
+      .query("sets")
+      .filter((q) => q.eq(q.field("userId"), userId))
+      .collect();
+    for (const set of sets) {
+      await ctx.db.delete(set._id);
+    }
+
+    // 3. Delete all exercise logs
+    const exerciseLogs = await ctx.db
+      .query("exerciseLogs")
+      .filter((q) => q.eq(q.field("userId"), userId))
+      .collect();
+    for (const log of exerciseLogs) {
+      await ctx.db.delete(log._id);
+    }
+
+    // 4. Delete all workouts
+    const workouts = await ctx.db
+      .query("workouts")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .collect();
+    for (const workout of workouts) {
+      await ctx.db.delete(workout._id);
+    }
+
+    // 5. Delete custom exercises
+    const customExercises = await ctx.db
+      .query("customExercises")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .collect();
+    for (const ce of customExercises) {
+      await ctx.db.delete(ce._id);
+    }
+
+    // 6. Delete personal records
+    const prs = await ctx.db
+      .query("personalRecords")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .collect();
+    for (const pr of prs) {
+      await ctx.db.delete(pr._id);
+    }
+
+    // 7. Delete body measurements
+    const measurements = await ctx.db
+      .query("bodyMeasurements")
+      .withIndex("by_userId", (q) => q.eq("userId", userId))
+      .collect();
+    for (const m of measurements) {
+      await ctx.db.delete(m._id);
+    }
+
+    // 8. Delete the user profile itself
+    await ctx.db.delete(userId);
+  },
+});

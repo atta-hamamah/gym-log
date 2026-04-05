@@ -376,7 +376,13 @@
     "manageSubscription": "Manage Subscription",
     "signOut": "Sign Out",
     "upgradeToAI": "Upgrade to AI Coach",
-    "upgradeToAIDesc": "Get personalized coaching & cloud sync"
+    "upgradeToAIDesc": "Get personalized coaching & cloud sync",
+    "deleteAccountTitle": "Delete Account",
+    "deleteAccountMessage": "Are you sure you want to delete your account and all associated data permanently? This action cannot be undone.",
+    "confirmDeleteAccount": "Delete Account",
+    "understandDelete": "I understand this is permanent",
+    "deleteAccount": "Delete Account",
+    "deleteError": "Failed to delete account."
   },
   "aiChat": {
     "subtitle": "Your AI fitness coach",

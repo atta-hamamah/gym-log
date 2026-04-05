@@ -376,7 +376,13 @@
     "manageSubscription": "إدارة الاشتراك",
     "signOut": "تسجيل الخروج",
     "upgradeToAI": "ترقية للمدرب الذكي",
-    "upgradeToAIDesc": "تدريب مخصص ومزامنة سحابية"
+    "upgradeToAIDesc": "تدريب مخصص ومزامنة سحابية",
+    "deleteAccountTitle": "حذف الحساب",
+    "deleteAccountMessage": "هل أنت متأكد أنك تريد حذف حسابك وجميع بياناتك المرتبطة به بشكل دائم؟ لا يمكن التراجع عن هذا الإجراء.",
+    "confirmDeleteAccount": "حذف الحساب",
+    "understandDelete": "أفهم أن هذا الإجراء دائم",
+    "deleteAccount": "حذف الحساب",
+    "deleteError": "فشل حذف الحساب."
   },
   "aiChat": {
     "subtitle": "مدربك الرياضي الذكي",
