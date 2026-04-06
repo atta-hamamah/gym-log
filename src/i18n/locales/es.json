@@ -296,6 +296,7 @@
     "almostReady": "¡Casi listo!",
     "needAccount": "Crea una cuenta para sincronizar tus datos y desbloquear tu coach IA.",
     "setupAccount": "Configurar cuenta",
+    "alreadyHaveAccount": "¿Ya tienes una cuenta? Inicia sesión",
     "feature": {
       "chat": "Coach de fitness IA personal",
       "insights": "Información inteligente de entrenamientos",

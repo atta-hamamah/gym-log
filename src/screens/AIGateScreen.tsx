@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
   Animated,
 } from 'react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
@@ -39,17 +39,21 @@ const AI_FEATURES = [
 
 export const AIGateScreen = ({ navigation }: any) => {
   const { t } = useTranslation();
-  const { isAISubscriber, purchaseAISubscription, restorePurchases } = useSubscription();
+  const { isAISubscriber, purchaseAISubscription } = useSubscription();
   const [isLive, setIsLive] = useState(false);
   const [subscribing, setSubscribing] = useState(false);
-  const [restoring, setRestoring] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fadeAnim = useState(new Animated.Value(0))[0];
   const scaleAnim = useState(new Animated.Value(0.95))[0];
 
-  useEffect(() => {
-    StorageService.getIsLive().then(setIsLive);
+  // Re-check isLive every time this screen gains focus
+  useFocusEffect(
+    useCallback(() => {
+      StorageService.getIsLive().then(setIsLive);
+    }, [])
+  );
 
+  useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -65,12 +69,7 @@ export const AIGateScreen = ({ navigation }: any) => {
     ]).start();
   }, []);
 
-  // If user is an AI subscriber AND has completed onboarding → go straight to chat
-  useEffect(() => {
-    if (isAISubscriber && isLive) {
-      navigation.navigate('AIChat');
-    }
-  }, [isAISubscriber, isLive, navigation]);
+
 
   const handleSubscribe = useCallback(async () => {
     setSubscribing(true);
@@ -83,9 +82,9 @@ export const AIGateScreen = ({ navigation }: any) => {
       const live = await StorageService.getIsLive();
       if (!live) {
         navigation.navigate('AIOnboarding');
-      } else {
-        navigation.navigate('AIChat');
       }
+      // If already live, the parent AITabScreen wrapper will
+      // automatically re-render and show AIChatScreen
     } else if (result.error) {
       setError(result.error);
     }
@@ -93,25 +92,13 @@ export const AIGateScreen = ({ navigation }: any) => {
     setSubscribing(false);
   }, [purchaseAISubscription, navigation]);
 
-  const handleRestore = useCallback(async () => {
-    setRestoring(true);
-    setError(null);
-
-    const result = await restorePurchases();
-
-    if (result.restoredAI) {
-      const live = await StorageService.getIsLive();
-      if (!live) {
-        navigation.navigate('AIOnboarding');
-      } else {
-        navigation.navigate('AIChat');
-      }
-    } else {
-      setError(t('subscription.noRestoreFound'));
-    }
-
-    setRestoring(false);
-  }, [restorePurchases, navigation, t]);
+  const handleSignIn = useCallback(() => {
+    // Navigate to AIOnboarding in sign-in mode — this handles:
+    // 1. Clerk authentication (sign in)
+    // 2. identifyUser() to link RevenueCat to Clerk ID (restores purchases automatically)
+    // 3. syncConvexToLocal() to restore cloud data
+    navigation.navigate('AIOnboarding');
+  }, [navigation]);
 
   // If already subscribed but not onboarded
   if (isAISubscriber && !isLive) {
@@ -198,7 +185,7 @@ export const AIGateScreen = ({ navigation }: any) => {
               onPress={handleSubscribe}
               size="large"
               fullWidth
-              disabled={subscribing || restoring}
+              disabled={subscribing}
               style={styles.subscribeButton}
             />
 
@@ -215,18 +202,14 @@ export const AIGateScreen = ({ navigation }: any) => {
             )}
 
             <TouchableOpacity
-              onPress={handleRestore}
-              disabled={restoring || subscribing}
+              onPress={handleSignIn}
+              disabled={subscribing}
               style={styles.restoreButton}
               activeOpacity={0.7}
             >
-              {restoring ? (
-                <ActivityIndicator size="small" color={colors.textSecondary} />
-              ) : (
-                <Typography variant="bodySmall" color={colors.textSecondary} style={{ textDecorationLine: 'underline' }}>
-                  {t('subscription.restorePurchase')}
-                </Typography>
-              )}
+              <Typography variant="bodySmall" color={colors.primary} style={{ textDecorationLine: 'underline' }}>
+                {t('aiGate.alreadyHaveAccount', 'Already have an account? Sign in')}
+              </Typography>
             </TouchableOpacity>
           </View>
         </ScrollView>

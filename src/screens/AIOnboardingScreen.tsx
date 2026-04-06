@@ -18,7 +18,7 @@ import { api } from '../../convex/_generated/api';
 import { migrateLocalToConvex, syncConvexToLocal, type MigrationProgress } from '../services/migration';
 import { useConvex } from 'convex/react';
 import { useTranslation } from 'react-i18next';
-import { Check, Brain, Cloud, ChevronRight, Calendar, Users, Sparkles, X } from 'lucide-react-native';
+import { Check, Brain, Cloud, ChevronRight, Calendar, Users, Sparkles, X, Eye, EyeOff } from 'lucide-react-native';
 
 type OnboardingStep = 'signup' | 'profile' | 'migrating' | 'complete';
 
@@ -42,6 +42,7 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
   const [lastName, setLastName] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [pendingVerification, setPendingVerification] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // ── Profile Fields ──
   const [dateOfBirth, setDateOfBirth] = useState('');
@@ -126,10 +127,9 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
         
         setMigrationProgress({ step: 'restoring', current: 1, total: 1 });
 
-        // Returning user - go immediately to chat!
+        // Returning user - go back to AI tab (wrapper will show chat)
         setTimeout(() => {
           navigation.goBack();
-          setTimeout(() => navigation.navigate('AIChat'), 300);
         }, 1000);
       } else {
         setError('Complete sign in via other methods not supported here yet.');
@@ -261,14 +261,27 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
           <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 4, marginTop: 12 }}>
             {t('aiOnboarding.password')}
           </Typography>
-          <TextInput
-            style={styles.input}
-            value={password}
-            onChangeText={setPassword}
-            placeholder="••••••••"
-            placeholderTextColor={colors.textMuted}
-            secureTextEntry
-          />
+          <View style={styles.passwordContainer}>
+            <TextInput
+              style={[styles.input, { marginBottom: 0, paddingRight: 45 }]}
+              value={password}
+              onChangeText={setPassword}
+              placeholder="••••••••"
+              placeholderTextColor={colors.textMuted}
+              secureTextEntry={!showPassword}
+            />
+            <TouchableOpacity 
+              onPress={() => setShowPassword(!showPassword)}
+              style={styles.eyeIcon}
+              activeOpacity={0.7}
+            >
+              {showPassword ? (
+                <EyeOff color={colors.textMuted} size={20} />
+              ) : (
+                <Eye color={colors.textMuted} size={20} />
+              )}
+            </TouchableOpacity>
+          </View>
 
           {error ? (
             <Typography variant="caption" color={colors.error} style={{ marginTop: 8 }}>
@@ -462,9 +475,8 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
       <Button
         title={t('aiOnboarding.startChatting')}
         onPress={() => {
+          // Go back to AI tab — the wrapper will show chat automatically
           navigation.goBack();
-          // Small delay for modal dismiss, then navigate to chat
-          setTimeout(() => navigation.navigate('AIChat'), 300);
         }}
         size="large"
         style={{ marginTop: 32 }}
@@ -532,6 +544,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     marginBottom: 12,
+  },
+  passwordContainer: {
+    marginBottom: 12,
+    justifyContent: 'center',
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: 16,
+    height: '100%',
+    justifyContent: 'center',
   },
   nameRow: {
     flexDirection: 'row',

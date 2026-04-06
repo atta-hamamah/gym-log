@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, Platform, ActivityIndicator } from 'react-native';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -17,11 +17,13 @@ import { AIGateScreen } from '../screens/AIGateScreen';
 import { AIOnboardingScreen } from '../screens/AIOnboardingScreen';
 import { AIChatScreen } from '../screens/AIChatScreen';
 import { useSubscription } from '../context/SubscriptionContext';
+import { StorageService } from '../services/storage';
 import { colors, borderRadius } from '../theme/colors';
 import { Home, History, TrendingUp, Settings, BookOpen, Sparkles } from 'lucide-react-native';
 import { RootStackParamList, TabParamList } from '../types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import { useFocusEffect } from '@react-navigation/native';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -100,7 +102,7 @@ const TabNavigator = () => {
             />
             <Tab.Screen
                 name="AI"
-                component={AIGateScreen}
+                component={AITabScreen}
                 options={{
                     tabBarIcon: ({ color, size }) => <Sparkles color={color} size={size - 2} />,
                     tabBarLabel: t('tabs.ai'),
@@ -116,6 +118,26 @@ const TabNavigator = () => {
             />
         </Tab.Navigator>
     );
+};
+
+// ── AI Tab: renders gate or chat inline (no modal overlay) ──
+const AITabScreen = (props: any) => {
+    const { isAISubscriber } = useSubscription();
+    const [isLive, setIsLive] = useState(false);
+
+    useFocusEffect(
+        useCallback(() => {
+            StorageService.getIsLive().then(setIsLive);
+        }, [])
+    );
+
+    // Subscribed + onboarded → show chat directly as tab content
+    if (isAISubscriber && isLive) {
+        return <AIChatScreen {...props} />;
+    }
+
+    // Otherwise show the gate/paywall
+    return <AIGateScreen {...props} />;
 };
 
 // ── Loading Screen ────────────────────────────────────────
@@ -219,15 +241,6 @@ export const AppNavigator = () => {
                 <Stack.Screen
                     name="AIOnboarding"
                     component={AIOnboardingScreen}
-                    options={{
-                        presentation: 'fullScreenModal',
-                        headerShown: false,
-                        animation: 'slide_from_bottom',
-                    }}
-                />
-                <Stack.Screen
-                    name="AIChat"
-                    component={AIChatScreen}
                     options={{
                         presentation: 'fullScreenModal',
                         headerShown: false,

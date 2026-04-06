@@ -198,9 +198,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const openManageSubscription = useCallback(async () => {
     try {
       const url = await getManagementURL();
-      if (url) {
-        await Linking.openURL(url);
-      }
+      await Linking.openURL(url);
     } catch (error) {
       console.warn('[Subscription] Failed to open management URL:', error);
     }
@@ -240,9 +238,11 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   // ── Sync Clerk User with RevenueCat ─────────────────────
   useEffect(() => {
     if (user?.id) {
-      identifyUser(user.id).catch(console.error);
+      identifyUser(user.id)
+        .then(() => refreshSubscriptionState())
+        .catch(console.error);
     }
-  }, [user?.id]);
+  }, [user?.id, refreshSubscriptionState]);
 
   const isSuperAdmin = user?.primaryEmailAddress?.emailAddress === 'super@admin.com';
 

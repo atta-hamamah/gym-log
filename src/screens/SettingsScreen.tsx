@@ -424,20 +424,7 @@ export const SettingsScreen = ({ navigation }: any) => {
                     </View>
                 )}
 
-                <Button
-                    title={t('subscription.restorePurchase')}
-                    variant="ghost"
-                    size="small"
-                    onPress={async () => {
-                        const result = await restorePurchases();
-                        if (result.restoredPro || result.restoredAI) {
-                            showModal(t('subscription.restored'), t('subscription.restoredMessage'), undefined, 'success');
-                        } else {
-                            showModal(t('subscription.noRestoreFound'), t('subscription.noRestoreFoundMessage'), undefined, 'primary');
-                        }
-                    }}
-                    style={{ marginTop: 8 }}
-                />
+
             </Card>
         );
     };

@@ -296,6 +296,7 @@
     "almostReady": "Almost Ready!",
     "needAccount": "Create an account to sync your data and unlock your AI coach.",
     "setupAccount": "Set Up Account",
+    "alreadyHaveAccount": "Already have an account? Sign in",
     "feature": {
       "chat": "Personal AI Fitness Coach",
       "insights": "Smart Workout Insights",

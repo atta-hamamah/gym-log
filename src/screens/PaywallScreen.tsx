@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
+import { View, StyleSheet, ScrollView, Image } from 'react-native';
 import { Typography } from '../components/Typography';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
@@ -21,9 +21,8 @@ const FEATURES = [
 
 export const PaywallScreen = () => {
   const { t } = useTranslation();
-  const { purchaseLocalPremium, restorePurchases, trialDaysRemaining, tier } = useSubscription();
+  const { purchaseLocalPremium, trialDaysRemaining, tier } = useSubscription();
   const [purchasing, setPurchasing] = useState(false);
-  const [restoring, setRestoring] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [product, setProduct] = useState<BillingProduct | null>(null);
 
@@ -51,18 +50,6 @@ export const PaywallScreen = () => {
     setPurchasing(false);
   };
 
-  const handleRestore = async () => {
-    setRestoring(true);
-    setError(null);
-
-    const result = await restorePurchases();
-
-    if (result.success && !result.restoredPro && !result.restoredAI) {
-      setError(t('subscription.noRestoreFound'));
-    }
-
-    setRestoring(false);
-  };
 
   const priceText = product?.localizedPrice || '$6.99';
   const isTrialActive = tier === 'trial' && trialDaysRemaining > 0;
@@ -121,7 +108,7 @@ export const PaywallScreen = () => {
             onPress={handlePurchase}
             size="large"
             fullWidth
-            disabled={purchasing || restoring}
+            disabled={purchasing}
             style={styles.purchaseButton}
           />
 
@@ -137,22 +124,6 @@ export const PaywallScreen = () => {
               </Typography>
             </View>
           )}
-
-          {/* Restore Purchase */}
-          <TouchableOpacity
-            onPress={handleRestore}
-            disabled={restoring || purchasing}
-            style={styles.restoreButton}
-            activeOpacity={0.7}
-          >
-            {restoring ? (
-              <ActivityIndicator size="small" color={colors.textSecondary} />
-            ) : (
-              <Typography variant="bodySmall" color={colors.textSecondary} style={{ textDecorationLine: 'underline' }}>
-                {t('subscription.restorePurchase')}
-              </Typography>
-            )}
-          </TouchableOpacity>
         </View>
       </ScrollView>
     </ScreenLayout>
@@ -223,10 +194,5 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     backgroundColor: colors.error + '15',
     borderRadius: borderRadius.s,
-  },
-  restoreButton: {
-    marginTop: 20,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
   },
 });

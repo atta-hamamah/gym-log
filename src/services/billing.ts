@@ -22,6 +22,10 @@ const REVENUECAT_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY || '';
 const ENTITLEMENT_PRO = 'RepAI Pro';
 const ENTITLEMENT_AI  = 'RepAI AI';
 
+// Offering identifiers — must match what's configured in RevenueCat dashboard
+const OFFERING_PRO = 'pro_lifetime';
+const OFFERING_AI  = 'ai_monthly';
+
 // ── Types ────────────────────────────────────────────────
 export interface BillingProduct {
   productId: string;
@@ -110,11 +114,24 @@ export const checkEntitlement = checkProEntitlement;
 
 /**
  * Present the RevenueCat paywall UI (for Pro one-time purchase).
- * Returns true if user purchased or restored.
+ * Shows only the 'pro_lifetime' offering.
  */
 export async function presentPaywall(): Promise<BillingPurchaseResult> {
   try {
-    const result: PAYWALL_RESULT = await RevenueCatUI.presentPaywall();
+    const offerings = await Purchases.getOfferings();
+    const proOffering = offerings.all[OFFERING_PRO];
+
+    if (!proOffering) {
+      console.warn('[Billing] Pro offering not found, falling back to default paywall');
+      const result: PAYWALL_RESULT = await RevenueCatUI.presentPaywall();
+      return result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED
+        ? { success: true }
+        : { success: false, error: 'Purchase cancelled or failed' };
+    }
+
+    const result: PAYWALL_RESULT = await RevenueCatUI.presentPaywall({
+      offering: proOffering,
+    });
 
     switch (result) {
       case PAYWALL_RESULT.PURCHASED:
@@ -133,12 +150,24 @@ export async function presentPaywall(): Promise<BillingPurchaseResult> {
 
 /**
  * Present the RevenueCat paywall for AI subscription.
+ * Shows only the 'ai_monthly' offering.
  */
 export async function presentAIPaywall(): Promise<BillingPurchaseResult> {
   try {
-    // Use the same RevenueCat paywall — it will show offerings
-    // configured for the AI subscription in the RC dashboard.
-    const result: PAYWALL_RESULT = await RevenueCatUI.presentPaywall();
+    const offerings = await Purchases.getOfferings();
+    const aiOffering = offerings.all[OFFERING_AI];
+
+    if (!aiOffering) {
+      console.warn('[Billing] AI offering not found, falling back to default paywall');
+      const result: PAYWALL_RESULT = await RevenueCatUI.presentPaywall();
+      return result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED
+        ? { success: true }
+        : { success: false, error: 'Subscription cancelled or failed' };
+    }
+
+    const result: PAYWALL_RESULT = await RevenueCatUI.presentPaywall({
+      offering: aiOffering,
+    });
 
     switch (result) {
       case PAYWALL_RESULT.PURCHASED:
@@ -173,15 +202,22 @@ export async function restorePurchasesRC(): Promise<{ success: boolean; restored
 /**
  * Get the management URL for the current user's subscriptions.
  * This lets users cancel/modify their AI subscription.
+ * Falls back to the Play Store subscriptions page if RevenueCat returns null.
  */
-export async function getManagementURL(): Promise<string | null> {
+export async function getManagementURL(): Promise<string> {
   try {
     const customerInfo = await Purchases.getCustomerInfo();
-    return customerInfo.managementURL || null;
+    if (customerInfo.managementURL) {
+      return customerInfo.managementURL;
+    }
   } catch (error) {
     console.warn('[Billing] Failed to get management URL:', error);
-    return null;
   }
+
+  // Fallback: open Play Store subscriptions page directly
+  return Platform.OS === 'ios'
+    ? 'https://apps.apple.com/account/subscriptions'
+    : 'https://play.google.com/store/account/subscriptions';
 }
 
 /**
