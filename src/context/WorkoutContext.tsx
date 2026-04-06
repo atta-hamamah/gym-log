@@ -6,6 +6,7 @@ import { EXERCISES } from '../constants/exercises';
 import { detectPRs, createPRRecords } from '../utils/prDetection';
 import { useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
+import { useAuth } from '@clerk/clerk-expo';
 
 interface WorkoutContextType {
     workouts: WorkoutSession[];
@@ -57,6 +58,10 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [personalRecords, setPersonalRecords] = useState<PersonalRecord[]>([]);
     const [bodyMeasurements, setBodyMeasurements] = useState<BodyMeasurement[]>([]);
     const [isLive, setIsLive] = useState(false);
+    const { isSignedIn } = useAuth();
+
+    // Only sync to cloud if user is both live AND signed in to Clerk
+    const shouldSyncToCloud = isLive && !!isSignedIn;
 
     // ── Convex mutations for cloud sync ──────────────────
     const cloudSaveWorkout = useMutation(api.liveSync.saveWorkout);
@@ -136,7 +141,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
             setLastDetectedPRs(detected);
 
             // ── Cloud sync PRs ──
-            if (isLive) {
+            if (shouldSyncToCloud) {
                 try {
                     await cloudSavePRs({
                         records: prRecords.map(pr => ({
@@ -163,7 +168,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setWorkouts(prev => [completedSession, ...prev]);
 
         // ── Cloud sync workout ──
-        if (isLive) {
+        if (shouldSyncToCloud) {
             try {
                 await cloudSaveWorkout({
                     localId: completedSession.id,
@@ -195,7 +200,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         setCurrentWorkout(null);
         await StorageService.saveCurrentWorkout(null);
-    }, [currentWorkout, workouts, isLive, cloudSaveWorkout, cloudSavePRs]);
+    }, [currentWorkout, workouts, shouldSyncToCloud, cloudSaveWorkout, cloudSavePRs]);
 
     const cancelWorkout = useCallback(async () => {
         setCurrentWorkout(null);
@@ -352,14 +357,14 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setWorkouts(prev => prev.filter(w => w.id !== id));
 
         // ── Cloud sync delete ──
-        if (isLive) {
+        if (shouldSyncToCloud) {
             try {
                 await cloudDeleteWorkout({ localId: id });
             } catch (e) {
                 console.warn('[WorkoutContext] Cloud workout delete failed:', e);
             }
         }
-    }, [isLive, cloudDeleteWorkout]);
+    }, [shouldSyncToCloud, cloudDeleteWorkout]);
 
     const clearDetectedPRs = useCallback(() => {
         setLastDetectedPRs([]);
@@ -393,7 +398,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setBodyMeasurements(prev => [measurement, ...prev].sort((a, b) => b.date - a.date));
 
         // ── Cloud sync body measurement ──
-        if (isLive) {
+        if (shouldSyncToCloud) {
             try {
                 await cloudSaveBodyMeasurement({
                     localId: measurement.id,
@@ -410,7 +415,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 console.warn('[WorkoutContext] Cloud measurement save failed:', e);
             }
         }
-    }, [isLive, cloudSaveBodyMeasurement]);
+    }, [shouldSyncToCloud, cloudSaveBodyMeasurement]);
 
     const deleteBodyMeasurement = useCallback(async (id: string) => {
         // Find the measurement to get its date for cloud deletion
@@ -419,14 +424,14 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setBodyMeasurements(prev => prev.filter(m => m.id !== id));
 
         // ── Cloud sync delete ──
-        if (isLive && measurement) {
+        if (shouldSyncToCloud && measurement) {
             try {
                 await cloudDeleteBodyMeasurement({ date: measurement.date });
             } catch (e) {
                 console.warn('[WorkoutContext] Cloud measurement delete failed:', e);
             }
         }
-    }, [isLive, bodyMeasurements, cloudDeleteBodyMeasurement]);
+    }, [shouldSyncToCloud, bodyMeasurements, cloudDeleteBodyMeasurement]);
     // ─────────────────────────────────────────────────────
 
     return (

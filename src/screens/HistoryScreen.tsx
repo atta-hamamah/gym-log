@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { FlatList, TouchableOpacity, View, Alert, StyleSheet } from 'react-native';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { FlatList, TouchableOpacity, View, Alert, StyleSheet, ActivityIndicator } from 'react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { useWorkout } from '../context/WorkoutContext';
@@ -10,10 +10,58 @@ import { colors, spacing, borderRadius } from '../theme/colors';
 import { WorkoutSession } from '../types';
 import { useTranslation } from 'react-i18next';
 import { ConfirmationModal } from '../components/ConfirmationModal';
+import { usePaginatedQuery, useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
+import { StorageService } from '../services/storage';
+
+const PAGE_SIZE = 10;
 
 export const HistoryScreen = ({ navigation }: any) => {
     const { t } = useTranslation();
-    const { workouts, deleteWorkout } = useWorkout();
+    const { workouts: localWorkouts, deleteWorkout } = useWorkout();
+    const [isLive, setIsLive] = useState(false);
+
+    useEffect(() => {
+        StorageService.getIsLive().then(setIsLive);
+    }, []);
+
+    // ── Convex paginated query (only active when isLive) ──
+    const {
+        results: cloudWorkouts,
+        status: cloudStatus,
+        loadMore: cloudLoadMore,
+    } = usePaginatedQuery(
+        api.paginatedWorkouts.list,
+        isLive ? {} : "skip",
+        { initialNumItems: PAGE_SIZE }
+    );
+    const cloudCount = useQuery(api.paginatedWorkouts.count, isLive ? {} : "skip");
+
+    // ── Local pagination state (for non-subscribers) ──
+    const [localVisibleCount, setLocalVisibleCount] = useState(PAGE_SIZE);
+    const localVisible = useMemo(
+        () => localWorkouts.slice(0, localVisibleCount),
+        [localWorkouts, localVisibleCount]
+    );
+    const localHasMore = localVisibleCount < localWorkouts.length;
+
+    // ── Unified data ──
+    const workouts = isLive ? (cloudWorkouts as any[] ?? []) : localVisible;
+    const totalCount = isLive ? (cloudCount ?? 0) : localWorkouts.length;
+    const hasMore = isLive ? cloudStatus === "CanLoadMore" : localHasMore;
+    const isLoadingMore = isLive ? cloudStatus === "LoadingMore" : false;
+
+    const handleLoadMore = useCallback(() => {
+        if (isLive) {
+            if (cloudStatus === "CanLoadMore") {
+                cloudLoadMore(PAGE_SIZE);
+            }
+        } else {
+            if (localHasMore) {
+                setLocalVisibleCount(prev => Math.min(prev + PAGE_SIZE, localWorkouts.length));
+            }
+        }
+    }, [isLive, cloudStatus, cloudLoadMore, localHasMore, localWorkouts.length]);
 
     const [modalVisible, setModalVisible] = useState(false);
     const [modalConfig, setModalConfig] = useState({
@@ -67,13 +115,13 @@ export const HistoryScreen = ({ navigation }: any) => {
         );
     };
 
-    const renderItem = ({ item, index }: { item: WorkoutSession; index: number }) => {
+    const renderItem = ({ item, index }: { item: any; index: number }) => {
         const duration = item.endTime
             ? Math.round((item.endTime - item.startTime) / 60000)
             : 0;
-        const totalSets = item.exercises.reduce((acc, e) => acc + e.sets.length, 0);
+        const totalSets = item.exercises.reduce((acc: number, e: any) => acc + e.sets.length, 0);
         const totalVolume = item.exercises.reduce(
-            (acc, e) => acc + e.sets.reduce((a, s) => a + s.weight * s.reps, 0),
+            (acc: number, e: any) => acc + e.sets.reduce((a: number, s: any) => a + s.weight * s.reps, 0),
             0
         );
 
@@ -147,18 +195,27 @@ export const HistoryScreen = ({ navigation }: any) => {
         );
     };
 
+    const renderFooter = () => {
+        if (!hasMore && !isLoadingMore) return null;
+        return (
+            <View style={styles.footerLoader}>
+                <ActivityIndicator size="small" color={colors.primary} />
+            </View>
+        );
+    };
+
     return (
         <ScreenLayout>
             <View style={styles.headerRow}>
                 <Typography variant="h1">{t('history.title')}</Typography>
-                {workouts.length > 0 && (
+                {totalCount > 0 && (
                     <Typography variant="caption" color={colors.textMuted}>
-                        {t('history.workoutCount', { count: workouts.length })}
+                        {t('history.workoutCount', { count: totalCount })}
                     </Typography>
                 )}
             </View>
 
-            {workouts.length === 0 ? (
+            {workouts.length === 0 && !isLoadingMore ? (
                 <View style={styles.emptyState}>
                     <Typography variant="number" style={{ fontSize: 48, marginBottom: 12 }}>📋</Typography>
                     <Typography variant="h3" color={colors.textMuted} align="center" style={{ marginBottom: 8 }}>
@@ -175,6 +232,9 @@ export const HistoryScreen = ({ navigation }: any) => {
                     renderItem={renderItem}
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={{ paddingBottom: 20 }}
+                    onEndReached={handleLoadMore}
+                    onEndReachedThreshold={0.3}
+                    ListFooterComponent={renderFooter}
                 />
             )}
             <ConfirmationModal
@@ -240,5 +300,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingTop: 80,
+    },
+    footerLoader: {
+        paddingVertical: 16,
+        alignItems: 'center',
     },
 });

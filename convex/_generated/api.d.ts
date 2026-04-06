@@ -12,6 +12,7 @@ import type * as ai from "../ai.js";
 import type * as aiHelpers from "../aiHelpers.js";
 import type * as liveSync from "../liveSync.js";
 import type * as migration from "../migration.js";
+import type * as paginatedWorkouts from "../paginatedWorkouts.js";
 import type * as users from "../users.js";
 import type * as workouts from "../workouts.js";
 
@@ -26,6 +27,7 @@ declare const fullApi: ApiFromModules<{
   aiHelpers: typeof aiHelpers;
   liveSync: typeof liveSync;
   migration: typeof migration;
+  paginatedWorkouts: typeof paginatedWorkouts;
   users: typeof users;
   workouts: typeof workouts;
 }>;
