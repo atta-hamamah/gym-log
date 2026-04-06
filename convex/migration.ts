@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 
 /**
  * Migrate all local data to Convex in a single batch.
@@ -184,6 +184,124 @@ export const migrateLocalData = mutation({
       exercisesInserted: customExercises.length,
       prsInserted: personalRecords.length,
       measurementsInserted: bodyMeasurements.length,
+    };
+  },
+});
+
+export const getCloudData = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthenticated");
+
+    const user = await ctx.db
+      .query("users")
+      .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+      .unique();
+
+    if (!user) throw new Error("User not found");
+
+    // 1. Fetch workouts
+    const rawWorkouts = await ctx.db
+      .query("workouts")
+      .withIndex("by_userId", (q) => q.eq("userId", user._id))
+      .collect();
+
+    const workouts = [];
+    for (const w of rawWorkouts) {
+      const logs = await ctx.db
+        .query("exerciseLogs")
+        .withIndex("by_workoutId", (q) => q.eq("workoutId", w._id))
+        .collect();
+      
+      const exercises = [];
+      for (const log of logs) {
+        const sets = await ctx.db
+          .query("sets")
+          .withIndex("by_exerciseLogId", (q) => q.eq("exerciseLogId", log._id))
+          .collect();
+        
+        exercises.push({
+          id: log.localId,
+          exerciseId: log.exerciseId,
+          exerciseName: log.exerciseName,
+          notes: log.notes,
+          supersetGroupId: log.supersetGroupId,
+          order: log.order,
+          sets: sets.map(s => ({
+            id: s._id.toString(), // Assign generated local id if we want, but stringified is fine
+            weight: s.weight,
+            reps: s.reps,
+            rpe: s.rpe,
+            completed: s.completed,
+            type: s.type,
+            order: s.order,
+          })).sort((a, b) => a.order - b.order),
+        });
+      }
+      
+      workouts.push({
+        id: w.localId,
+        name: w.name,
+        startTime: w.startTime,
+        endTime: w.endTime,
+        notes: w.notes,
+        bodyWeight: w.bodyWeight,
+        mood: w.mood,
+        exercises: exercises.sort((a, b) => a.order - b.order),
+      });
+    }
+
+    const customExercisesData = await ctx.db
+      .query("customExercises")
+      .withIndex("by_userId", (q) => q.eq("userId", user._id))
+      .collect();
+
+    const customExercises = customExercisesData.map(e => ({
+      id: e.localId,
+      name: e.name,
+      category: e.category,
+      muscleGroup: e.muscleGroup,
+      isCustom: true,
+    }));
+
+    const personalRecordsData = await ctx.db
+      .query("personalRecords")
+      .withIndex("by_userId", (q) => q.eq("userId", user._id))
+      .collect();
+
+    const personalRecords = personalRecordsData.map(pr => ({
+      exerciseId: pr.exerciseId,
+      exerciseName: pr.exerciseName,
+      type: pr.type,
+      value: pr.value,
+      reps: pr.reps,
+      date: pr.date,
+      workoutId: pr.workoutLocalId,
+    }));
+
+    const bodyMeasurementsData = await ctx.db
+      .query("bodyMeasurements")
+      .withIndex("by_userId", (q) => q.eq("userId", user._id))
+      .collect();
+    
+    const bodyMeasurements = bodyMeasurementsData.map(m => ({
+      id: m._id.toString(),
+      date: m.date,
+      neck: m.neck,
+      chest: m.chest,
+      waist: m.waist,
+      hips: m.hips,
+      biceps: m.biceps,
+      thighs: m.thighs,
+      calves: m.calves,
+    }));
+
+    return {
+      workouts: workouts.sort((a, b) => b.startTime - a.startTime),
+      customExercises,
+      personalRecords,
+      bodyMeasurements,
     };
   },
 });

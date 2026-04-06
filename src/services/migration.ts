@@ -128,3 +128,28 @@ export async function migrateLocalToConvex(
     };
   }
 }
+
+/**
+ * Reverse Migration: Sync Cloud Data down to local AsyncStorage.
+ * Call this when a returning user logs onto a fresh device.
+ */
+export async function syncConvexToLocal(
+  convexClient: ConvexReactClient
+): Promise<boolean> {
+  try {
+    const data = await convexClient.query(api.migration.getCloudData);
+    
+    // Reverse save all items back to local AsyncStorage
+    await StorageService.setAllWorkouts(data.workouts as any);
+    await StorageService.setAllCustomExercises(data.customExercises as any);
+    await StorageService.savePersonalRecords(data.personalRecords as any);
+    await StorageService.setAllBodyMeasurements(data.bodyMeasurements as any);
+
+    // Mark as live to immediately unlock normal app flow
+    await StorageService.setIsLive(true);
+    return true;
+  } catch (error) {
+    console.error('[Reverse Sync] Failed to sync down from convex:', error);
+    return false;
+  }
+}

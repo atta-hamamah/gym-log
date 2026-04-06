@@ -10,6 +10,7 @@ import {
   restorePurchasesRC,
   getManagementURL,
   disposeBilling,
+  identifyUser,
 } from '../services/billing';
 import { SubscriptionTier } from '../types';
 
@@ -235,6 +236,14 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   }, []);
 
   const { user } = useUser();
+
+  // ── Sync Clerk User with RevenueCat ─────────────────────
+  useEffect(() => {
+    if (user?.id) {
+      identifyUser(user.id).catch(console.error);
+    }
+  }, [user?.id]);
+
   const isSuperAdmin = user?.primaryEmailAddress?.emailAddress === 'super@admin.com';
 
   return (

@@ -12,10 +12,10 @@ import { Typography } from '../components/Typography';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { colors, spacing, borderRadius } from '../theme/colors';
-import { useSignUp, useAuth, useUser } from '@clerk/clerk-expo';
+import { useSignUp, useSignIn, useAuth, useUser } from '@clerk/clerk-expo';
 import { useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-import { migrateLocalToConvex, type MigrationProgress } from '../services/migration';
+import { migrateLocalToConvex, syncConvexToLocal, type MigrationProgress } from '../services/migration';
 import { useConvex } from 'convex/react';
 import { useTranslation } from 'react-i18next';
 import { Check, Brain, Cloud, ChevronRight, Calendar, Users, Sparkles, X } from 'lucide-react-native';
@@ -27,13 +27,15 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
 
   // ── Clerk Auth State ──
   const { signUp, setActive, isLoaded: isSignUpLoaded } = useSignUp();
+  const { signIn, setActive: setSignInActive, isLoaded: isSignInLoaded } = useSignIn();
   const { isSignedIn } = useAuth();
   const { user } = useUser();
 
   // Start at signup or skip to profile if already signed in
   const [step, setStep] = useState<OnboardingStep>(isSignedIn ? 'profile' : 'signup');
+  const [authMode, setAuthMode] = useState<'signup' | 'signin'>('signup');
 
-  // ── Signup Fields ──
+  // ── Signup/Signin Fields ──
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -102,6 +104,43 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
     }
   }, [isSignUpLoaded, signUp, verificationCode, setActive]);
 
+  const handleSignIn = useCallback(async () => {
+    if (!isSignInLoaded) return;
+    setLoading(true);
+    setError('');
+
+    try {
+      const result = await signIn.create({
+        identifier: email,
+        password,
+      });
+
+      if (result.status === 'complete') {
+        await setSignInActive({ session: result.createdSessionId });
+        
+        // Show restoring UI
+        setStep('migrating');
+        setMigrationProgress({ step: 'restoring', current: 0, total: 1 });
+        
+        await syncConvexToLocal(convex);
+        
+        setMigrationProgress({ step: 'restoring', current: 1, total: 1 });
+
+        // Returning user - go immediately to chat!
+        setTimeout(() => {
+          navigation.goBack();
+          setTimeout(() => navigation.navigate('AIChat'), 300);
+        }, 1000);
+      } else {
+        setError('Complete sign in via other methods not supported here yet.');
+        setLoading(false);
+      }
+    } catch (err: any) {
+      setError(err.errors?.[0]?.longMessage || err.message || 'Sign in failed');
+      setLoading(false);
+    }
+  }, [isSignInLoaded, signIn, email, password, setSignInActive, navigation, convex]);
+
   // ══════════════════════════════════════════════════════
   // STEP: PROFILE COMPLETION + MIGRATION
   // ══════════════════════════════════════════════════════
@@ -158,46 +197,53 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
           <Sparkles color={colors.primary} size={24} />
         </View>
         <Typography variant="h2" style={{ marginTop: 12 }}>
-          {pendingVerification ? t('aiOnboarding.verifyEmail') : t('aiOnboarding.createAccount')}
+          {pendingVerification
+            ? t('aiOnboarding.verifyEmail')
+            : authMode === 'signup'
+              ? t('aiOnboarding.createAccount')
+              : t('aiOnboarding.signIn', 'Sign In')}
         </Typography>
         <Typography variant="body" color={colors.textSecondary} style={{ marginTop: 4 }}>
           {pendingVerification
             ? t('aiOnboarding.verificationSent', { email })
-            : t('aiOnboarding.accountRequired')
-          }
+            : authMode === 'signup'
+              ? t('aiOnboarding.accountRequired')
+              : t('aiOnboarding.signInDesc', 'Welcome back to your AI Coach')}
         </Typography>
       </View>
 
       {!pendingVerification ? (
         <>
-          <View style={styles.nameRow}>
-            <View style={styles.nameField}>
-              <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 4 }}>
-                {t('aiOnboarding.firstName')}
-              </Typography>
-              <TextInput
-                style={styles.input}
-                value={firstName}
-                onChangeText={setFirstName}
-                placeholder="John"
-                placeholderTextColor={colors.textMuted}
-                autoCapitalize="words"
-              />
+          {authMode === 'signup' && (
+            <View style={styles.nameRow}>
+              <View style={styles.nameField}>
+                <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 4 }}>
+                  {t('aiOnboarding.firstName')}
+                </Typography>
+                <TextInput
+                  style={styles.input}
+                  value={firstName}
+                  onChangeText={setFirstName}
+                  placeholder="John"
+                  placeholderTextColor={colors.textMuted}
+                  autoCapitalize="words"
+                />
+              </View>
+              <View style={styles.nameField}>
+                <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 4 }}>
+                  {t('aiOnboarding.lastName')}
+                </Typography>
+                <TextInput
+                  style={styles.input}
+                  value={lastName}
+                  onChangeText={setLastName}
+                  placeholder="Doe"
+                  placeholderTextColor={colors.textMuted}
+                  autoCapitalize="words"
+                />
+              </View>
             </View>
-            <View style={styles.nameField}>
-              <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 4 }}>
-                {t('aiOnboarding.lastName')}
-              </Typography>
-              <TextInput
-                style={styles.input}
-                value={lastName}
-                onChangeText={setLastName}
-                placeholder="Doe"
-                placeholderTextColor={colors.textMuted}
-                autoCapitalize="words"
-              />
-            </View>
-          </View>
+          )}
 
           <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 4 }}>
             {t('aiOnboarding.email')}
@@ -231,12 +277,26 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
           ) : null}
 
           <Button
-            title={loading ? t('subscription.processing') : t('aiOnboarding.signUp')}
-            onPress={handleSignUp}
+            title={loading ? t('subscription.processing') : (authMode === 'signup' ? t('aiOnboarding.signUp') : t('aiOnboarding.signIn', 'Sign In'))}
+            onPress={authMode === 'signup' ? handleSignUp : handleSignIn}
             size="large"
             style={{ marginTop: 24 }}
-            disabled={loading || !email || !password || !firstName}
+            disabled={loading || !email || !password || (authMode === 'signup' && !firstName)}
           />
+
+          <TouchableOpacity
+            onPress={() => {
+              setAuthMode(authMode === 'signup' ? 'signin' : 'signup');
+              setError('');
+            }}
+            style={{ marginTop: 16, alignItems: 'center' }}
+          >
+            <Typography variant="bodySmall" color={colors.primary}>
+              {authMode === 'signup'
+                ? t('aiOnboarding.alreadyHaveAccount', 'Already have an account? Sign in')
+                : t('aiOnboarding.needAccount', "Don't have an account? Sign up")}
+            </Typography>
+          </TouchableOpacity>
         </>
       ) : (
         <>
@@ -356,7 +416,9 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
           ? t('aiOnboarding.migratingReading')
           : migrationProgress?.step === 'uploading'
             ? t('aiOnboarding.migratingUploading')
-            : t('aiOnboarding.migratingProcessing')}
+            : migrationProgress?.step === 'restoring'
+              ? t('aiOnboarding.restoringCloud', 'Restoring from Cloud...')
+              : t('aiOnboarding.migratingProcessing')}
       </Typography>
 
       {/* Progress bar */}

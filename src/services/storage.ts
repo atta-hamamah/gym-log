@@ -28,6 +28,14 @@ export const StorageService = {
     }
   },
 
+  async setAllWorkouts(workouts: WorkoutSession[]): Promise<void> {
+    try {
+      await AsyncStorage.setItem(KEYS.WORKOUTS, JSON.stringify(workouts));
+    } catch (e) {
+      console.error('Failed to set all workouts', e);
+    }
+  },
+
   async saveWorkout(workout: WorkoutSession): Promise<void> {
     const workouts = await this.getWorkouts();
     // Check if updating existing workout
@@ -67,6 +75,15 @@ export const StorageService = {
       await AsyncStorage.setItem(KEYS.CUSTOM_EXERCISES, JSON.stringify(customExercises));
     } catch (e) {
       console.error('Failed to save custom exercise', e);
+    }
+  },
+
+  async setAllCustomExercises(exercises: Exercise[]): Promise<void> {
+    try {
+      const customOnly = exercises.map(e => ({ ...e, isCustom: true }));
+      await AsyncStorage.setItem(KEYS.CUSTOM_EXERCISES, JSON.stringify(customOnly));
+    } catch (e) {
+      console.error('Failed to set all custom exercises', e);
     }
   },
 
@@ -142,6 +159,15 @@ export const StorageService = {
     } catch (e) {
       console.error('Failed to load measurements', e);
       return [];
+    }
+  },
+
+  async setAllBodyMeasurements(measurements: BodyMeasurement[]): Promise<void> {
+    try {
+      const sorted = measurements.sort((a, b) => b.date - a.date);
+      await AsyncStorage.setItem(KEYS.BODY_MEASUREMENTS, JSON.stringify(sorted));
+    } catch (e) {
+      console.error('Failed to set all body measurements', e);
     }
   },
 
