@@ -4,6 +4,8 @@ import { StorageService } from '../services/storage';
 import { generateId } from '../utils/generateId';
 import { EXERCISES } from '../constants/exercises';
 import { detectPRs, createPRRecords } from '../utils/prDetection';
+import { useMutation } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 
 interface WorkoutContextType {
     workouts: WorkoutSession[];
@@ -54,10 +56,22 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [lastDetectedPRs, setLastDetectedPRs] = useState<DetectedPR[]>([]);
     const [personalRecords, setPersonalRecords] = useState<PersonalRecord[]>([]);
     const [bodyMeasurements, setBodyMeasurements] = useState<BodyMeasurement[]>([]);
+    const [isLive, setIsLive] = useState(false);
+
+    // ── Convex mutations for cloud sync ──────────────────
+    const cloudSaveWorkout = useMutation(api.liveSync.saveWorkout);
+    const cloudDeleteWorkout = useMutation(api.liveSync.deleteWorkout);
+    const cloudSavePRs = useMutation(api.liveSync.savePersonalRecords);
+    const cloudSaveBodyMeasurement = useMutation(api.liveSync.saveBodyMeasurement);
+    const cloudDeleteBodyMeasurement = useMutation(api.liveSync.deleteBodyMeasurement);
 
     const refreshData = useCallback(async () => {
         setLoading(true);
         try {
+            // Check live status
+            const liveStatus = await StorageService.getIsLive();
+            setIsLive(liveStatus);
+
             const [loadedWorkouts, loadedExercises, loadedStats, loadedPRs, loadedMeasurements] = await Promise.all([
                 StorageService.getWorkouts(),
                 StorageService.getExercises(),
@@ -120,17 +134,68 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
             await StorageService.addPersonalRecords(prRecords);
             setPersonalRecords(prev => [...prev, ...prRecords]);
             setLastDetectedPRs(detected);
+
+            // ── Cloud sync PRs ──
+            if (isLive) {
+                try {
+                    await cloudSavePRs({
+                        records: prRecords.map(pr => ({
+                            exerciseId: pr.exerciseId,
+                            exerciseName: pr.exerciseName,
+                            type: pr.type,
+                            value: pr.value,
+                            reps: pr.reps,
+                            date: pr.date,
+                            workoutLocalId: pr.workoutId,
+                        })),
+                    });
+                } catch (e) {
+                    console.warn('[WorkoutContext] Cloud PR save failed:', e);
+                }
+            }
         } else {
             setLastDetectedPRs([]);
         }
         // ─────────────────────
 
+        // Always save locally (acts as cache for AI subscribers)
         await StorageService.saveWorkout(completedSession);
         setWorkouts(prev => [completedSession, ...prev]);
 
+        // ── Cloud sync workout ──
+        if (isLive) {
+            try {
+                await cloudSaveWorkout({
+                    localId: completedSession.id,
+                    name: completedSession.name,
+                    startTime: completedSession.startTime,
+                    endTime: completedSession.endTime,
+                    notes: completedSession.notes,
+                    bodyWeight: completedSession.bodyWeight,
+                    mood: completedSession.mood,
+                    exercises: completedSession.exercises.map(ex => ({
+                        localId: ex.id,
+                        exerciseId: ex.exerciseId,
+                        exerciseName: ex.exerciseName,
+                        notes: ex.notes,
+                        supersetGroupId: ex.supersetGroupId,
+                        sets: ex.sets.map(s => ({
+                            weight: s.weight,
+                            reps: s.reps,
+                            rpe: s.rpe,
+                            completed: s.completed,
+                            type: s.type,
+                        })),
+                    })),
+                });
+            } catch (e) {
+                console.warn('[WorkoutContext] Cloud workout save failed:', e);
+            }
+        }
+
         setCurrentWorkout(null);
         await StorageService.saveCurrentWorkout(null);
-    }, [currentWorkout, workouts]);
+    }, [currentWorkout, workouts, isLive, cloudSaveWorkout, cloudSavePRs]);
 
     const cancelWorkout = useCallback(async () => {
         setCurrentWorkout(null);
@@ -285,7 +350,16 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const deleteWorkout = useCallback(async (id: string) => {
         await StorageService.deleteWorkout(id);
         setWorkouts(prev => prev.filter(w => w.id !== id));
-    }, []);
+
+        // ── Cloud sync delete ──
+        if (isLive) {
+            try {
+                await cloudDeleteWorkout({ localId: id });
+            } catch (e) {
+                console.warn('[WorkoutContext] Cloud workout delete failed:', e);
+            }
+        }
+    }, [isLive, cloudDeleteWorkout]);
 
     const clearDetectedPRs = useCallback(() => {
         setLastDetectedPRs([]);
@@ -317,12 +391,42 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const addBodyMeasurement = useCallback(async (measurement: BodyMeasurement) => {
         await StorageService.saveBodyMeasurement(measurement);
         setBodyMeasurements(prev => [measurement, ...prev].sort((a, b) => b.date - a.date));
-    }, []);
+
+        // ── Cloud sync body measurement ──
+        if (isLive) {
+            try {
+                await cloudSaveBodyMeasurement({
+                    localId: measurement.id,
+                    date: measurement.date,
+                    neck: measurement.neck,
+                    chest: measurement.chest,
+                    waist: measurement.waist,
+                    hips: measurement.hips,
+                    biceps: measurement.biceps,
+                    thighs: measurement.thighs,
+                    calves: measurement.calves,
+                });
+            } catch (e) {
+                console.warn('[WorkoutContext] Cloud measurement save failed:', e);
+            }
+        }
+    }, [isLive, cloudSaveBodyMeasurement]);
 
     const deleteBodyMeasurement = useCallback(async (id: string) => {
+        // Find the measurement to get its date for cloud deletion
+        const measurement = bodyMeasurements.find(m => m.id === id);
         await StorageService.deleteBodyMeasurement(id);
         setBodyMeasurements(prev => prev.filter(m => m.id !== id));
-    }, []);
+
+        // ── Cloud sync delete ──
+        if (isLive && measurement) {
+            try {
+                await cloudDeleteBodyMeasurement({ date: measurement.date });
+            } catch (e) {
+                console.warn('[WorkoutContext] Cloud measurement delete failed:', e);
+            }
+        }
+    }, [isLive, bodyMeasurements, cloudDeleteBodyMeasurement]);
     // ─────────────────────────────────────────────────────
 
     return (

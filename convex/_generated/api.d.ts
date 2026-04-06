@@ -10,6 +10,7 @@
 
 import type * as ai from "../ai.js";
 import type * as aiHelpers from "../aiHelpers.js";
+import type * as liveSync from "../liveSync.js";
 import type * as migration from "../migration.js";
 import type * as users from "../users.js";
 import type * as workouts from "../workouts.js";
@@ -23,6 +24,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   ai: typeof ai;
   aiHelpers: typeof aiHelpers;
+  liveSync: typeof liveSync;
   migration: typeof migration;
   users: typeof users;
   workouts: typeof workouts;
