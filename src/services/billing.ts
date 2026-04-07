@@ -99,10 +99,11 @@ export async function checkAIEntitlement(): Promise<boolean> {
 export async function checkAllEntitlements(): Promise<{ hasPro: boolean; hasAI: boolean }> {
   try {
     const customerInfo = await Purchases.getCustomerInfo();
-    return {
-      hasPro: typeof customerInfo.entitlements.active[ENTITLEMENT_PRO] !== 'undefined',
-      hasAI:  typeof customerInfo.entitlements.active[ENTITLEMENT_AI]  !== 'undefined',
-    };
+    const activeKeys = Object.keys(customerInfo.entitlements.active);
+    const hasPro = typeof customerInfo.entitlements.active[ENTITLEMENT_PRO] !== 'undefined';
+    const hasAI  = typeof customerInfo.entitlements.active[ENTITLEMENT_AI]  !== 'undefined';
+    console.log(`[Billing] checkAllEntitlements: active=[${activeKeys.join(',')}] looking for PRO="${ENTITLEMENT_PRO}" AI="${ENTITLEMENT_AI}" → hasPro=${hasPro} hasAI=${hasAI}`);
+    return { hasPro, hasAI };
   } catch (error) {
     console.warn('[Billing] Failed to check entitlements:', error);
     return { hasPro: false, hasAI: false };
@@ -246,10 +247,17 @@ export async function getStoreProducts(): Promise<BillingProduct[]> {
 /**
  * Identify the user with RevenueCat (call after Clerk auth).
  * Links purchases to a user account.
+ * Also syncs purchases to ensure anonymous → identified transfer is reflected.
  */
 export async function identifyUser(userId: string): Promise<void> {
   try {
-    await Purchases.logIn(userId);
+    const { customerInfo } = await Purchases.logIn(userId);
+    console.log('[Billing] Identified user:', userId);
+    console.log('[Billing] Active entitlements after logIn:', Object.keys(customerInfo.entitlements.active));
+
+    // Force sync to ensure anonymous purchases are transferred
+    await Purchases.syncPurchases();
+    console.log('[Billing] ✅ Purchases synced');
   } catch (error) {
     console.warn('[Billing] Failed to identify user:', error);
   }

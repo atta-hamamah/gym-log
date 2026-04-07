@@ -58,6 +58,9 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [trialDaysRemaining, setTrialDaysRemaining] = useState(TRIAL_DURATION_DAYS);
   const [loading, setLoading] = useState(true);
   const appState = useRef(AppState.currentState);
+  // Track if a purchase just happened — prevents RC server overriding local state
+  // (critical for test store where anonymous→identified transfer doesn't work)
+  const recentAIPurchaseRef = useRef(false);
 
   // ── Determine subscription state ────────────────────
   const refreshSubscriptionState = useCallback(async () => {
@@ -78,7 +81,14 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         hasPro = entitlements.hasPro;
         hasAI = entitlements.hasAI;
 
-        // Update local cache to match RevenueCat
+        // If a purchase JUST happened locally but RC doesn't reflect it yet
+        // (e.g., test store can't transfer anonymous purchases), preserve the local state
+        if (!hasAI && recentAIPurchaseRef.current) {
+          console.log('[Subscription] RC says no AI but purchase just happened — preserving local state');
+          hasAI = true;
+        }
+
+        // Update local cache to match
         await StorageService.setPurchaseStatus(hasPro ? 'local_premium' : 'free');
         await StorageService.setAISubscriptionStatus(hasAI ? 'active' : 'expired');
       } catch (e) {
@@ -178,6 +188,13 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         setIsAISubscriber(true);
         setTier('ai_subscriber');
         setTrialDaysRemaining(0);
+
+        // Mark that a purchase just happened — prevents refreshSubscriptionState
+        // from overriding this state if RC server hasn't synced yet
+        recentAIPurchaseRef.current = true;
+        // Clear after 5 minutes (RC should have synced by then)
+        setTimeout(() => { recentAIPurchaseRef.current = false; }, 5 * 60 * 1000);
+
         // AI subscribers also get Pro-level local access
         if (!isPro) {
           await StorageService.setPurchaseStatus('local_premium');

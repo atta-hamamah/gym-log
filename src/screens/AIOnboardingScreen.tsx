@@ -102,9 +102,14 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
 
         // CRITICAL: Link RevenueCat to the new Clerk user ID.
         // This transfers the anonymous purchase (made before signup) to this user.
-        if (signUp.createdUserId) {
-          await identifyUser(signUp.createdUserId);
+        const clerkUserId = signUp.createdUserId;
+        console.log('[AIOnboarding] Clerk user created:', clerkUserId);
+        if (clerkUserId) {
+          console.log('[AIOnboarding] Identifying user in RevenueCat...');
+          await identifyUser(clerkUserId);
+          console.log('[AIOnboarding] Refreshing subscription state...');
           await refreshSubscriptionState();
+          console.log('[AIOnboarding] ✅ Subscription state refreshed');
         }
 
         setStep('profile');
@@ -114,7 +119,7 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
     } finally {
       setLoading(false);
     }
-  }, [isSignUpLoaded, signUp, verificationCode, setActive]);
+  }, [isSignUpLoaded, signUp, verificationCode, setActive, refreshSubscriptionState]);
 
   const handleSignIn = useCallback(async () => {
     if (!isSignInLoaded) return;
@@ -492,7 +497,9 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
 
       <Button
         title={t('aiOnboarding.startChatting')}
-        onPress={() => {
+        onPress={async () => {
+          // Refresh subscription state so AITabScreen knows we're subscribed
+          await refreshSubscriptionState();
           // Go back to AI tab — the wrapper will show chat automatically
           navigation.goBack();
         }}
