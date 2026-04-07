@@ -4,9 +4,8 @@ import { StorageService } from '../services/storage';
 import { generateId } from '../utils/generateId';
 import { EXERCISES } from '../constants/exercises';
 import { detectPRs, createPRRecords } from '../utils/prDetection';
-import { useMutation } from 'convex/react';
+import { useMutation, useConvexAuth } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-import { useAuth } from '@clerk/clerk-expo';
 
 interface WorkoutContextType {
     workouts: WorkoutSession[];
@@ -58,10 +57,10 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [personalRecords, setPersonalRecords] = useState<PersonalRecord[]>([]);
     const [bodyMeasurements, setBodyMeasurements] = useState<BodyMeasurement[]>([]);
     const [isLive, setIsLive] = useState(false);
-    const { isSignedIn } = useAuth();
+    const { isAuthenticated } = useConvexAuth();
 
-    // Only sync to cloud if user is both live AND signed in to Clerk
-    const shouldSyncToCloud = isLive && !!isSignedIn;
+    // Only sync to cloud when Convex actually has a valid auth token
+    const shouldSyncToCloud = isLive && isAuthenticated;
 
     // ── Convex mutations for cloud sync ──────────────────
     const cloudSaveWorkout = useMutation(api.liveSync.saveWorkout);

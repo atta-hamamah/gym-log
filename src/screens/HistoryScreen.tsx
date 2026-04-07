@@ -10,7 +10,7 @@ import { colors, spacing, borderRadius } from '../theme/colors';
 import { WorkoutSession } from '../types';
 import { useTranslation } from 'react-i18next';
 import { ConfirmationModal } from '../components/ConfirmationModal';
-import { usePaginatedQuery, useQuery } from 'convex/react';
+import { usePaginatedQuery, useQuery, useConvexAuth } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { StorageService } from '../services/storage';
 
@@ -20,22 +20,26 @@ export const HistoryScreen = ({ navigation }: any) => {
     const { t } = useTranslation();
     const { workouts: localWorkouts, deleteWorkout } = useWorkout();
     const [isLive, setIsLive] = useState(false);
+    const { isAuthenticated } = useConvexAuth();
+
+    // Only use Convex queries when both live AND Convex has a valid auth token
+    const useCloud = isLive && isAuthenticated;
 
     useEffect(() => {
         StorageService.getIsLive().then(setIsLive);
     }, []);
 
-    // ── Convex paginated query (only active when isLive) ──
+    // ── Convex paginated query (only active when authenticated) ──
     const {
         results: cloudWorkouts,
         status: cloudStatus,
         loadMore: cloudLoadMore,
     } = usePaginatedQuery(
         api.paginatedWorkouts.list,
-        isLive ? {} : "skip",
+        useCloud ? {} : "skip",
         { initialNumItems: PAGE_SIZE }
     );
-    const cloudCount = useQuery(api.paginatedWorkouts.count, isLive ? {} : "skip");
+    const cloudCount = useQuery(api.paginatedWorkouts.count, useCloud ? {} : "skip");
 
     // ── Local pagination state (for non-subscribers) ──
     const [localVisibleCount, setLocalVisibleCount] = useState(PAGE_SIZE);
@@ -46,13 +50,13 @@ export const HistoryScreen = ({ navigation }: any) => {
     const localHasMore = localVisibleCount < localWorkouts.length;
 
     // ── Unified data ──
-    const workouts = isLive ? (cloudWorkouts as any[] ?? []) : localVisible;
-    const totalCount = isLive ? (cloudCount ?? 0) : localWorkouts.length;
-    const hasMore = isLive ? cloudStatus === "CanLoadMore" : localHasMore;
-    const isLoadingMore = isLive ? cloudStatus === "LoadingMore" : false;
+    const workouts = useCloud ? (cloudWorkouts as any[] ?? []) : localVisible;
+    const totalCount = useCloud ? (cloudCount ?? 0) : localWorkouts.length;
+    const hasMore = useCloud ? cloudStatus === "CanLoadMore" : localHasMore;
+    const isLoadingMore = useCloud ? cloudStatus === "LoadingMore" : false;
 
     const handleLoadMore = useCallback(() => {
-        if (isLive) {
+        if (useCloud) {
             if (cloudStatus === "CanLoadMore") {
                 cloudLoadMore(PAGE_SIZE);
             }
@@ -61,7 +65,7 @@ export const HistoryScreen = ({ navigation }: any) => {
                 setLocalVisibleCount(prev => Math.min(prev + PAGE_SIZE, localWorkouts.length));
             }
         }
-    }, [isLive, cloudStatus, cloudLoadMore, localHasMore, localWorkouts.length]);
+    }, [useCloud, cloudStatus, cloudLoadMore, localHasMore, localWorkouts.length]);
 
     const [modalVisible, setModalVisible] = useState(false);
     const [modalConfig, setModalConfig] = useState({
