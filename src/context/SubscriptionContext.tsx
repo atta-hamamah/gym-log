@@ -67,36 +67,32 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         await StorageService.setFirstOpenDate(firstOpenDate);
       }
 
-      // 2. Check local purchase caches first (offline-first)
-      const purchaseStatus = await StorageService.getPurchaseStatus();
-      const aiStatus = await StorageService.getAISubscriptionStatus();
-      let hasPro = purchaseStatus === 'local_premium';
-      let hasAI = aiStatus === 'active';
+      let hasPro = false;
+      let hasAI = false;
 
-      // 3. Check RevenueCat entitlements (may update the local cache)
+      // 2. RevenueCat is the SOURCE OF TRUTH for subscription state
       try {
         const entitlements = await checkAllEntitlements();
-        if (entitlements.hasPro && !hasPro) {
-          await StorageService.setPurchaseStatus('local_premium');
-          hasPro = true;
-        }
-        if (entitlements.hasAI) {
-          await StorageService.setAISubscriptionStatus('active');
-          hasAI = true;
-        } else if (hasAI) {
-          // Subscription may have expired/been cancelled
-          await StorageService.setAISubscriptionStatus('expired');
-          hasAI = false;
-        }
+        hasPro = entitlements.hasPro;
+        hasAI = entitlements.hasAI;
+
+        // Update local cache to match RevenueCat
+        await StorageService.setPurchaseStatus(hasPro ? 'local_premium' : 'free');
+        await StorageService.setAISubscriptionStatus(hasAI ? 'active' : 'expired');
       } catch (e) {
-        console.warn('[Subscription] RevenueCat check failed, using cached:', e);
+        // RevenueCat failed — only trust local cache if we have a reason to
+        console.warn('[Subscription] RevenueCat check failed, checking local cache:', e);
+        const purchaseStatus = await StorageService.getPurchaseStatus();
+        const aiStatus = await StorageService.getAISubscriptionStatus();
+        hasPro = purchaseStatus === 'local_premium';
+        hasAI = aiStatus === 'active';
       }
 
-      // 4. Set state
+      // 3. Set state
       setIsPro(hasPro);
       setIsAISubscriber(hasAI);
 
-      // 5. Determine highest tier
+      // 4. Determine highest tier
       if (hasAI) {
         setTier('ai_subscriber');
         setTrialDaysRemaining(0);
@@ -234,6 +230,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   }, []);
 
   const { user } = useUser();
+  const isSignedIn = !!user;
 
   // ── Sync Clerk User with RevenueCat ─────────────────────
   useEffect(() => {
@@ -246,12 +243,17 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const isSuperAdmin = user?.primaryEmailAddress?.emailAddress === 'super@admin.com';
 
+  // AI features REQUIRE a Clerk account (for Convex auth + cloud data).
+  // If user is not signed in, AI subscription is always false regardless of RevenueCat.
+  const effectiveAISubscriber = isSignedIn && isAISubscriber;
+  const effectiveTier: SubscriptionTier = !isSignedIn && tier === 'ai_subscriber' ? (isPro ? 'local_premium' : 'trial') : tier;
+
   return (
     <SubscriptionContext.Provider
       value={{
-        tier: isSuperAdmin ? 'ai_subscriber' : tier,
+        tier: isSuperAdmin ? 'ai_subscriber' : effectiveTier,
         isPro: isSuperAdmin ? true : isPro,
-        isAISubscriber: isSuperAdmin ? true : isAISubscriber,
+        isAISubscriber: isSuperAdmin ? true : effectiveAISubscriber,
         trialDaysRemaining: isSuperAdmin ? 0 : trialDaysRemaining,
         loading,
         purchaseLocalPremium,

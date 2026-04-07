@@ -6,6 +6,7 @@ import { EXERCISES } from '../constants/exercises';
 import { detectPRs, createPRRecords } from '../utils/prDetection';
 import { useMutation, useConvexAuth } from 'convex/react';
 import { api } from '../../convex/_generated/api';
+import { useSubscription } from './SubscriptionContext';
 
 interface WorkoutContextType {
     workouts: WorkoutSession[];
@@ -56,11 +57,15 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [lastDetectedPRs, setLastDetectedPRs] = useState<DetectedPR[]>([]);
     const [personalRecords, setPersonalRecords] = useState<PersonalRecord[]>([]);
     const [bodyMeasurements, setBodyMeasurements] = useState<BodyMeasurement[]>([]);
-    const [isLive, setIsLive] = useState(false);
-    const { isAuthenticated } = useConvexAuth();
 
-    // Only sync to cloud when Convex actually has a valid auth token
-    const shouldSyncToCloud = isLive && isAuthenticated;
+    const { isAuthenticated } = useConvexAuth();
+    const { isAISubscriber } = useSubscription();
+
+    // ── Unified cloud sync check ──
+    // Sync to Convex when:
+    //   1. User has an active AI subscription (RevenueCat)
+    //   2. Convex has a valid auth token (Clerk session is active)
+    const shouldSyncToCloud = isAISubscriber && isAuthenticated;
 
     // ── Convex mutations for cloud sync ──────────────────
     const cloudSaveWorkout = useMutation(api.liveSync.saveWorkout);
@@ -72,10 +77,6 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const refreshData = useCallback(async () => {
         setLoading(true);
         try {
-            // Check live status
-            const liveStatus = await StorageService.getIsLive();
-            setIsLive(liveStatus);
-
             const [loadedWorkouts, loadedExercises, loadedStats, loadedPRs, loadedMeasurements] = await Promise.all([
                 StorageService.getWorkouts(),
                 StorageService.getExercises(),
@@ -167,8 +168,10 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setWorkouts(prev => [completedSession, ...prev]);
 
         // ── Cloud sync workout ──
+        console.log('[WorkoutContext] Cloud sync check:', { isAISubscriber, isAuthenticated, shouldSyncToCloud });
         if (shouldSyncToCloud) {
             try {
+                console.log('[WorkoutContext] ✅ Syncing workout to Convex...');
                 await cloudSaveWorkout({
                     localId: completedSession.id,
                     name: completedSession.name,
@@ -192,9 +195,12 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
                         })),
                     })),
                 });
+                console.log('[WorkoutContext] ✅ Workout synced successfully!');
             } catch (e) {
                 console.warn('[WorkoutContext] Cloud workout save failed:', e);
             }
+        } else {
+            console.log('[WorkoutContext] ⏭️ Skipping cloud sync (not live or not authenticated)');
         }
 
         setCurrentWorkout(null);

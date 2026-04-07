@@ -12,22 +12,18 @@ import { useTranslation } from 'react-i18next';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { usePaginatedQuery, useQuery, useConvexAuth } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-import { StorageService } from '../services/storage';
+import { useSubscription } from '../context/SubscriptionContext';
 
 const PAGE_SIZE = 10;
 
 export const HistoryScreen = ({ navigation }: any) => {
     const { t } = useTranslation();
     const { workouts: localWorkouts, deleteWorkout } = useWorkout();
-    const [isLive, setIsLive] = useState(false);
     const { isAuthenticated } = useConvexAuth();
+    const { isAISubscriber } = useSubscription();
 
-    // Only use Convex queries when both live AND Convex has a valid auth token
-    const useCloud = isLive && isAuthenticated;
-
-    useEffect(() => {
-        StorageService.getIsLive().then(setIsLive);
-    }, []);
+    // Only use Convex queries when user has AI subscription AND Convex is authenticated
+    const useCloud = isAISubscriber && isAuthenticated;
 
     // ── Convex paginated query (only active when authenticated) ──
     const {
