@@ -19,6 +19,8 @@ import { migrateLocalToConvex, syncConvexToLocal, type MigrationProgress } from 
 import { useConvex } from 'convex/react';
 import { useTranslation } from 'react-i18next';
 import { Check, Brain, Cloud, ChevronRight, Calendar, Users, Sparkles, X, Eye, EyeOff } from 'lucide-react-native';
+import { identifyUser } from '../services/billing';
+import { useSubscription } from '../context/SubscriptionContext';
 
 type OnboardingStep = 'signup' | 'profile' | 'migrating' | 'complete';
 
@@ -57,6 +59,7 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
   // ── Convex ──
   const convex = useConvex();
   const createUser = useMutation(api.users.createUser);
+  const { refreshSubscriptionState } = useSubscription();
 
   // ══════════════════════════════════════════════════════
   // STEP: SIGN UP
@@ -96,6 +99,14 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
 
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId });
+
+        // CRITICAL: Link RevenueCat to the new Clerk user ID.
+        // This transfers the anonymous purchase (made before signup) to this user.
+        if (signUp.createdUserId) {
+          await identifyUser(signUp.createdUserId);
+          await refreshSubscriptionState();
+        }
+
         setStep('profile');
       }
     } catch (err: any) {
@@ -118,6 +129,13 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
 
       if (result.status === 'complete') {
         await setSignInActive({ session: result.createdSessionId });
+
+        // Link RevenueCat to Clerk user and refresh entitlements
+        const clerkUserId = (signIn as any)?.createdUserId || (result as any)?.createdUserId;
+        if (clerkUserId) {
+          await identifyUser(clerkUserId);
+          await refreshSubscriptionState();
+        }
         
         // Show restoring UI
         setStep('migrating');

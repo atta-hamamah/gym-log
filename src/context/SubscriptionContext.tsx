@@ -37,6 +37,8 @@ interface SubscriptionContextType {
   openManageSubscription: () => Promise<void>;
   /** Restore all purchases */
   restorePurchases: () => Promise<{ success: boolean; restoredPro: boolean; restoredAI: boolean }>;
+  /** Force refresh subscription state from RevenueCat */
+  refreshSubscriptionState: () => Promise<void>;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
@@ -260,6 +262,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         purchaseAISubscription,
         openManageSubscription,
         restorePurchases,
+        refreshSubscriptionState,
       }}
     >
       {children}

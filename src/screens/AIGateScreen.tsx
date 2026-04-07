@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   StyleSheet,
@@ -12,7 +11,7 @@ import { Typography } from '../components/Typography';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { useSubscription } from '../context/SubscriptionContext';
-import { StorageService } from '../services/storage';
+import { useAuth } from '@clerk/clerk-expo';
 import { colors, spacing, borderRadius } from '../theme/colors';
 import { useTranslation } from 'react-i18next';
 import {
@@ -40,18 +39,11 @@ const AI_FEATURES = [
 export const AIGateScreen = ({ navigation }: any) => {
   const { t } = useTranslation();
   const { isAISubscriber, purchaseAISubscription } = useSubscription();
-  const [isLive, setIsLive] = useState(false);
+  const { isSignedIn } = useAuth();
   const [subscribing, setSubscribing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fadeAnim = useState(new Animated.Value(0))[0];
   const scaleAnim = useState(new Animated.Value(0.95))[0];
-
-  // Re-check isLive every time this screen gains focus
-  useFocusEffect(
-    useCallback(() => {
-      StorageService.getIsLive().then(setIsLive);
-    }, [])
-  );
 
   useEffect(() => {
     Animated.parallel([
@@ -78,13 +70,8 @@ export const AIGateScreen = ({ navigation }: any) => {
     const result = await purchaseAISubscription();
 
     if (result.success) {
-      // Check if they need to onboard (create account + migrate)
-      const live = await StorageService.getIsLive();
-      if (!live) {
-        navigation.navigate('AIOnboarding');
-      }
-      // If already live, the parent AITabScreen wrapper will
-      // automatically re-render and show AIChatScreen
+      // After purchase, user needs to create a Clerk account to use AI
+      navigation.navigate('AIOnboarding');
     } else if (result.error) {
       setError(result.error);
     }
@@ -93,15 +80,11 @@ export const AIGateScreen = ({ navigation }: any) => {
   }, [purchaseAISubscription, navigation]);
 
   const handleSignIn = useCallback(() => {
-    // Navigate to AIOnboarding in sign-in mode — this handles:
-    // 1. Clerk authentication (sign in)
-    // 2. identifyUser() to link RevenueCat to Clerk ID (restores purchases automatically)
-    // 3. syncConvexToLocal() to restore cloud data
     navigation.navigate('AIOnboarding');
   }, [navigation]);
 
-  // If already subscribed but not onboarded
-  if (isAISubscriber && !isLive) {
+  // If already subscribed but not signed in to Clerk — needs to complete onboarding
+  if (isAISubscriber && !isSignedIn) {
     return (
       <ScreenLayout>
         <View style={styles.readyContainer}>

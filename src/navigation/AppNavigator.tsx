@@ -17,7 +17,7 @@ import { AIGateScreen } from '../screens/AIGateScreen';
 import { AIOnboardingScreen } from '../screens/AIOnboardingScreen';
 import { AIChatScreen } from '../screens/AIChatScreen';
 import { useSubscription } from '../context/SubscriptionContext';
-import { StorageService } from '../services/storage';
+import { useAuth } from '@clerk/clerk-expo';
 import { colors, borderRadius } from '../theme/colors';
 import { Home, History, TrendingUp, Settings, BookOpen, Sparkles } from 'lucide-react-native';
 import { RootStackParamList, TabParamList } from '../types';
@@ -123,16 +123,10 @@ const TabNavigator = () => {
 // ── AI Tab: renders gate or chat inline (no modal overlay) ──
 const AITabScreen = (props: any) => {
     const { isAISubscriber } = useSubscription();
-    const [isLive, setIsLive] = useState(false);
+    const { isSignedIn } = useAuth();
 
-    useFocusEffect(
-        useCallback(() => {
-            StorageService.getIsLive().then(setIsLive);
-        }, [])
-    );
-
-    // Subscribed + onboarded → show chat directly as tab content
-    if (isAISubscriber && isLive) {
+    // Subscribed + signed in → show chat directly as tab content
+    if (isAISubscriber && isSignedIn) {
         return <AIChatScreen {...props} />;
     }
 
