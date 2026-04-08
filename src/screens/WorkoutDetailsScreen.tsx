@@ -7,7 +7,7 @@ import { Card } from '../components/Card';
 import { StatBadge } from '../components/StatBadge';
 import { Button } from '../components/Button';
 import { format } from 'date-fns';
-import { colors, spacing, borderRadius } from '../theme/colors';
+import { borderRadius } from '../theme/colors';
 import { WorkoutSession, ExerciseLog, Set as WorkoutSet } from '../types';
 import { useTranslation } from 'react-i18next';
 import { ConfirmationModal } from '../components/ConfirmationModal';
@@ -18,6 +18,7 @@ import {
     getSupersetPositionLabel,
 } from '../utils/supersetUtils';
 import { getExerciseName } from '../constants/exercises';
+import { useTheme } from '../context/ThemeContext';
 
 // ── Build groupable render list ──────────────────────────
 interface RenderItem {
@@ -50,6 +51,8 @@ const MOOD_EMOJIS = ['😴', '😕', '😐', '💪', '🔥'];
 
 export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
     const { t } = useTranslation();
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     const { workoutId } = route.params as { workoutId: string };
     const { workouts, deleteWorkout } = useWorkout();
 
@@ -326,7 +329,7 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
     summaryRow: {
         flexDirection: 'row',
         gap: 8,

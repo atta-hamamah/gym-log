@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Typography } from './Typography';
-import { colors, borderRadius, spacing } from '../theme/colors';
+import { useTheme } from '../context/ThemeContext';
 
 interface StatBadgeProps {
     value: string | number;
@@ -13,16 +13,18 @@ interface StatBadgeProps {
 export const StatBadge: React.FC<StatBadgeProps> = ({
     value,
     label,
-    color = colors.primary,
+    color,
     size = 'medium',
 }) => {
+    const { colors } = useTheme();
+    const badgeColor = color ?? colors.primary;
     const valueSizes = { small: 18, medium: 24, large: 32 };
 
     return (
         <View style={styles.container}>
             <Typography
                 variant={size === 'large' ? 'number' : 'h2'}
-                color={color}
+                color={badgeColor}
                 align="center"
                 style={{ fontSize: valueSizes[size] }}
             >

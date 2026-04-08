@@ -5,10 +5,11 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { useSubscription } from '../context/SubscriptionContext';
-import { colors, spacing, borderRadius } from '../theme/colors';
+import { borderRadius } from '../theme/colors';
 import { getStoreProducts, type BillingProduct } from '../services/billing';
 import { useTranslation } from 'react-i18next';
 import { Check, Dumbbell, TrendingUp, Trophy, BookOpen, FileSpreadsheet, Zap } from 'lucide-react-native';
+import { useTheme } from '../context/ThemeContext';
 
 const FEATURES = [
   { icon: Dumbbell, labelKey: 'subscription.features.tracking' },
@@ -21,6 +22,8 @@ const FEATURES = [
 
 export const PaywallScreen = () => {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const { purchaseLocalPremium, trialDaysRemaining, tier } = useSubscription();
   const [purchasing, setPurchasing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -130,7 +133,7 @@ export const PaywallScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   scrollContent: {
     paddingBottom: 40,
     flexGrow: 1,

@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, StyleSheet, TouchableOpacity, Animated, Vibration } from 'react-native';
 import { Typography } from './Typography';
-import { colors, borderRadius } from '../theme/colors';
+import { borderRadius } from '../theme/colors';
 import { useAudioPlayer } from 'expo-audio';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../context/ThemeContext';
 
 const REST_PRESETS = [30, 60, 90, 120, 180, 240, 300];
 
@@ -16,6 +17,8 @@ interface RestTimerProps {
 
 export const RestTimer: React.FC<RestTimerProps> = ({ visible, defaultDuration, onDismiss, onTimeChange }) => {
     const { t } = useTranslation();
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     const [remaining, setRemaining] = useState(defaultDuration);
     const [totalDuration, setTotalDuration] = useState(defaultDuration);
     const [isRunning, setIsRunning] = useState(false);
@@ -242,7 +245,7 @@ export const RestTimer: React.FC<RestTimerProps> = ({ visible, defaultDuration, 
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
     container: {
         position: 'absolute',
         bottom: 0,

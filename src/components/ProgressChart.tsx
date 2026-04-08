@@ -9,8 +9,9 @@ import Svg, {
     LinearGradient,
     Stop,
 } from 'react-native-svg';
-import { colors, borderRadius } from '../theme/colors';
+import { borderRadius } from '../theme/colors';
 import { Typography } from './Typography';
+import { useTheme } from '../context/ThemeContext';
 
 interface DataPoint {
     label: string;
@@ -31,9 +32,14 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
     width,
     height = 200,
     unit = 'kg',
-    color = colors.primary,
-    gradientTo = colors.secondary,
+    color,
+    gradientTo,
 }) => {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
+    const lineColor = color ?? colors.primary;
+    const gradientColor = gradientTo ?? colors.secondary;
+
     if (data.length === 0) {
         return (
             <View style={[styles.empty, { width, height }]}>
@@ -99,13 +105,13 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
             <Svg width={width} height={height}>
                 <Defs>
                     <LinearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
-                        <Stop offset="0" stopColor={color} stopOpacity="0.25" />
-                        <Stop offset="0.7" stopColor={color} stopOpacity="0.05" />
-                        <Stop offset="1" stopColor={color} stopOpacity="0" />
+                        <Stop offset="0" stopColor={lineColor} stopOpacity="0.25" />
+                        <Stop offset="0.7" stopColor={lineColor} stopOpacity="0.05" />
+                        <Stop offset="1" stopColor={lineColor} stopOpacity="0" />
                     </LinearGradient>
                     <LinearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
-                        <Stop offset="0" stopColor={color} stopOpacity="1" />
-                        <Stop offset="1" stopColor={gradientTo} stopOpacity="1" />
+                        <Stop offset="0" stopColor={lineColor} stopOpacity="1" />
+                        <Stop offset="1" stopColor={gradientColor} stopOpacity="1" />
                     </LinearGradient>
                 </Defs>
 
@@ -150,13 +156,13 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
                 {/* Dots with glow */}
                 {points.map((p, i) => (
                     <React.Fragment key={`dot-${i}`}>
-                        <Circle cx={p.x} cy={p.y} r={8} fill={color} opacity={0.15} />
+                        <Circle cx={p.x} cy={p.y} r={8} fill={lineColor} opacity={0.15} />
                         <Circle
                             cx={p.x}
                             cy={p.y}
                             r={4.5}
                             fill={colors.surface}
-                            stroke={color}
+                            stroke={lineColor}
                             strokeWidth={2.5}
                         />
                     </React.Fragment>
@@ -188,7 +194,7 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
     container: {
         backgroundColor: colors.surface,
         borderRadius: borderRadius.l,

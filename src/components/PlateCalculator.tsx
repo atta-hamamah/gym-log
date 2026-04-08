@@ -3,8 +3,9 @@ import { View, StyleSheet, Modal, TouchableOpacity, ScrollView } from 'react-nat
 import { Typography } from './Typography';
 import { Card } from './Card';
 import { Button } from './Button';
-import { colors, borderRadius, spacing } from '../theme/colors';
+import { borderRadius } from '../theme/colors';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../context/ThemeContext';
 
 // Standard Olympic plates in kg (descending order)
 const AVAILABLE_PLATES = [25, 20, 15, 10, 5, 2.5, 1.25, 1, 0.5];
@@ -93,6 +94,8 @@ interface PlateCalculatorProps {
 
 export const PlateCalculator: React.FC<PlateCalculatorProps> = ({ visible, onClose, weight }) => {
     const { t } = useTranslation();
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     const [barWeight, setBarWeight] = useState(20);
 
     const BAR_OPTIONS = [20, 15, 10];
@@ -312,7 +315,7 @@ export const PlateCalculator: React.FC<PlateCalculatorProps> = ({ visible, onClo
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
     overlay: {
         flex: 1,
         backgroundColor: colors.overlay,

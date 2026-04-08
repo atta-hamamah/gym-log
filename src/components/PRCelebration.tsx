@@ -3,10 +3,11 @@ import { View, Modal, StyleSheet, Animated, Easing, Dimensions, TouchableOpacity
 import { Typography } from './Typography';
 import { Button } from './Button';
 import { Card } from './Card';
-import { colors, borderRadius, spacing, shadows } from '../theme/colors';
+import { borderRadius, shadows } from '../theme/colors';
 import { DetectedPR, PRType } from '../types';
 import { useTranslation } from 'react-i18next';
 import { getExerciseName } from '../constants/exercises';
+import { useTheme } from '../context/ThemeContext';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -114,6 +115,8 @@ interface PRCelebrationProps {
 
 export const PRCelebration: React.FC<PRCelebrationProps> = ({ visible, prs, onDismiss }) => {
     const { t } = useTranslation();
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     const scaleAnim = useRef(new Animated.Value(0)).current;
     const glowAnim = useRef(new Animated.Value(0)).current;
 
@@ -273,7 +276,7 @@ export const PRCelebration: React.FC<PRCelebrationProps> = ({ visible, prs, onDi
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
     overlay: {
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.85)',

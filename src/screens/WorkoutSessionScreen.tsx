@@ -9,7 +9,7 @@ import { PlateCalculator } from '../components/PlateCalculator';
 import { RestTimer } from '../components/RestTimer';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { PRCelebration } from '../components/PRCelebration';
-import { colors, borderRadius, spacing, shadows } from '../theme/colors';
+import { borderRadius, spacing } from '../theme/colors';
 import { ExerciseLog, Set as WorkoutSet } from '../types';
 import { useTranslation } from 'react-i18next';
 import {
@@ -20,9 +20,12 @@ import {
     getExerciseGroups,
 } from '../utils/supersetUtils';
 import { getExerciseName } from '../constants/exercises';
+import { useTheme } from '../context/ThemeContext';
 
 export const WorkoutSessionScreen = ({ navigation }: any) => {
     const { t } = useTranslation();
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     const {
         currentWorkout,
         finishWorkout,
@@ -593,7 +596,7 @@ function buildRenderList(exercises: ExerciseLog[]): RenderItem[] {
 }
 
 // RPE Color based on exertion level
-const getRpeColor = (rpe: number): string => {
+const getRpeColor = (rpe: number, colors: any): string => {
     if (rpe <= 5) return colors.success;
     if (rpe <= 7) return colors.warning;
     if (rpe <= 8) return '#FF9800';
@@ -624,6 +627,8 @@ const ExerciseCard = ({
     isLastInGroup?: boolean;
 }) => {
     const { t } = useTranslation();
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     const { logSet, deleteSet, removeExerciseFromWorkout, updateExerciseNotes } = useWorkout();
     const [weight, setWeight] = useState('');
     const [reps, setReps] = useState('');
@@ -729,8 +734,8 @@ const ExerciseCard = ({
                     <Typography variant="body" style={styles.colVal}>{set.reps}</Typography>
                     <View style={styles.colRpe}>
                         {set.rpe ? (
-                            <View style={[styles.rpeBadge, { backgroundColor: getRpeColor(set.rpe) + '20', borderColor: getRpeColor(set.rpe) + '50' }]}>
-                                <Typography variant="caption" color={getRpeColor(set.rpe)} bold style={{ fontSize: 11 }}>
+                            <View style={[styles.rpeBadge, { backgroundColor: getRpeColor(set.rpe, colors) + '20', borderColor: getRpeColor(set.rpe, colors) + '50' }]}>
+                                <Typography variant="caption" color={getRpeColor(set.rpe, colors)} bold style={{ fontSize: 11 }}>
                                     {set.rpe}
                                 </Typography>
                             </View>
@@ -781,13 +786,13 @@ const ExerciseCard = ({
                     onPress={() => setShowRpeSelector(!showRpeSelector)}
                     style={[
                         styles.rpeInputBtn,
-                        rpe !== null && { backgroundColor: getRpeColor(rpe) + '20', borderColor: getRpeColor(rpe) + '50' },
+                        rpe !== null && { backgroundColor: getRpeColor(rpe, colors) + '20', borderColor: getRpeColor(rpe, colors) + '50' },
                     ]}
                     activeOpacity={0.7}
                 >
                     <Typography
                         variant="caption"
-                        color={rpe !== null ? getRpeColor(rpe) : colors.textMuted}
+                        color={rpe !== null ? getRpeColor(rpe, colors) : colors.textMuted}
                         bold={rpe !== null}
                         style={{ fontSize: 11 }}
                     >
@@ -825,8 +830,8 @@ const ExerciseCard = ({
                             style={[
                                 styles.rpeChip,
                                 rpe === val && {
-                                    backgroundColor: getRpeColor(val),
-                                    borderColor: getRpeColor(val),
+                                    backgroundColor: getRpeColor(val, colors),
+                                    borderColor: getRpeColor(val, colors),
                                 },
                             ]}
                             onPress={() => {
@@ -896,7 +901,7 @@ const MOOD_OPTIONS = [
     { value: 5, emoji: '🔥', label: 'Great' },
 ];
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',

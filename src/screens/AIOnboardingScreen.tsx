@@ -11,7 +11,7 @@ import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { colors, spacing, borderRadius } from '../theme/colors';
+import { borderRadius } from '../theme/colors';
 import { useSignUp, useSignIn, useAuth, useUser } from '@clerk/clerk-expo';
 import { useMutation } from 'convex/react';
 import { api } from '../../convex/_generated/api';
@@ -21,11 +21,14 @@ import { useTranslation } from 'react-i18next';
 import { Check, Brain, Cloud, ChevronRight, Calendar, Users, Sparkles, X, Eye, EyeOff } from 'lucide-react-native';
 import { identifyUser } from '../services/billing';
 import { useSubscription } from '../context/SubscriptionContext';
+import { useTheme } from '../context/ThemeContext';
 
 type OnboardingStep = 'signup' | 'profile' | 'migrating' | 'complete';
 
 export const AIOnboardingScreen = ({ navigation }: any) => {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
 
   // ── Clerk Auth State ──
   const { signUp, setActive, isLoaded: isSignUpLoaded } = useSignUp();
@@ -533,7 +536,7 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
 };
 
 // ── Styles ────────────────────────────────────────────────
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   closeRow: {
     flexDirection: 'row',
     justifyContent: 'flex-end',

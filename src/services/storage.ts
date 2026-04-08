@@ -14,6 +14,7 @@ const KEYS = {
   PURCHASE_STATUS: '@gym_log_purchase_status',
   IS_LIVE: '@gym_log_is_live',
   AI_SUBSCRIPTION_STATUS: '@gym_log_ai_sub_status',
+  THEME_PREFERENCE: '@gym_log_theme_preference',
 };
 
 export const StorageService = {
@@ -258,6 +259,26 @@ export const StorageService = {
       await AsyncStorage.setItem(KEYS.AI_SUBSCRIPTION_STATUS, status);
     } catch (e) {
       console.error('Failed to set AI subscription status', e);
+    }
+  },
+
+  // THEME
+  async getThemePreference(): Promise<'dark' | 'light' | null> {
+    try {
+      const value = await AsyncStorage.getItem(KEYS.THEME_PREFERENCE);
+      if (value === 'dark' || value === 'light') return value;
+      return null;
+    } catch (e) {
+      console.error('Failed to get theme preference', e);
+      return null;
+    }
+  },
+
+  async setThemePreference(mode: 'dark' | 'light'): Promise<void> {
+    try {
+      await AsyncStorage.setItem(KEYS.THEME_PREFERENCE, mode);
+    } catch (e) {
+      console.error('Failed to set theme preference', e);
     }
   },
 

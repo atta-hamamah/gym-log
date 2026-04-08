@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import { View, StyleSheet, Platform, ActivityIndicator } from 'react-native';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -18,31 +18,21 @@ import { AIOnboardingScreen } from '../screens/AIOnboardingScreen';
 import { AIChatScreen } from '../screens/AIChatScreen';
 import { useSubscription } from '../context/SubscriptionContext';
 import { useAuth } from '@clerk/clerk-expo';
-import { colors, borderRadius } from '../theme/colors';
+import { useTheme } from '../context/ThemeContext';
 import { Home, History, TrendingUp, Settings, BookOpen, Sparkles } from 'lucide-react-native';
 import { RootStackParamList, TabParamList } from '../types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { useFocusEffect } from '@react-navigation/native';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
 
 const AppTheme = {
     ...DefaultTheme,
-    dark: true,
-    colors: {
-        ...DefaultTheme.colors,
-        primary: colors.primary,
-        background: colors.background,
-        card: colors.surface,
-        text: colors.text,
-        border: colors.border,
-        notification: colors.accent,
-    },
 };
 
 const TabNavigator = () => {
+    const { colors } = useTheme();
     const insets = useSafeAreaInsets();
     const { t } = useTranslation();
 
@@ -135,20 +125,37 @@ const AITabScreen = (props: any) => {
 };
 
 // ── Loading Screen ────────────────────────────────────────
-const LoadingScreen = () => (
-    <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.primary} />
-    </View>
-);
+const LoadingScreen = () => {
+    const { colors } = useTheme();
+    return (
+        <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+            <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+    );
+};
 
 export const AppNavigator = () => {
+    const { colors, isDark } = useTheme();
     const { t } = useTranslation();
     const { tier, loading } = useSubscription();
+    const appTheme = {
+        ...AppTheme,
+        dark: isDark,
+        colors: {
+            ...DefaultTheme.colors,
+            primary: colors.primary,
+            background: colors.background,
+            card: colors.surface,
+            text: colors.text,
+            border: colors.border,
+            notification: colors.accent,
+        },
+    };
 
     // Show loading while checking subscription state
     if (loading) {
         return (
-            <NavigationContainer theme={AppTheme}>
+            <NavigationContainer theme={appTheme}>
                 <LoadingScreen />
             </NavigationContainer>
         );
@@ -157,7 +164,7 @@ export const AppNavigator = () => {
     // If trial expired and not purchased, show paywall only
     if (tier === 'expired') {
         return (
-            <NavigationContainer theme={AppTheme}>
+            <NavigationContainer theme={appTheme}>
                 <Stack.Navigator
                     screenOptions={{
                         headerShown: false,
@@ -172,7 +179,7 @@ export const AppNavigator = () => {
 
     // Normal app flow (trial, premium, or AI subscriber)
     return (
-        <NavigationContainer theme={AppTheme}>
+        <NavigationContainer theme={appTheme}>
             <Stack.Navigator
                 screenOptions={{
                     headerShown: false,
@@ -251,6 +258,5 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: colors.background,
     },
 });

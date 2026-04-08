@@ -7,7 +7,8 @@ import {
     View,
 } from 'react-native';
 import { Typography } from './Typography';
-import { colors, spacing, borderRadius, shadows } from '../theme/colors';
+import { spacing, borderRadius, shadows } from '../theme/colors';
+import { useTheme } from '../context/ThemeContext';
 
 interface ButtonProps extends TouchableOpacityProps {
     title: string;
@@ -29,6 +30,7 @@ export const Button: React.FC<ButtonProps> = ({
     disabled,
     ...props
 }) => {
+    const { colors } = useTheme();
     const getBackgroundColor = () => {
         if (disabled) return colors.surfaceLight;
         switch (variant) {

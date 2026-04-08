@@ -6,18 +6,21 @@ import { useWorkout } from '../context/WorkoutContext';
 import { Card } from '../components/Card';
 import { StatBadge } from '../components/StatBadge';
 import { format } from 'date-fns';
-import { colors, spacing, borderRadius } from '../theme/colors';
+import { borderRadius } from '../theme/colors';
 import { WorkoutSession } from '../types';
 import { useTranslation } from 'react-i18next';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { usePaginatedQuery, useQuery, useConvexAuth } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { useSubscription } from '../context/SubscriptionContext';
+import { useTheme } from '../context/ThemeContext';
 
 const PAGE_SIZE = 10;
 
 export const HistoryScreen = ({ navigation }: any) => {
     const { t } = useTranslation();
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     const { workouts: localWorkouts, deleteWorkout } = useWorkout();
     const { isAuthenticated } = useConvexAuth();
     const { isAISubscriber } = useSubscription();
@@ -251,7 +254,7 @@ export const HistoryScreen = ({ navigation }: any) => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
     headerRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',

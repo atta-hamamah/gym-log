@@ -12,13 +12,14 @@ import {
 } from 'react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
-import { colors, borderRadius } from '../theme/colors';
+import { borderRadius } from '../theme/colors';
 import { useAction, useQuery } from 'convex/react';
 import { useAuth } from '@clerk/clerk-expo';
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
 import { Send, X, Bot, User, Sparkles } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../context/ThemeContext';
 
 interface ChatMessage {
   id: string;
@@ -29,6 +30,8 @@ interface ChatMessage {
 
 export const AIChatScreen = ({ navigation }: any) => {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const { userId: clerkUserId } = useAuth();
   const chatAction = useAction(api.ai.chat);
 
@@ -51,7 +54,7 @@ export const AIChatScreen = ({ navigation }: any) => {
       duration: 300,
       useNativeDriver: true,
     }).start();
-  }, []);
+  }, [colors]);
 
   // Auto-scroll to bottom
   const scrollToBottom = useCallback(() => {
@@ -264,7 +267,7 @@ export const AIChatScreen = ({ navigation }: any) => {
 };
 
 // ── Styles ────────────────────────────────────────────────
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flex: 1,
   },
