@@ -6,7 +6,7 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useWorkout } from '../context/WorkoutContext';
-import { borderRadius } from '../theme/colors';
+import { borderRadius, ThemeColors } from '../theme/colors';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { LANGUAGE_LABELS, SupportedLanguage, isRTL, saveLanguagePreference } from '../i18n';
@@ -740,20 +740,7 @@ export const SettingsScreen = ({ navigation }: any) => {
     );
 };
 
-const createStyles = (colors: {
-    background: string;
-    surface: string;
-    surfaceLight: string;
-    text: string;
-    textSecondary: string;
-    textMuted: string;
-    primary: string;
-    success: string;
-    warning: string;
-    error: string;
-    border: string;
-    black: string;
-}) => StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
