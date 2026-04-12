@@ -14,6 +14,7 @@ export const createUser = mutation({
     weight: v.optional(v.float64()),
     bodyFat: v.optional(v.float64()),
     height: v.optional(v.float64()),
+    goal: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     // Check if user already exists
@@ -35,6 +36,7 @@ export const createUser = mutation({
       weight: args.weight,
       bodyFat: args.bodyFat,
       height: args.height,
+      goal: args.goal,
       createdAt: Date.now(),
       migrationComplete: false,
     });
@@ -78,6 +80,7 @@ export const updateUserProfile = mutation({
     weight: v.optional(v.float64()),
     bodyFat: v.optional(v.float64()),
     height: v.optional(v.float64()),
+    goal: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const { userId, ...updates } = args;

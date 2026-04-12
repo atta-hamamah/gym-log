@@ -201,10 +201,13 @@ export const getCloudData = query({
 
     if (!user) throw new Error("User not found");
 
-    // 1. Fetch workouts
+    // 1. Fetch workouts (last 1 year only for restore efficiency)
+    const oneYearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000;
     const rawWorkouts = await ctx.db
       .query("workouts")
-      .withIndex("by_userId", (q) => q.eq("userId", user._id))
+      .withIndex("by_userId_startTime", (q) =>
+        q.eq("userId", user._id).gte("startTime", oneYearAgo)
+      )
       .collect();
 
     const workouts = [];

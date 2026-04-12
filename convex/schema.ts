@@ -12,6 +12,7 @@ export default defineSchema({
     weight: v.optional(v.float64()),       // kg
     bodyFat: v.optional(v.float64()),      // percentage
     height: v.optional(v.float64()),       // cm
+    goal: v.optional(v.string()),          // fitness goal text
     createdAt: v.float64(),
     migrationComplete: v.boolean(),
   })

@@ -5,10 +5,62 @@ import { action } from "./_generated/server";
 import { api } from "./_generated/api";
 import OpenAI from "openai";
 
+// ══════════════════════════════════════════════════════════
+// DYNAMIC MODEL ROUTING
+// Set to true to enable smart model for complex queries.
+// When false, ALL queries use the cheap model (saves cost).
+// ══════════════════════════════════════════════════════════
+const ENABLE_DYNAMIC_MODEL = false;
+
+// Model definitions
+const MODEL_CHEAP = "gpt-4o-mini";   // Fast, cheap — simple Q&A, classification
+const MODEL_SMART = "gpt-4.1";        // Powerful — deep analysis & advice
+
+/**
+ * Use a tiny, cheap AI call to classify whether the user's message
+ * requires the smart model or the cheap one.
+ *
+ * Cost: ~30 input tokens + 1 output token ≈ $0.00002 per classification.
+ * This is far more accurate than keyword matching — it understands intent,
+ * slang, misspellings, and works across all languages.
+ */
+async function classifyIntent(openai: OpenAI, message: string): Promise<string> {
+  if (!ENABLE_DYNAMIC_MODEL) return MODEL_CHEAP;
+
+  try {
+    const classification = await openai.chat.completions.create({
+      model: MODEL_CHEAP,
+      messages: [
+        {
+          role: "system",
+          content: `You are a message classifier for a gym tracking app AI assistant. Your job is to decide if a user's message is SIMPLE or COMPLEX.
+
+SIMPLE = quick factual questions, greetings, short answers, definitions, basic tips.
+Examples: "How many sets for chest?", "What is RPE?", "Hi", "Thanks!", "How much protein per day?"
+
+COMPLEX = needs deep analysis of the user's workout data, creating plans, analyzing progress/plateaus, body composition advice, programming recommendations, injury assessment, or any request requiring reasoning over their training history.
+Examples: "Analyze my squat progress", "Why am I not getting stronger?", "Create a PPL routine for me", "Should I bulk or cut?", "Compare my bench to my deadlift ratio", "I have pain in my shoulder when pressing"
+
+Reply with ONLY the single word: SIMPLE or COMPLEX`,
+        },
+        { role: "user", content: message },
+      ],
+      max_tokens: 3,
+      temperature: 0,
+    });
+
+    const result = classification.choices[0]?.message?.content?.trim().toUpperCase();
+    return result === "COMPLEX" ? MODEL_SMART : MODEL_CHEAP;
+  } catch {
+    // If classification fails, fall back to cheap model
+    return MODEL_CHEAP;
+  }
+}
+
 /**
  * AI Chat Action
  * Queries the user's workout data from Convex, builds context,
- * and sends it to OpenAI GPT-4o for a personalized response.
+ * and sends it to OpenAI with dynamic model routing.
  */
 export const chat = action({
   args: {
@@ -30,15 +82,17 @@ export const chat = action({
     const user = await ctx.runQuery(api.users.getUserById, { userId: args.userId });
     if (!user) throw new Error("User not found");
 
-    // ── 2. Fetch recent workouts (last 30) ──
+    // ── 2. Fetch recent workouts (last 1 year, capped at 100) ──
+    const oneYearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000;
     const workouts = await ctx.runQuery(api.workouts.getWorkoutsByUser, {
       userId: args.userId,
-      limit: 30,
+      limit: 100,
+      sinceTimestamp: oneYearAgo,
     });
 
-    // ── 3. Fetch exercise details for each workout (limit to 15 for context size) ──
+    // ── 3. Fetch exercise details for the 20 most recent workouts ──
     const workoutSummaries = await Promise.all(
-      workouts.slice(0, 15).map(async (workout: any) => {
+      workouts.slice(0, 20).map(async (workout: any) => {
         const exerciseLogs = await ctx.runQuery(api.workouts.getExerciseLogsByWorkout, {
           workoutId: workout._id,
         });
@@ -77,16 +131,27 @@ export const chat = action({
       })
     );
 
-    // ── 4. Fetch personal records ──
+    // ── 4. Fetch yearly aggregate stats (computed server-side) ──
+    const yearlyStats = await ctx.runQuery(api.aiHelpers.getYearlyStats, { userId: args.userId });
+
+    // ── 5. Fetch personal records ──
     const prs = await ctx.runQuery(api.aiHelpers.getPersonalRecords, { userId: args.userId });
 
-    // ── 5. Fetch body measurements ──
+    // ── 6. Fetch body measurements ──
     const measurements = await ctx.runQuery(api.aiHelpers.getBodyMeasurements, { userId: args.userId });
 
-    // ── 6. Build user context ──
+    // ── 7. Build user context ──
     const age = user.dateOfBirth
       ? Math.floor((Date.now() - new Date(user.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
       : null;
+
+    const yearlyStatsBlock = yearlyStats.totalWorkouts > 0
+      ? `YEARLY TRAINING STATS (last 365 days):
+- Total workouts: ${yearlyStats.totalWorkouts}
+- Average workout duration: ${yearlyStats.avgDurationMin} min
+- Training frequency: ${yearlyStats.sessionsPerWeek} sessions/week
+- Most trained exercises: ${yearlyStats.topExercises.map((e: any) => `${e.name} (${e.count} sessions)`).join(", ")}`
+      : "YEARLY TRAINING STATS: No workouts in the last year.";
 
     const userContext = `
 USER PROFILE:
@@ -96,9 +161,11 @@ USER PROFILE:
 - Weight: ${user.weight ? `${user.weight}kg` : "unknown"}
 - Height: ${user.height ? `${user.height}cm` : "unknown"}
 - Body Fat: ${user.bodyFat ? `${user.bodyFat}%` : "unknown"}
-- Total workouts: ${workouts.length}
+- Fitness Goal: ${user.goal || "not specified"}
 
-RECENT WORKOUTS (last 15):
+${yearlyStatsBlock}
+
+RECENT WORKOUTS (last 20):
 ${workoutSummaries.map((w: any) => {
   const exerciseList = w.exercises
     .map((e: any) => `  • ${e.exercise}: ${e.sets} sets, best ${e.bestWeight}kg×${e.bestReps}, volume ${e.totalVolume}kg`)
@@ -152,6 +219,9 @@ Here is the user's current data:
 
 ${userContext}`;
 
+    // ── 8. Classify intent & select model ──
+    const selectedModel = await classifyIntent(openai, args.message);
+
     const chatMessages: OpenAI.ChatCompletionMessageParam[] = [
       { role: "system", content: systemPrompt },
       ...args.conversationHistory.map((m) => ({
@@ -162,9 +232,9 @@ ${userContext}`;
     ];
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: selectedModel,
       messages: chatMessages,
-      max_tokens: 800,
+      max_tokens: selectedModel === MODEL_SMART ? 1200 : 800,
       temperature: 0.7,
     });
 

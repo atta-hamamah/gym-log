@@ -12,14 +12,21 @@ export const getWorkoutsByUser = query({
   args: {
     userId: v.id("users"),
     limit: v.optional(v.float64()),
+    sinceTimestamp: v.optional(v.float64()),
   },
   handler: async (ctx, args) => {
     const limit = args.limit || 50;
-    return await ctx.db
+    const q = ctx.db
       .query("workouts")
-      .withIndex("by_userId_startTime", (q) => q.eq("userId", args.userId))
-      .order("desc")
-      .take(limit);
+      .withIndex("by_userId_startTime", (idx) => {
+        const base = idx.eq("userId", args.userId);
+        return args.sinceTimestamp
+          ? base.gte("startTime", args.sinceTimestamp)
+          : base;
+      })
+      .order("desc");
+
+    return await q.take(limit);
   },
 });
 

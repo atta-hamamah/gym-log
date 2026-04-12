@@ -26,7 +26,8 @@ export interface MigrationResult {
 }
 
 /**
- * Migrate all local data to Convex.
+ * Migrate local data to Convex (last 1 year of workouts & measurements).
+ * PRs and custom exercises are always migrated in full.
  */
 export async function migrateLocalToConvex(
   convexClient: ConvexReactClient,
@@ -47,12 +48,17 @@ export async function migrateLocalToConvex(
     // Filter to only custom exercises (not built-in)
     const customExercises = customExercisesRaw.filter(e => e.isCustom);
 
+    // Only push the last 1 year of workouts & measurements to keep cloud lean
+    const oneYearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000;
+    const recentWorkouts = workouts.filter(w => w.startTime >= oneYearAgo);
+    const recentMeasurements = bodyMeasurements.filter(m => m.date >= oneYearAgo);
+
     onProgress?.({ step: 'uploading', current: 1, total: 4 });
 
     // ── 2. Call migration mutation ──
     const result = await convexClient.mutation(api.migration.migrateLocalData, {
       userId,
-      workouts: workouts.map(w => ({
+      workouts: recentWorkouts.map(w => ({
         id: w.id,
         name: w.name,
         startTime: w.startTime,
@@ -91,7 +97,7 @@ export async function migrateLocalToConvex(
         date: pr.date,
         workoutId: pr.workoutId,
       })),
-      bodyMeasurements: bodyMeasurements.map(m => ({
+      bodyMeasurements: recentMeasurements.map(m => ({
         id: m.id,
         date: m.date,
         neck: m.neck,

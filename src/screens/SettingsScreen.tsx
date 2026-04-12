@@ -17,9 +17,9 @@ import { StorageService } from '../services/storage';
 import { BodyMeasurement, MeasurementKey } from '../types';
 import { generateId } from '../utils/generateId';
 import { useAuth, useUser } from '@clerk/clerk-expo';
-import { useMutation } from 'convex/react';
+import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-import { Crown, Sparkles, Zap, CreditCard, LogOut } from 'lucide-react-native';
+import { Crown, Sparkles, Zap, CreditCard, LogOut, Target } from 'lucide-react-native';
 
 export const SettingsScreen = ({ navigation }: any) => {
     const { t, i18n } = useTranslation();
@@ -37,9 +37,15 @@ export const SettingsScreen = ({ navigation }: any) => {
     const { isSignedIn, signOut } = useAuth();
     const { user } = useUser();
     const deleteUser = useMutation(api.users.deleteUser);
+    const updateUserProfile = useMutation(api.users.updateUserProfile);
+    const convexUser = useQuery(
+        api.users.getUserByClerkId,
+        user?.id ? { clerkId: user.id } : 'skip'
+    );
     const [weight, setWeight] = useState('');
     const [bodyFat, setBodyFat] = useState('');
     const [height, setHeight] = useState('');
+    const [fitnessGoal, setFitnessGoal] = useState('');
 
     // Body measurements state
     const [showMeasurements, setShowMeasurements] = useState(false);
@@ -313,6 +319,51 @@ export const SettingsScreen = ({ navigation }: any) => {
                     <Typography variant="caption" color={colors.textSecondary} style={{ marginTop: 8 }}>
                         {t('settings.aiActiveDesc')}
                     </Typography>
+
+                    {/* Fitness Goal Editor */}
+                    <View style={styles.goalSection}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                            <Target color={colors.primary} size={16} />
+                            <Typography variant="label" color={colors.text} style={{ marginLeft: 8 }}>
+                                {t('settings.fitnessGoal', 'Fitness Goal')}
+                            </Typography>
+                        </View>
+                        <TextInput
+                            style={styles.goalInput}
+                            value={fitnessGoal || convexUser?.goal || ''}
+                            onChangeText={setFitnessGoal}
+                            placeholder={t('aiOnboarding.goalPlaceholder', 'e.g. Build muscle, lose fat, get stronger...')}
+                            placeholderTextColor={colors.textMuted}
+                            multiline
+                            numberOfLines={2}
+                            maxLength={200}
+                            textAlignVertical="top"
+                        />
+                        {fitnessGoal && fitnessGoal !== (convexUser?.goal || '') && (
+                            <TouchableOpacity
+                                style={styles.saveGoalButton}
+                                onPress={async () => {
+                                    if (convexUser?._id) {
+                                        await updateUserProfile({
+                                            userId: convexUser._id,
+                                            goal: fitnessGoal.trim(),
+                                        });
+                                        showModal(
+                                            t('settings.saved'),
+                                            t('settings.goalSaved', 'Your fitness goal has been updated. RepAI will tailor advice to this goal.'),
+                                            undefined,
+                                            'success'
+                                        );
+                                    }
+                                }}
+                                activeOpacity={0.7}
+                            >
+                                <Typography variant="bodySmall" color={colors.primary} bold>
+                                    {t('settings.saveGoal', 'Save Goal')}
+                                </Typography>
+                            </TouchableOpacity>
+                        )}
+                    </View>
 
                     {/* Manage Subscription */}
                     <TouchableOpacity
@@ -848,5 +899,31 @@ const styles = StyleSheet.create({
         paddingVertical: 2,
         backgroundColor: colors.surfaceLight,
         borderRadius: borderRadius.xs,
+    },
+    // ── Goal editing styles ───────────────────────────────
+    goalSection: {
+        marginTop: 16,
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: colors.border + '30',
+    },
+    goalInput: {
+        backgroundColor: colors.surfaceLight,
+        borderRadius: borderRadius.m,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        fontSize: 14,
+        color: colors.text,
+        borderWidth: 1,
+        borderColor: colors.border,
+        minHeight: 60,
+    },
+    saveGoalButton: {
+        alignSelf: 'flex-end',
+        marginTop: 8,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        backgroundColor: colors.primary + '15',
+        borderRadius: borderRadius.m,
     },
 });

@@ -6,7 +6,9 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   TextInput,
+  Platform,
 } from 'react-native';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { Card } from '../components/Card';
@@ -18,7 +20,7 @@ import { api } from '../../convex/_generated/api';
 import { migrateLocalToConvex, syncConvexToLocal, type MigrationProgress } from '../services/migration';
 import { useConvex } from 'convex/react';
 import { useTranslation } from 'react-i18next';
-import { Check, Brain, Cloud, ChevronRight, Calendar, Users, Sparkles, X, Eye, EyeOff } from 'lucide-react-native';
+import { Check, Brain, Cloud, ChevronRight, Calendar, Users, Sparkles, X, Eye, EyeOff, Target } from 'lucide-react-native';
 import { identifyUser } from '../services/billing';
 import { useSubscription } from '../context/SubscriptionContext';
 
@@ -48,7 +50,10 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
 
   // ── Profile Fields ──
   const [dateOfBirth, setDateOfBirth] = useState('');
+  const [selectedDate, setSelectedDate] = useState(new Date(2000, 0, 1));
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [gender, setGender] = useState<'male' | 'female' | 'other' | ''>('');
+  const [goal, setGoal] = useState('');
 
   // ── Migration State ──
   const [migrationProgress, setMigrationProgress] = useState<MigrationProgress | null>(null);
@@ -184,6 +189,7 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
         email: user?.primaryEmailAddress?.emailAddress || '',
         dateOfBirth,
         gender: gender as 'male' | 'female' | 'other',
+        goal: goal.trim() || undefined,
       });
 
       // 2. Migrate local data
@@ -207,7 +213,17 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
     } finally {
       setLoading(false);
     }
-  }, [gender, dateOfBirth, createUser, user, convex, t]);
+  }, [gender, dateOfBirth, goal, createUser, user, convex, t]);
+
+  // ── Date Picker Handler ──
+  const handleDateChange = useCallback((event: DateTimePickerEvent, date?: Date) => {
+    if (Platform.OS === 'android') setShowDatePicker(false);
+    if (date) {
+      setSelectedDate(date);
+      const iso = date.toISOString().split('T')[0];
+      setDateOfBirth(iso);
+    }
+  }, []);
 
   // ══════════════════════════════════════════════════════
   // RENDER: SIGNUP STEP
@@ -387,18 +403,47 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
         </Typography>
       </View>
 
-      {/* Date of Birth */}
-      <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 4 }}>
+      {/* Date of Birth — Native Date Picker */}
+      <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 8 }}>
         <Calendar color={colors.textSecondary} size={14} /> {t('aiOnboarding.dateOfBirth')}
       </Typography>
-      <TextInput
-        style={styles.input}
-        value={dateOfBirth}
-        onChangeText={setDateOfBirth}
-        placeholder="YYYY-MM-DD"
-        placeholderTextColor={colors.textMuted}
-        keyboardType="numeric"
-      />
+      <TouchableOpacity
+        style={styles.datePickerButton}
+        onPress={() => setShowDatePicker(true)}
+        activeOpacity={0.7}
+      >
+        <Calendar color={dateOfBirth ? colors.primary : colors.textMuted} size={18} />
+        <Typography
+          variant="body"
+          color={dateOfBirth ? colors.text : colors.textMuted}
+          style={{ marginLeft: 12 }}
+        >
+          {dateOfBirth || t('aiOnboarding.selectDate', 'Select your birthday')}
+        </Typography>
+      </TouchableOpacity>
+      {showDatePicker && (
+        <View style={styles.datePickerContainer}>
+          <DateTimePicker
+            value={selectedDate}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={handleDateChange}
+            maximumDate={new Date()}
+            minimumDate={new Date(1940, 0, 1)}
+            themeVariant="dark"
+          />
+          {Platform.OS === 'ios' && (
+            <TouchableOpacity
+              style={styles.datePickerDone}
+              onPress={() => setShowDatePicker(false)}
+            >
+              <Typography variant="body" color={colors.primary} bold>
+                {t('common.done', 'Done')}
+              </Typography>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
 
       {/* Gender */}
       <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 8, marginTop: 16 }}>
@@ -421,6 +466,22 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
           </TouchableOpacity>
         ))}
       </View>
+
+      {/* Fitness Goal */}
+      <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 8, marginTop: 16 }}>
+        <Target color={colors.textSecondary} size={14} /> {t('aiOnboarding.fitnessGoal', 'What\'s your fitness goal?')}
+      </Typography>
+      <TextInput
+        style={[styles.input, styles.goalInput]}
+        value={goal}
+        onChangeText={setGoal}
+        placeholder={t('aiOnboarding.goalPlaceholder', 'e.g. Build muscle, lose fat, get stronger...')}
+        placeholderTextColor={colors.textMuted}
+        multiline
+        numberOfLines={3}
+        maxLength={200}
+        textAlignVertical="top"
+      />
 
       {error ? (
         <Typography variant="caption" color={colors.error} style={{ marginTop: 8 }}>
@@ -603,6 +664,33 @@ const styles = StyleSheet.create({
   genderOptionActive: {
     borderColor: colors.primary,
     backgroundColor: colors.primary + '12',
+  },
+  datePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surfaceLight,
+    borderRadius: borderRadius.m,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    marginBottom: 4,
+  },
+  datePickerContainer: {
+    backgroundColor: colors.surfaceLight,
+    borderRadius: borderRadius.m,
+    marginBottom: 8,
+    overflow: 'hidden',
+  },
+  datePickerDone: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  goalInput: {
+    minHeight: 80,
+    paddingTop: 12,
   },
   centerContainer: {
     flex: 1,
