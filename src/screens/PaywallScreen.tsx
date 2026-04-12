@@ -68,8 +68,13 @@ export const PaywallScreen = () => {
           <View style={styles.iconWrapper}>
             <Zap color={colors.primary} size={48} />
           </View>
-          <Typography variant="h1" style={styles.appTitle}>
-            RepAI
+          <Typography 
+            variant="h1" 
+            style={styles.appTitle}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+          >
+            {"RepAI"}
           </Typography>
           <Typography variant="body" color={colors.textSecondary} align="center">
             {isTrialActive

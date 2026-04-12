@@ -9,7 +9,7 @@
  *  - "RepAI AI"   → monthly subscription, AI coach + cloud sync
  */
 
-import { Platform } from 'react-native';
+import { Platform, Alert } from 'react-native';
 import Purchases, {
   LOG_LEVEL,
   type CustomerInfo,
@@ -112,75 +112,62 @@ export async function checkAllEntitlements(): Promise<{ hasPro: boolean; hasAI: 
 
 // Keep backward-compatible alias
 export const checkEntitlement = checkProEntitlement;
-
 /**
- * Present the RevenueCat paywall UI (for Pro one-time purchase).
- * Shows only the 'pro_lifetime' offering.
+ * Present the Google Play purchase flow (for Pro one-time purchase).
+ * Grabs the first package from the 'pro_lifetime' offering.
  */
 export async function presentPaywall(): Promise<BillingPurchaseResult> {
   try {
     const offerings = await Purchases.getOfferings();
     const proOffering = offerings.all[OFFERING_PRO];
 
-    if (!proOffering) {
-      console.warn('[Billing] Pro offering not found, falling back to default paywall');
-      const result: PAYWALL_RESULT = await RevenueCatUI.presentPaywall();
-      return result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED
-        ? { success: true }
-        : { success: false, error: 'Purchase cancelled or failed' };
+    if (!proOffering || proOffering.availablePackages.length === 0) {
+      console.warn('[Billing] Pro offering not found or has no packages.');
+      return { success: false, error: 'Product not found' };
     }
 
-    const result: PAYWALL_RESULT = await RevenueCatUI.presentPaywall({
-      offering: proOffering,
-    });
-
-    switch (result) {
-      case PAYWALL_RESULT.PURCHASED:
-      case PAYWALL_RESULT.RESTORED:
-        return { success: true };
-      case PAYWALL_RESULT.NOT_PRESENTED:
-      case PAYWALL_RESULT.ERROR:
-      case PAYWALL_RESULT.CANCELLED:
-      default:
-        return { success: false, error: 'Purchase cancelled or failed' };
+    const packageToBuy = proOffering.availablePackages[0];
+    const { customerInfo } = await Purchases.purchasePackage(packageToBuy);
+    
+    if (typeof customerInfo.entitlements.active[ENTITLEMENT_PRO] !== 'undefined') {
+      return { success: true };
     }
+    
+    return { success: false, error: 'Purchase incomplete' };
   } catch (error: any) {
+    if (error.userCancelled) {
+      return { success: false, error: 'Purchase cancelled' };
+    }
     return { success: false, error: error?.message || 'Paywall error' };
   }
 }
 
 /**
- * Present the RevenueCat paywall for AI subscription.
- * Shows only the 'ai_monthly' offering.
+ * Present the Google Play purchase flow for AI subscription.
+ * Grabs the first package from the 'ai_monthly' offering.
  */
 export async function presentAIPaywall(): Promise<BillingPurchaseResult> {
   try {
     const offerings = await Purchases.getOfferings();
     const aiOffering = offerings.all[OFFERING_AI];
 
-    if (!aiOffering) {
-      console.warn('[Billing] AI offering not found, falling back to default paywall');
-      const result: PAYWALL_RESULT = await RevenueCatUI.presentPaywall();
-      return result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED
-        ? { success: true }
-        : { success: false, error: 'Subscription cancelled or failed' };
+    if (!aiOffering || aiOffering.availablePackages.length === 0) {
+      console.warn('[Billing] AI offering not found or has no packages.');
+      return { success: false, error: 'Product not found' };
     }
 
-    const result: PAYWALL_RESULT = await RevenueCatUI.presentPaywall({
-      offering: aiOffering,
-    });
+    const packageToBuy = aiOffering.availablePackages[0];
+    const { customerInfo } = await Purchases.purchasePackage(packageToBuy);
 
-    switch (result) {
-      case PAYWALL_RESULT.PURCHASED:
-      case PAYWALL_RESULT.RESTORED:
-        return { success: true };
-      case PAYWALL_RESULT.NOT_PRESENTED:
-      case PAYWALL_RESULT.ERROR:
-      case PAYWALL_RESULT.CANCELLED:
-      default:
-        return { success: false, error: 'Subscription cancelled or failed' };
+    if (typeof customerInfo.entitlements.active[ENTITLEMENT_AI] !== 'undefined') {
+      return { success: true };
     }
+
+    return { success: false, error: 'Subscription incomplete' };
   } catch (error: any) {
+    if (error.userCancelled) {
+      return { success: false, error: 'Subscription cancelled' };
+    }
     return { success: false, error: error?.message || 'AI Paywall error' };
   }
 }
@@ -227,10 +214,11 @@ export async function getManagementURL(): Promise<string> {
 export async function getStoreProducts(): Promise<BillingProduct[]> {
   try {
     const offerings = await Purchases.getOfferings();
-    const current = offerings.current;
-    if (!current) return [];
+    // Force it to read from the Pro offering, not the 'current/default' one
+    const proOffering = offerings.all[OFFERING_PRO];
+    if (!proOffering) return [];
 
-    return current.availablePackages.map((pkg) => ({
+    return proOffering.availablePackages.map((pkg) => ({
       productId: pkg.product.identifier,
       title: pkg.product.title,
       description: pkg.product.description,
