@@ -6,13 +6,14 @@ import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { useWorkout } from '../context/WorkoutContext';
 import { ConfirmationModal } from '../components/ConfirmationModal';
-import { colors, spacing, borderRadius, shadows } from '../theme/colors';
+import { borderRadius } from '../theme/colors';
 import { PROGRAMS } from '../constants/programs';
 import { ProgramDay, ProgramExercise, WorkoutProgram } from '../types';
 import { useTranslation } from 'react-i18next';
 import { getExerciseName } from '../constants/exercises';
 import { PlayCircle } from 'lucide-react-native';
 import { ExerciseInfoModal } from '../components/ExerciseInfoModal';
+import { useTheme } from '../context/ThemeContext';
 
 const LEVEL_ICONS: Record<string, string> = {
     beginner: '🟢',
@@ -29,6 +30,8 @@ const GOAL_ICONS: Record<string, string> = {
 
 export const ProgramDetailScreen = ({ route, navigation }: any) => {
     const { t } = useTranslation();
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     const { programId } = route.params;
     const program = PROGRAMS.find(p => p.id === programId);
     const { currentWorkout, startWorkout, addExerciseToWorkout } = useWorkout();
@@ -291,7 +294,7 @@ export const ProgramDetailScreen = ({ route, navigation }: any) => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
     backBtn: {
         paddingVertical: 8,
         marginBottom: 4,

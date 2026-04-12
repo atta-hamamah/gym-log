@@ -3,10 +3,11 @@ import { FlatList, TouchableOpacity, View, StyleSheet, ScrollView } from 'react-
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { Card } from '../components/Card';
-import { colors, spacing, borderRadius, shadows } from '../theme/colors';
+import { borderRadius } from '../theme/colors';
 import { PROGRAMS, PROGRAM_LEVELS, PROGRAM_GOALS } from '../constants/programs';
 import { WorkoutProgram } from '../types';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../context/ThemeContext';
 
 const LEVEL_ICONS: Record<string, string> = {
     beginner: '🟢',
@@ -23,6 +24,8 @@ const GOAL_ICONS: Record<string, string> = {
 
 export const ProgramsScreen = ({ navigation }: any) => {
     const { t } = useTranslation();
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     const [selectedLevel, setSelectedLevel] = useState<string>('all');
     const [selectedGoal, setSelectedGoal] = useState<string>('all');
 
@@ -187,7 +190,7 @@ export const ProgramsScreen = ({ navigation }: any) => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
     headerRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',

@@ -2,9 +2,10 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Typography } from './Typography';
 import { useSubscription } from '../context/SubscriptionContext';
-import { colors, borderRadius } from '../theme/colors';
+import { borderRadius } from '../theme/colors';
 import { useTranslation } from 'react-i18next';
 import { Clock, ChevronRight } from 'lucide-react-native';
+import { useTheme } from '../context/ThemeContext';
 
 interface TrialBannerProps {
   onPress?: () => void;
@@ -12,6 +13,8 @@ interface TrialBannerProps {
 
 export const TrialBanner: React.FC<TrialBannerProps> = ({ onPress }) => {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const { tier, trialDaysRemaining } = useSubscription();
 
   // Only show during active trial
@@ -46,7 +49,7 @@ export const TrialBanner: React.FC<TrialBannerProps> = ({ onPress }) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Modal, View, StyleSheet, TouchableWithoutFeedback, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
-import { colors, spacing, borderRadius, shadows } from '../theme/colors';
+import { spacing, borderRadius, shadows } from '../theme/colors';
 import { Typography } from './Typography';
 import { Button } from './Button';
 import { Check } from 'lucide-react-native';
+import { useTheme } from '../context/ThemeContext';
 
 interface ConfirmationModalProps {
     visible: boolean;
@@ -33,6 +34,8 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     checkboxLabel = '',
 }) => {
     const [isChecked, setIsChecked] = useState(false);
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
 
     useEffect(() => {
         if (visible) {
@@ -109,7 +112,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
     overlay: {
         flex: 1,
         justifyContent: 'center',

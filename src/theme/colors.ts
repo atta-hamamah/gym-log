@@ -1,4 +1,39 @@
-export const colors = {
+export type ThemeColors = {
+  primary: string;
+  primaryDark: string;
+  primaryLight: string;
+  secondary: string;
+  secondaryDark: string;
+  secondaryLight: string;
+  accent: string;
+  accentLight: string;
+  background: string;
+  surface: string;
+  surfaceLight: string;
+  surfaceElevated: string;
+  text: string;
+  textSecondary: string;
+  textMuted: string;
+  success: string;
+  successDark: string;
+  warning: string;
+  warningDark: string;
+  error: string;
+  errorDark: string;
+  border: string;
+  borderLight: string;
+  white: string;
+  black: string;
+  overlay: string;
+  gradients: {
+    primary: string[];
+    accent: string[];
+    surface: string[];
+    warm: string[];
+  };
+};
+
+export const darkColors: ThemeColors = {
   // Primary palette – electric cyan/teal gradient
   primary: '#00E5FF',
   primaryDark: '#00B8D4',
@@ -47,6 +82,44 @@ export const colors = {
     warm: ['#FFD740', '#FF4081'],
   },
 };
+
+export const lightColors: ThemeColors = {
+  primary: '#00B8D4',
+  primaryDark: '#0097A7',
+  primaryLight: '#4DD0E1',
+  secondary: '#5E35B1',
+  secondaryDark: '#4527A0',
+  secondaryLight: '#9575CD',
+  accent: '#E91E63',
+  accentLight: '#F48FB1',
+  background: '#F6F8FC',
+  surface: '#FFFFFF',
+  surfaceLight: '#F1F4FA',
+  surfaceElevated: '#FFFFFF',
+  text: '#111827',
+  textSecondary: '#4B5563',
+  textMuted: '#6B7280',
+  success: '#16A34A',
+  successDark: '#15803D',
+  warning: '#D97706',
+  warningDark: '#B45309',
+  error: '#DC2626',
+  errorDark: '#B91C1C',
+  border: '#D7DEEA',
+  borderLight: '#E7ECF5',
+  white: '#FFFFFF',
+  black: '#000000',
+  overlay: 'rgba(0, 0, 0, 0.35)',
+  gradients: {
+    primary: ['#00B8D4', '#5E35B1'],
+    accent: ['#E91E63', '#5E35B1'],
+    surface: ['#FFFFFF', '#F1F4FA'],
+    warm: ['#D97706', '#E91E63'],
+  },
+};
+
+// Backward-compatible alias while migrating static imports.
+export const colors = darkColors;
 
 export const spacing = {
   xxs: 2,

@@ -9,12 +9,15 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { StatBadge } from '../components/StatBadge';
 import { format, isThisWeek } from 'date-fns';
-import { colors, spacing, borderRadius, shadows } from '../theme/colors';
+import { borderRadius } from '../theme/colors';
 import { WorkoutSession } from '../types';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../context/ThemeContext';
 
 export const HomeScreen = ({ navigation }: any) => {
     const { t } = useTranslation();
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     const { currentWorkout, startWorkout, workouts } = useWorkout();
     const { tier } = useSubscription();
     const [nameModalVisible, setNameModalVisible] = useState(false);
@@ -230,7 +233,7 @@ export const HomeScreen = ({ navigation }: any) => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
     headerRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',

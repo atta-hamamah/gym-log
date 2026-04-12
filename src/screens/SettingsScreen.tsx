@@ -6,7 +6,7 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useWorkout } from '../context/WorkoutContext';
-import { colors, spacing, borderRadius } from '../theme/colors';
+import { borderRadius, ThemeColors } from '../theme/colors';
 import { format } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 import { LANGUAGE_LABELS, SupportedLanguage, isRTL, saveLanguagePreference } from '../i18n';
@@ -19,10 +19,14 @@ import { generateId } from '../utils/generateId';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-import { Crown, Sparkles, Zap, CreditCard, LogOut, Target } from 'lucide-react-native';
+import { Crown, Sparkles, Zap, CreditCard, LogOut, Sun, Moon, Target } from 'lucide-react-native';
+import { useTheme } from '../context/ThemeContext';
+
 
 export const SettingsScreen = ({ navigation }: any) => {
     const { t, i18n } = useTranslation();
+    const { colors, themeMode, setThemeMode } = useTheme();
+    const styles = createStyles(colors);
     const { updateUserStats, userStats, workouts, refreshData, bodyMeasurements, addBodyMeasurement } = useWorkout();
     const {
         tier,
@@ -518,6 +522,50 @@ export const SettingsScreen = ({ navigation }: any) => {
                     </View>
                 </Card>
 
+                {/* Theme Selector */}
+                <Card>
+                    <Typography variant="h3" style={{ marginBottom: 4 }}>{t('settings.theme')}</Typography>
+                    <Typography variant="caption" style={{ marginBottom: 16 }}>
+                        {t('settings.themeDescription')}
+                    </Typography>
+                    <View style={styles.themeSegment}>
+                        <TouchableOpacity
+                            style={[styles.themeOption, themeMode === 'dark' && styles.themeOptionActive]}
+                            onPress={() => setThemeMode('dark')}
+                            activeOpacity={0.85}
+                        >
+                            <View style={styles.themeOptionInner}>
+                                <Moon color={themeMode === 'dark' ? colors.black : colors.textSecondary} size={15} />
+                                <Typography
+                                    variant="bodySmall"
+                                    color={themeMode === 'dark' ? colors.black : colors.textSecondary}
+                                    bold={themeMode === 'dark'}
+                                    style={{ marginLeft: 6 }}
+                                >
+                                    {t('settings.darkMode')}
+                                </Typography>
+                            </View>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.themeOption, themeMode === 'light' && styles.themeOptionActive]}
+                            onPress={() => setThemeMode('light')}
+                            activeOpacity={0.85}
+                        >
+                            <View style={styles.themeOptionInner}>
+                                <Sun color={themeMode === 'light' ? colors.black : colors.textSecondary} size={15} />
+                                <Typography
+                                    variant="bodySmall"
+                                    color={themeMode === 'light' ? colors.black : colors.textSecondary}
+                                    bold={themeMode === 'light'}
+                                    style={{ marginLeft: 6 }}
+                                >
+                                    {t('settings.lightMode')}
+                                </Typography>
+                            </View>
+                        </TouchableOpacity>
+                    </View>
+                </Card>
+
                 {/* Body Stats */}
                 <Card>
                     <Typography variant="h3" style={{ marginBottom: 16 }}>{t('settings.bodyStats')}</Typography>
@@ -744,7 +792,7 @@ export const SettingsScreen = ({ navigation }: any) => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -786,6 +834,38 @@ const styles = StyleSheet.create({
     languageChipActive: {
         backgroundColor: colors.primary,
         borderColor: colors.primary,
+    },
+    themeSegment: {
+        flexDirection: 'row',
+        gap: 8,
+        backgroundColor: colors.surfaceLight,
+        borderRadius: borderRadius.l,
+        padding: 6,
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    themeOption: {
+        flex: 1,
+        paddingVertical: 12,
+        paddingHorizontal: 10,
+        borderRadius: borderRadius.m,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    themeOptionInner: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    themeOptionActive: {
+        backgroundColor: colors.primary,
+        borderWidth: 1,
+        borderColor: colors.primaryLight,
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.22,
+        shadowRadius: 10,
+        elevation: 5,
     },
     footer: {
         marginTop: 24,

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text, StyleSheet, TextProps, TextStyle } from 'react-native';
-import { colors } from '../theme/colors';
+import { useTheme } from '../context/ThemeContext';
 
 interface TypographyProps extends TextProps {
     variant?: 'h1' | 'h2' | 'h3' | 'body' | 'bodySmall' | 'caption' | 'label' | 'number';
@@ -18,6 +18,7 @@ export const Typography: React.FC<TypographyProps> = ({
     style,
     ...props
 }) => {
+    const { colors } = useTheme();
     const variantStyle = styles[variant];
     const defaultColor = variant === 'caption' || variant === 'label'
         ? colors.textSecondary

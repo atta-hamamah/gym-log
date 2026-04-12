@@ -9,6 +9,7 @@ import { ConvexReactClient } from 'convex/react';
 import { tokenCache } from './src/services/auth';
 import { SubscriptionProvider } from './src/context/SubscriptionContext';
 import { WorkoutProvider } from './src/context/WorkoutContext';
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
 
 // ── Convex & Clerk Configuration ─────────────────────────
@@ -21,8 +22,18 @@ const convex = new ConvexReactClient(CONVEX_URL);
 
 export default function App() {
     return (
+        <ThemeProvider>
+            <AppContent />
+        </ThemeProvider>
+    );
+}
+
+const AppContent = () => {
+    const { isDark } = useTheme();
+
+    return (
         <SafeAreaProvider>
-            <StatusBar barStyle="light-content" />
+            <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
             <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
                 <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
                     <SubscriptionProvider>
@@ -34,4 +45,4 @@ export default function App() {
             </ClerkProvider>
         </SafeAreaProvider>
     );
-}
+};

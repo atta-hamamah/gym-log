@@ -6,12 +6,13 @@ import { ProgressChart } from '../components/ProgressChart';
 import { StatBadge } from '../components/StatBadge';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { colors, spacing, borderRadius } from '../theme/colors';
+import { borderRadius, spacing } from '../theme/colors';
 import { useWorkout } from '../context/WorkoutContext';
 import { format } from 'date-fns';
 import { Exercise, WorkoutSession, ExerciseLog, Set as WorkoutSet } from '../types';
 import { useTranslation } from 'react-i18next';
 import { getExerciseName, getMuscleGroupName } from '../constants/exercises';
+import { useTheme } from '../context/ThemeContext';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -19,6 +20,8 @@ type Metric = 'maxWeight' | 'totalVolume' | 'bestSet';
 
 export const ProgressScreen = () => {
     const { t } = useTranslation();
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     const { workouts, exercises } = useWorkout();
     const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
     const [modalVisible, setModalVisible] = useState(false);
@@ -249,7 +252,7 @@ export const ProgressScreen = () => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
     headerRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',

@@ -12,7 +12,7 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { useSubscription } from '../context/SubscriptionContext';
 import { useAuth } from '@clerk/clerk-expo';
-import { colors, spacing, borderRadius } from '../theme/colors';
+import { borderRadius } from '../theme/colors';
 import { useTranslation } from 'react-i18next';
 import {
   Sparkles,
@@ -26,6 +26,7 @@ import {
   Crown,
   Zap,
 } from 'lucide-react-native';
+import { useTheme } from '../context/ThemeContext';
 
 const AI_FEATURES = [
   { icon: MessageCircle, labelKey: 'aiGate.feature.chat' },
@@ -38,6 +39,8 @@ const AI_FEATURES = [
 
 export const AIGateScreen = ({ navigation }: any) => {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = createStyles(colors);
   const { isAISubscriber, purchaseAISubscription } = useSubscription();
   const { isSignedIn } = useAuth();
   const [subscribing, setSubscribing] = useState(false);
@@ -201,7 +204,7 @@ export const AIGateScreen = ({ navigation }: any) => {
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
   scrollContent: {
     paddingBottom: 40,
     flexGrow: 1,

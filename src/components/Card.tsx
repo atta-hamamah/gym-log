@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ViewProps } from 'react-native';
-import { colors, borderRadius, spacing, shadows } from '../theme/colors';
+import { borderRadius, spacing, shadows } from '../theme/colors';
+import { useTheme } from '../context/ThemeContext';
 
 interface CardProps extends ViewProps {
     variant?: 'default' | 'elevated' | 'outlined' | 'glass';
@@ -14,6 +15,8 @@ export const Card: React.FC<CardProps> = ({
     style,
     ...props
 }) => {
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     const variantStyles = {
         default: styles.default,
         elevated: styles.elevated,
@@ -36,7 +39,11 @@ export const Card: React.FC<CardProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: {
+    surface: string;
+    border: string;
+    surfaceElevated: string;
+}) => StyleSheet.create({
     container: {
         borderRadius: borderRadius.l,
         padding: spacing.m,

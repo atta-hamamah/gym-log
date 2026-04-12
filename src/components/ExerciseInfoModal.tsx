@@ -1,10 +1,11 @@
 import { View, Modal, StyleSheet, TouchableOpacity, Pressable, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import { Typography } from './Typography';
-import { colors, borderRadius } from '../theme/colors';
+import { borderRadius } from '../theme/colors';
 import { EXERCISE_GIFS } from '../assets/exercises';
 import { X, PlayCircle } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
+import { useTheme } from '../context/ThemeContext';
 
 interface ExerciseInfoModalProps {
     visible: boolean;
@@ -20,6 +21,8 @@ export const ExerciseInfoModal: React.FC<ExerciseInfoModalProps> = ({
     onClose,
 }) => {
     const { t } = useTranslation();
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     
     // Check if we have the GIF for this ID
     const gifSource = exerciseId && EXERCISE_GIFS[exerciseId];
@@ -68,7 +71,7 @@ export const ExerciseInfoModal: React.FC<ExerciseInfoModalProps> = ({
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
     overlay: {
         flex: 1,
         justifyContent: 'center',

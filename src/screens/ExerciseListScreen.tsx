@@ -3,7 +3,7 @@ import { FlatList, TouchableOpacity, StyleSheet, View, TextInput, Modal, Alert, 
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { useWorkout } from '../context/WorkoutContext';
-import { colors, spacing, borderRadius } from '../theme/colors';
+import { borderRadius, spacing } from '../theme/colors';
 import { StorageService } from '../services/storage';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
@@ -14,9 +14,12 @@ import { useTranslation } from 'react-i18next';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { PlayCircle } from 'lucide-react-native';
 import { ExerciseInfoModal } from '../components/ExerciseInfoModal';
+import { useTheme } from '../context/ThemeContext';
 
 export const ExerciseListScreen = ({ navigation }: any) => {
     const { t } = useTranslation();
+    const { colors } = useTheme();
+    const styles = createStyles(colors);
     const { exercises, addExerciseToWorkout, refreshData } = useWorkout();
     const [search, setSearch] = useState('');
     const [modalVisible, setModalVisible] = useState(false);
@@ -350,7 +353,7 @@ export const ExerciseListScreen = ({ navigation }: any) => {
     );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (colors: any) => StyleSheet.create({
     header: {
         flexDirection: 'row',
         marginBottom: 8,
