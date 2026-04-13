@@ -14,11 +14,10 @@
         "production": {
             "channel": "production",
             "env": {
-                "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_Z3JhbmQtc3dpbmUtMC5jbGVyay5hY2NvdW50cy5kZXYk",
-                "CLERK_JWT_ISSUER_DOMAIN": "https://grand-swine-0.clerk.accounts.dev",
-                "CONVEX_DEPLOYMENT": "dev:striped-raccoon-307",
-                "EXPO_PUBLIC_CONVEX_URL": "https://striped-raccoon-307.eu-west-1.convex.cloud",
-                "EXPO_PUBLIC_CONVEX_SITE_URL": "https://striped-raccoon-307.eu-west-1.convex.site",
+                "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_live_Y2xlcmsucmVwYWkuc2hvcCQ",
+                "CLERK_JWT_ISSUER_DOMAIN": "https://clerk.repai.shop",
+                "EXPO_PUBLIC_CONVEX_URL": "https://dynamic-akita-631.eu-west-1.convex.cloud",
+                "EXPO_PUBLIC_CONVEX_SITE_URL": "https://dynamic-akita-631.eu-west-1.convex.site",
                 "EXPO_PUBLIC_REVENUECAT_API_KEY": "goog_gYQeVyQtstEaeIbZyLYZUUYbyfP"
             }
         }
