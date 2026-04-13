@@ -400,5 +400,16 @@
     "suggestion2": "كم مرة تدربت هذا الأسبوع؟",
     "suggestion3": "هل أبالغ في تدريب أي عضلة؟",
     "suggestion4": "اقترح تمريناً لليوم"
+  },
+  "aura": {
+    "consulting": "استشارة آلهة النادي...",
+    "analyzingRest": "تحليل أوقات الراحة...",
+    "judgingForm": "الحكم على أدائك...",
+    "calculatingAura": "حساب هالتك المطلقة...",
+    "silentGods": "آلهة النادي صامتة اليوم.",
+    "todaysAura": "هالة اليوم",
+    "verifiedBy": "موثق بواسطة RepAI",
+    "shareToStory": "مشاركة في القصة",
+    "shareTitle": "شارك هالة تمرينك"
   }
 }

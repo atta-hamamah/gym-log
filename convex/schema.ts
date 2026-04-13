@@ -29,6 +29,8 @@ export default defineSchema({
     notes: v.optional(v.string()),
     bodyWeight: v.optional(v.float64()),
     mood: v.optional(v.float64()),
+    auraTitle: v.optional(v.string()),
+    auraDescription: v.optional(v.string()),
   })
     .index("by_userId", ["userId"])
     .index("by_userId_startTime", ["userId", "startTime"])

@@ -241,3 +241,83 @@ ${userContext}`;
     return response.choices[0]?.message?.content || "Sorry, I couldn't generate a response.";
   },
 });
+
+// Model for Aura Generation. Change to "gpt-4o" for better reasoning/humor.
+const AURA_MODEL = "gpt-4o-mini";
+
+export const generateWorkoutAura = action({
+  args: {
+    workoutId: v.id("workouts"),
+  },
+  handler: async (ctx, args) => {
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    const details = await ctx.runQuery(api.workouts.getWorkoutDetailsForAura, {
+      workoutId: args.workoutId,
+    });
+
+    const durationMin = details.workout.endTime && details.workout.startTime
+      ? Math.round((details.workout.endTime - details.workout.startTime) / 60000)
+      : null;
+
+    let exerciseSummary = "";
+    details.exercises.forEach((ex) => {
+      exerciseSummary += `- ${ex.name}: ${ex.sets} sets, ${ex.volume}kg total volume\n`;
+    });
+
+    const prompt = `
+You are an analyzer for a fitness app. Look at this user's workout data from today:
+- Duration: ${durationMin ? durationMin + " minutes" : "Unknown"}
+- Total Exercises: ${details.exercises.length}
+- Total Sets: ${details.totalSets}
+- Total Volume Lifted: ${details.totalVolume} kg
+Exercises:
+${exerciseSummary}
+
+Your task:
+1. Assign them a funny, slightly sarcastic "Gym Archetype" title based on their behavior (e.g., if they rest a lot, if they rush, if they only did arms).
+2. Calculate what real-world object their total volume (in kg) roughly equals (e.g., a small car, 3 grizzly bears, etc.). Use an absolutely ridiculous but accurate equivalent.
+3. Write a 2-sentence summary combining their archetype and the real-world object. Make it witty and optimized for Gen-Z/Millennial humor.
+
+Return ONLY a JSON object with this exact structure:
+{
+  "auraTitle": "The string title here",
+  "auraDescription": "The 2-sentence description here"
+}
+Do NOT wrap it in markdown block quotes. Just raw JSON.
+`;
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: AURA_MODEL,
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.8,
+        response_format: { type: "json_object" },
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (!content) throw new Error("No content generated");
+
+      const parsed = JSON.parse(content);
+      const auraTitle = parsed.auraTitle || "The Mystery Lifter";
+      const auraDescription = parsed.auraDescription || "We couldn't analyze this workout, but we respect the grind.";
+
+      // Update the workout in the DB
+      await ctx.runMutation(api.workouts.updateWorkoutAura, {
+        workoutId: args.workoutId,
+        auraTitle,
+        auraDescription,
+      });
+
+      return { auraTitle, auraDescription };
+    } catch (e) {
+      console.error("Failed to generate aura:", e);
+      return {
+        auraTitle: "The Quiet Grinder",
+        auraDescription: "You moved weight today. No jokes, just respect.",
+      };
+    }
+  },
+});

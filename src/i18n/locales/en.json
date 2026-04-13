@@ -400,5 +400,16 @@
     "suggestion2": "How many times did I train this week?",
     "suggestion3": "Am I overtraining any muscle?",
     "suggestion4": "Suggest a workout for today"
+  },
+  "aura": {
+    "consulting": "Consulting the gym gods...",
+    "analyzingRest": "Analyzing rest times...",
+    "judgingForm": "Judging your form...",
+    "calculatingAura": "Calculating absolute aura...",
+    "silentGods": "The gym gods are silent today.",
+    "todaysAura": "TODAY'S AURA",
+    "verifiedBy": "Verified by RepAI",
+    "shareToStory": "Share to Story",
+    "shareTitle": "Share your workout aura"
   }
 }

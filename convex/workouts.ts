@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query } from "./_generated/server";
+import { query, mutation } from "./_generated/server";
 
 /**
  * Workout queries — primarily for future AI assistant use.
@@ -91,5 +91,65 @@ export const getExerciseHistory = query({
     );
 
     return enriched.sort((a, b) => (b.workoutDate || 0) - (a.workoutDate || 0));
+  },
+});
+
+/**
+ * Get detailed data for a workout to generate an aura.
+ */
+export const getWorkoutDetailsForAura = query({
+  args: { workoutId: v.id("workouts") },
+  handler: async (ctx, args) => {
+    const workout = await ctx.db.get(args.workoutId);
+    if (!workout) throw new Error("Workout not found");
+
+    const exerciseLogs = await ctx.db
+      .query("exerciseLogs")
+      .withIndex("by_workoutId", (q) => q.eq("workoutId", args.workoutId))
+      .collect();
+
+    let totalSets = 0;
+    let totalVolume = 0;
+    const exercisesWithSets = await Promise.all(
+      exerciseLogs.map(async (log) => {
+        const sets = await ctx.db
+          .query("sets")
+          .withIndex("by_exerciseLogId", (q) => q.eq("exerciseLogId", log._id))
+          .collect();
+        const validSets = sets.filter((s) => s.type === "normal" && s.completed);
+        totalSets += validSets.length;
+        const volume = validSets.reduce((acc, s) => acc + s.weight * s.reps, 0);
+        totalVolume += volume;
+        return {
+          name: log.exerciseName,
+          sets: validSets.length,
+          volume,
+        };
+      })
+    );
+
+    return {
+      workout,
+      exercises: exercisesWithSets,
+      totalVolume,
+      totalSets,
+    };
+  },
+});
+
+/**
+ * Update a workout with its generated aura.
+ */
+export const updateWorkoutAura = mutation({
+  args: {
+    workoutId: v.id("workouts"),
+    auraTitle: v.string(),
+    auraDescription: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.workoutId, {
+      auraTitle: args.auraTitle,
+      auraDescription: args.auraDescription,
+    });
   },
 });

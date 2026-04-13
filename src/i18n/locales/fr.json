@@ -400,5 +400,16 @@
     "suggestion2": "Combien de fois me suis-je entraîné cette semaine ?",
     "suggestion3": "Est-ce que je surentraîne un muscle ?",
     "suggestion4": "Suggère un entraînement pour aujourd'hui"
+  },
+  "aura": {
+    "consulting": "Consultation des dieux de la muscu...",
+    "analyzingRest": "Analyse des temps de repos...",
+    "judgingForm": "Jugement de votre exécution...",
+    "calculatingAura": "Calcul de l'aura absolue...",
+    "silentGods": "Les dieux de la muscu sont silencieux aujourd'hui.",
+    "todaysAura": "AURA DU JOUR",
+    "verifiedBy": "Vérifié par RepAI",
+    "shareToStory": "Partager en Story",
+    "shareTitle": "Partagez votre aura d'entraînement"
   }
 }

@@ -16,6 +16,7 @@ import { PaywallScreen } from '../screens/PaywallScreen';
 import { AIGateScreen } from '../screens/AIGateScreen';
 import { AIOnboardingScreen } from '../screens/AIOnboardingScreen';
 import { AIChatScreen } from '../screens/AIChatScreen';
+import WorkoutAuraScreen from '../screens/WorkoutAuraScreen';
 import { useSubscription } from '../context/SubscriptionContext';
 import { useAuth } from '@clerk/clerk-expo';
 import { useTheme } from '../context/ThemeContext';
@@ -246,6 +247,15 @@ export const AppNavigator = () => {
                         presentation: 'fullScreenModal',
                         headerShown: false,
                         animation: 'slide_from_bottom',
+                    }}
+                />
+                <Stack.Screen
+                    name="WorkoutAura"
+                    component={WorkoutAuraScreen}
+                    options={{
+                        presentation: 'fullScreenModal',
+                        headerShown: false,
+                        animation: 'fade',
                     }}
                 />
             </Stack.Navigator>

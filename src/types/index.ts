@@ -133,6 +133,7 @@ export type RootStackParamList = {
   ProgramDetail: { programId: string };
   Paywall: undefined;
   AIOnboarding: undefined;
+  WorkoutAura: { workoutId: string };
 };
 
 export type TabParamList = {

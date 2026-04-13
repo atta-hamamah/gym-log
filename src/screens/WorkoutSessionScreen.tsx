@@ -179,14 +179,22 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
             setPendingGoBack(false);
         } else if (pendingGoBack && lastDetectedPRs.length === 0) {
             setPendingGoBack(false);
-            navigation.goBack();
+            if (currentWorkout) {
+                navigation.replace('WorkoutAura', { workoutId: currentWorkout.id });
+            } else {
+                navigation.goBack();
+            }
         }
-    }, [pendingGoBack, lastDetectedPRs]);
+    }, [pendingGoBack, lastDetectedPRs, currentWorkout?.id, navigation]);
 
     const handleDismissPR = () => {
         setShowPRCelebration(false);
         clearDetectedPRs();
-        navigation.goBack();
+        if (currentWorkout) {
+            navigation.replace('WorkoutAura', { workoutId: currentWorkout.id });
+        } else {
+            navigation.goBack();
+        }
     };
 
     if (!currentWorkout) {
