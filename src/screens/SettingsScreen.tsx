@@ -4,6 +4,7 @@ import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
+import { ProFeatureGate } from '../components/ProFeatureGate';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useWorkout } from '../context/WorkoutContext';
 import { borderRadius, ThemeColors } from '../theme/colors';
@@ -32,8 +33,9 @@ export const SettingsScreen = ({ navigation }: any) => {
         tier,
         isPro,
         isAISubscriber,
+        isProTrial,
         trialDaysRemaining,
-        purchaseLocalPremium,
+        purchasePro,
         purchaseAISubscription,
         openManageSubscription,
         restorePurchases,
@@ -402,7 +404,7 @@ export const SettingsScreen = ({ navigation }: any) => {
             );
         }
 
-        if (isPro) {
+        if (isPro && !isProTrial) {
             // ── Pro (one-time purchase) ──
             return (
                 <Card style={styles.premiumCard}>
@@ -436,23 +438,23 @@ export const SettingsScreen = ({ navigation }: any) => {
             );
         }
 
-        // ── Trial / Expired ──
+        // ── Pro Trial / Free ──
         return (
             <Card>
                 <Typography variant="h3" style={{ marginBottom: 4 }}>{t('subscription.statusTitle')}</Typography>
 
-                {tier === 'trial' ? (
+                {tier === 'pro_trial' ? (
                     <View>
                         <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 12 }}>
-                            {t('subscription.trialBanner', { days: trialDaysRemaining })}
+                            {t('subscription.proTrialBanner', { days: trialDaysRemaining, defaultValue: '{{days}} days of Pro remaining' })}
                         </Typography>
                         <View style={styles.trialProgressBar}>
-                            <View style={[styles.trialProgressFill, { width: `${(trialDaysRemaining / 5) * 100}%` }]} />
+                            <View style={[styles.trialProgressFill, { width: `${(trialDaysRemaining / 14) * 100}%` }]} />
                         </View>
                         <Button
                             title={t('subscription.unlockForever')}
                             onPress={async () => {
-                                const result = await purchaseLocalPremium();
+                                const result = await purchasePro();
                                 if (!result.success) {
                                     showModal(t('subscription.purchaseError'), result.error || '', undefined, 'danger');
                                 }
@@ -469,7 +471,7 @@ export const SettingsScreen = ({ navigation }: any) => {
                         <Button
                             title={t('subscription.unlockForever')}
                             onPress={async () => {
-                                const result = await purchaseLocalPremium();
+                                const result = await purchasePro();
                                 if (!result.success) {
                                     showModal(t('subscription.purchaseError'), result.error || '', undefined, 'danger');
                                 }
@@ -637,6 +639,7 @@ export const SettingsScreen = ({ navigation }: any) => {
                 </Card>
 
                 {/* Body Measurements */}
+                <ProFeatureGate feature="bodyMeasurements">
                 <Card>
                     <TouchableOpacity
                         onPress={() => setShowMeasurements(!showMeasurements)}
@@ -729,6 +732,7 @@ export const SettingsScreen = ({ navigation }: any) => {
                         </View>
                     )}
                 </Card>
+                </ProFeatureGate>
 
                 {/* Data Management */}
                 <Card>
@@ -737,12 +741,14 @@ export const SettingsScreen = ({ navigation }: any) => {
                         {t('settings.dataManagementDescription')}
                     </Typography>
 
+                    <ProFeatureGate feature="csvExport" inline>
                     <Button
                         title={t('settings.exportCSV')}
                         onPress={handleExportCSV}
                         variant="secondary"
                         style={{ marginBottom: 12 }}
                     />
+                    </ProFeatureGate>
 
                     <Button
                         title={t('settings.clearAllData')}

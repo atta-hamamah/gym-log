@@ -84,8 +84,8 @@ export const HomeScreen = ({ navigation }: any) => {
                     </View>
                 </View>
 
-                {/* Trial Banner */}
-                {tier === 'trial' && (
+                {/* Trial / Upgrade Banner */}
+                {(tier === 'pro_trial' || tier === 'free') && (
                     <TrialBanner onPress={() => navigation.navigate('Paywall')} />
                 )}
 

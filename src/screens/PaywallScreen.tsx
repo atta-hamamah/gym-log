@@ -24,7 +24,7 @@ export const PaywallScreen = () => {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const styles = createStyles(colors);
-  const { purchaseLocalPremium, trialDaysRemaining, tier } = useSubscription();
+  const { purchasePro, trialDaysRemaining, tier, restorePurchases } = useSubscription();
   const [purchasing, setPurchasing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [product, setProduct] = useState<BillingProduct | null>(null);
@@ -44,7 +44,7 @@ export const PaywallScreen = () => {
     setPurchasing(true);
     setError(null);
 
-    const result = await purchaseLocalPremium();
+    const result = await purchasePro();
 
     if (!result.success) {
       setError(result.error || t('subscription.purchaseError'));
@@ -54,8 +54,8 @@ export const PaywallScreen = () => {
   };
 
 
-  const priceText = product?.localizedPrice || '$6.99';
-  const isTrialActive = tier === 'trial' && trialDaysRemaining > 0;
+  const priceText = product?.localizedPrice || '$4.99';
+  const isTrialActive = tier === 'pro_trial' && trialDaysRemaining > 0;
 
   return (
     <ScreenLayout>

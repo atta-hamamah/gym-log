@@ -4,7 +4,7 @@ import { Typography } from './Typography';
 import { useSubscription } from '../context/SubscriptionContext';
 import { borderRadius } from '../theme/colors';
 import { useTranslation } from 'react-i18next';
-import { Clock, ChevronRight } from 'lucide-react-native';
+import { Clock, ChevronRight, Crown } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 
 interface TrialBannerProps {
@@ -17,36 +17,65 @@ export const TrialBanner: React.FC<TrialBannerProps> = ({ onPress }) => {
   const styles = createStyles(colors);
   const { tier, trialDaysRemaining } = useSubscription();
 
-  // Only show during active trial
-  if (tier !== 'trial') return null;
+  // Show during active Pro trial
+  if (tier === 'pro_trial') {
+    const isUrgent = trialDaysRemaining <= 3;
 
-  const isUrgent = trialDaysRemaining <= 2;
+    return (
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.8}
+        style={[
+          styles.container,
+          isUrgent && styles.containerUrgent,
+        ]}
+      >
+        <View style={[styles.iconCircle, isUrgent && styles.iconCircleUrgent]}>
+          <Clock color={isUrgent ? colors.warning : colors.primary} size={16} />
+        </View>
 
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.8}
-      style={[
-        styles.container,
-        isUrgent && styles.containerUrgent,
-      ]}
-    >
-      <View style={[styles.iconCircle, isUrgent && styles.iconCircleUrgent]}>
-        <Clock color={isUrgent ? colors.warning : colors.primary} size={16} />
-      </View>
+        <View style={styles.textContainer}>
+          <Typography variant="bodySmall" bold color={colors.text}>
+            {t('subscription.proTrialBanner', { days: trialDaysRemaining, defaultValue: '{{days}} days of Pro remaining' })}
+          </Typography>
+          <Typography variant="caption" color={colors.textSecondary} style={{ marginTop: 1 }}>
+            {t('subscription.proTrialHint', { defaultValue: 'Enjoying all features for free!' })}
+          </Typography>
+        </View>
 
-      <View style={styles.textContainer}>
-        <Typography variant="bodySmall" bold color={colors.text}>
-          {t('subscription.trialBanner', { days: trialDaysRemaining })}
-        </Typography>
-        <Typography variant="caption" color={colors.textSecondary} style={{ marginTop: 1 }}>
-          {t('subscription.tapToUnlock')}
-        </Typography>
-      </View>
+        <ChevronRight color={colors.textMuted} size={18} />
+      </TouchableOpacity>
+    );
+  }
 
-      <ChevronRight color={colors.textMuted} size={18} />
-    </TouchableOpacity>
-  );
+  // Show upgrade banner when trial expired (free tier)
+  if (tier === 'free') {
+    return (
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.8}
+        style={[styles.container, styles.containerUpgrade]}
+      >
+        <View style={[styles.iconCircle, styles.iconCircleUpgrade]}>
+          <Crown color={colors.primary} size={16} />
+        </View>
+
+        <View style={styles.textContainer}>
+          <Typography variant="bodySmall" bold color={colors.text}>
+            {t('subscription.upgradeProBanner', { defaultValue: 'Upgrade to Pro' })}
+          </Typography>
+          <Typography variant="caption" color={colors.textSecondary} style={{ marginTop: 1 }}>
+            {t('subscription.upgradeProHint', { defaultValue: 'Unlock all features — one-time $4.99' })}
+          </Typography>
+        </View>
+
+        <ChevronRight color={colors.textMuted} size={18} />
+      </TouchableOpacity>
+    );
+  }
+
+  // Don't show for pro or ai_subscriber
+  return null;
 };
 
 const createStyles = (colors: any) => StyleSheet.create({
@@ -65,6 +94,10 @@ const createStyles = (colors: any) => StyleSheet.create({
     borderColor: colors.warning + '50',
     backgroundColor: colors.warning + '08',
   },
+  containerUpgrade: {
+    borderColor: colors.primary + '40',
+    backgroundColor: colors.primary + '08',
+  },
   iconCircle: {
     width: 32,
     height: 32,
@@ -76,6 +109,9 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   iconCircleUrgent: {
     backgroundColor: colors.warning + '15',
+  },
+  iconCircleUpgrade: {
+    backgroundColor: colors.primary + '20',
   },
   textContainer: {
     flex: 1,

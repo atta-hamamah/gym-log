@@ -264,6 +264,10 @@
   "subscription": {
     "statusTitle": "Subscription",
     "trialBanner": "⏳ {{days}} days left in your free trial",
+    "proTrialBanner": "{{days}} days of Pro remaining",
+    "proTrialHint": "Enjoying all features for free!",
+    "upgradeProBanner": "Upgrade to Pro",
+    "upgradeProHint": "Unlock all features — one-time $4.99",
     "tapToUnlock": "Tap to unlock premium",
     "trialExpired": "Your free trial has ended",
     "unlockForever": "Unlock Forever",
@@ -286,6 +290,12 @@
       "export": "CSV Data Export",
       "noLimits": "No Limits, No Ads — Forever"
     }
+  },
+  "proGate": {
+    "unlockPro": "Unlock with Pro",
+    "proFeature": "Pro Feature",
+    "upgradeMessage": "Upgrade to Pro to unlock this feature — one-time payment",
+    "upgrade": "Upgrade to Pro"
   },
   "aiGate": {
     "title": "Meet Your AI Coach",

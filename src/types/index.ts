@@ -122,7 +122,7 @@ export interface DetectedPR {
 // ──────────────────────────────────────────────────────
 
 // ── Subscription ─────────────────────────────────────────
-export type SubscriptionTier = 'trial' | 'expired' | 'local_premium' | 'ai_subscriber';
+export type SubscriptionTier = 'pro_trial' | 'free' | 'pro' | 'ai_subscriber';
 // ──────────────────────────────────────────────────────────
 
 export type RootStackParamList = {

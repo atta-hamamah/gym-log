@@ -162,23 +162,8 @@ export const AppNavigator = () => {
         );
     }
 
-    // If trial expired and not purchased, show paywall only
-    if (tier === 'expired') {
-        return (
-            <NavigationContainer theme={appTheme}>
-                <Stack.Navigator
-                    screenOptions={{
-                        headerShown: false,
-                        contentStyle: { backgroundColor: colors.background },
-                    }}
-                >
-                    <Stack.Screen name="Paywall" component={PaywallScreen} />
-                </Stack.Navigator>
-            </NavigationContainer>
-        );
-    }
 
-    // Normal app flow (trial, premium, or AI subscriber)
+    // Normal app flow — app is always accessible, features are gated per tier
     return (
         <NavigationContainer theme={appTheme}>
             <Stack.Navigator

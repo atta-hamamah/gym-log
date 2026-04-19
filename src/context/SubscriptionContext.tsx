@@ -15,22 +15,24 @@ import {
 import { SubscriptionTier } from '../types';
 
 // ── Constants ────────────────────────────────────────────
-const TRIAL_DURATION_DAYS = 5;
+const TRIAL_DURATION_DAYS = 14;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 // ── Context Type ─────────────────────────────────────────
 interface SubscriptionContextType {
   /** Highest active tier */
   tier: SubscriptionTier;
-  /** Whether the user has at least Pro (one-time purchase) */
+  /** Whether the user has at least Pro (one-time purchase or active trial) */
   isPro: boolean;
   /** Whether the user has an active AI subscription */
   isAISubscriber: boolean;
+  /** Whether the user is in the 14-day Pro trial period */
+  isProTrial: boolean;
   trialDaysRemaining: number;
   loading: boolean;
 
   /** Purchase the one-time Pro unlock */
-  purchaseLocalPremium: () => Promise<{ success: boolean; error?: string }>;
+  purchasePro: () => Promise<{ success: boolean; error?: string }>;
   /** Purchase the AI monthly subscription */
   purchaseAISubscription: () => Promise<{ success: boolean; error?: string }>;
   /** Open the store's subscription management page (for cancel) */
@@ -52,9 +54,10 @@ function calculateTrialDaysRemaining(firstOpenDate: number): number {
 
 // ── Provider ─────────────────────────────────────────────
 export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [tier, setTier] = useState<SubscriptionTier>('trial');
+  const [tier, setTier] = useState<SubscriptionTier>('pro_trial');
   const [isPro, setIsPro] = useState(false);
   const [isAISubscriber, setIsAISubscriber] = useState(false);
+  const [isProTrial, setIsProTrial] = useState(true);
   const [trialDaysRemaining, setTrialDaysRemaining] = useState(TRIAL_DURATION_DAYS);
   const [loading, setLoading] = useState(true);
   const appState = useRef(AppState.currentState);
@@ -72,13 +75,13 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         await StorageService.setFirstOpenDate(firstOpenDate);
       }
 
-      let hasPro = false;
+      let hasPurchasedPro = false;
       let hasAI = false;
 
       // 2. RevenueCat is the SOURCE OF TRUTH for subscription state
       try {
         const entitlements = await checkAllEntitlements();
-        hasPro = entitlements.hasPro;
+        hasPurchasedPro = entitlements.hasPro;
         hasAI = entitlements.hasAI;
 
         // If a purchase JUST happened locally but RC doesn't reflect it yet
@@ -89,37 +92,51 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         }
 
         // Update local cache to match
-        await StorageService.setPurchaseStatus(hasPro ? 'local_premium' : 'free');
+        await StorageService.setPurchaseStatus(hasPurchasedPro ? 'pro' : 'free');
         await StorageService.setAISubscriptionStatus(hasAI ? 'active' : 'expired');
       } catch (e) {
         // RevenueCat failed — only trust local cache if we have a reason to
         console.warn('[Subscription] RevenueCat check failed, checking local cache:', e);
         const purchaseStatus = await StorageService.getPurchaseStatus();
         const aiStatus = await StorageService.getAISubscriptionStatus();
-        hasPro = purchaseStatus === 'local_premium';
+        hasPurchasedPro = purchaseStatus === 'pro' || purchaseStatus === 'local_premium';
         hasAI = aiStatus === 'active';
       }
 
       // 3. Set state
-      setIsPro(hasPro);
       setIsAISubscriber(hasAI);
 
       // 4. Determine highest tier
       if (hasAI) {
         setTier('ai_subscriber');
+        setIsPro(true);
+        setIsProTrial(false);
         setTrialDaysRemaining(0);
-      } else if (hasPro) {
-        setTier('local_premium');
+      } else if (hasPurchasedPro) {
+        setTier('pro');
+        setIsPro(true);
+        setIsProTrial(false);
         setTrialDaysRemaining(0);
       } else {
-        // Trial logic
+        // Trial / free logic
         const remaining = calculateTrialDaysRemaining(firstOpenDate);
         setTrialDaysRemaining(remaining);
-        setTier(remaining > 0 ? 'trial' : 'expired');
+        if (remaining > 0) {
+          // 14-day reverse trial: user gets all Pro features for free
+          setTier('pro_trial');
+          setIsPro(true);
+          setIsProTrial(true);
+        } else {
+          // Trial expired: downgrade to free tier (app still works, just limited)
+          setTier('free');
+          setIsPro(false);
+          setIsProTrial(false);
+        }
       }
     } catch (error) {
       console.error('[Subscription] Failed to refresh state:', error);
-      setTier('trial');
+      setTier('pro_trial');
+      setIsProTrial(true);
       setTrialDaysRemaining(TRIAL_DURATION_DAYS);
     }
   }, []);
@@ -158,15 +175,16 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   }, [refreshSubscriptionState]);
 
   // ── Purchase Pro (one-time) ─────────────────────────
-  const purchaseLocalPremium = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
+  const purchasePro = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
     try {
       const result = await presentPaywall();
 
       if (result.success) {
-        await StorageService.setPurchaseStatus('local_premium');
+        await StorageService.setPurchaseStatus('pro');
         setIsPro(true);
+        setIsProTrial(false);
         if (!isAISubscriber) {
-          setTier('local_premium');
+          setTier('pro');
         }
         setTrialDaysRemaining(0);
         return { success: true };
@@ -187,6 +205,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         await StorageService.setAISubscriptionStatus('active');
         setIsAISubscriber(true);
         setTier('ai_subscriber');
+        setIsProTrial(false);
         setTrialDaysRemaining(0);
 
         // Mark that a purchase just happened — prevents refreshSubscriptionState
@@ -197,7 +216,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
         // AI subscribers also get Pro-level local access
         if (!isPro) {
-          await StorageService.setPurchaseStatus('local_premium');
+          await StorageService.setPurchaseStatus('pro');
           setIsPro(true);
         }
         return { success: true };
@@ -225,12 +244,14 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const result = await restorePurchasesRC();
 
       if (result.restoredPro) {
-        await StorageService.setPurchaseStatus('local_premium');
+        await StorageService.setPurchaseStatus('pro');
         setIsPro(true);
+        setIsProTrial(false);
       }
       if (result.restoredAI) {
         await StorageService.setAISubscriptionStatus('active');
         setIsAISubscriber(true);
+        setIsProTrial(false);
       }
 
       // Update tier
@@ -238,7 +259,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         setTier('ai_subscriber');
         setTrialDaysRemaining(0);
       } else if (result.restoredPro) {
-        setTier('local_premium');
+        setTier('pro');
         setTrialDaysRemaining(0);
       }
 
@@ -265,7 +286,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   // AI features REQUIRE a Clerk account (for Convex auth + cloud data).
   // If user is not signed in, AI subscription is always false regardless of RevenueCat.
   const effectiveAISubscriber = isSignedIn && isAISubscriber;
-  const effectiveTier: SubscriptionTier = !isSignedIn && tier === 'ai_subscriber' ? (isPro ? 'local_premium' : 'trial') : tier;
+  const effectiveTier: SubscriptionTier = !isSignedIn && tier === 'ai_subscriber' ? (isPro ? 'pro' : (isProTrial ? 'pro_trial' : 'free')) : tier;
 
   return (
     <SubscriptionContext.Provider
@@ -273,9 +294,10 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         tier: isSuperAdmin ? 'ai_subscriber' : effectiveTier,
         isPro: isSuperAdmin ? true : isPro,
         isAISubscriber: isSuperAdmin ? true : effectiveAISubscriber,
+        isProTrial: isSuperAdmin ? false : isProTrial,
         trialDaysRemaining: isSuperAdmin ? 0 : trialDaysRemaining,
         loading,
-        purchaseLocalPremium,
+        purchasePro,
         purchaseAISubscription,
         openManageSubscription,
         restorePurchases,

@@ -264,6 +264,10 @@
   "subscription": {
     "statusTitle": "الاشتراك",
     "trialBanner": "⏳ {{days}} أيام متبقية في الفترة التجريبية",
+    "proTrialBanner": "{{days}} أيام متبقية من باقة برو",
+    "proTrialHint": "استمتع بجميع الميزات مجاناً!",
+    "upgradeProBanner": "ترقية إلى برو",
+    "upgradeProHint": "افتح جميع الميزات — دفعة واحدة $4.99",
     "tapToUnlock": "اضغط لفتح النسخة المميزة",
     "trialExpired": "انتهت الفترة التجريبية الخاصة بك",
     "unlockForever": "افتح التطبيق مدى الحياة",
@@ -286,6 +290,12 @@
       "export": "تصدير البيانات كـ CSV",
       "noLimits": "بلا حدود، بلا إعلانات — للأبد"
     }
+  },
+  "proGate": {
+    "unlockPro": "افتح مع برو",
+    "proFeature": "ميزة برو",
+    "upgradeMessage": "ترقية إلى برو لفتح هذه الميزة — دفعة واحدة",
+    "upgrade": "ترقية إلى برو"
   },
   "aiGate": {
     "title": "تعرّف على مدربك الذكي",

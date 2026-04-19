@@ -264,6 +264,10 @@
   "subscription": {
     "statusTitle": "Abonnement",
     "trialBanner": "⏳ {{days}} jours restants d'essai gratuit",
+    "proTrialBanner": "{{days}} jours de Pro restants",
+    "proTrialHint": "Profitez de toutes les fonctionnalités gratuitement !",
+    "upgradeProBanner": "Passer à Pro",
+    "upgradeProHint": "Débloquez toutes les fonctionnalités — 4,99 $ une fois",
     "tapToUnlock": "Appuyez pour débloquer premium",
     "trialExpired": "Votre essai gratuit est terminé",
     "unlockForever": "Débloquer à vie",
@@ -286,6 +290,12 @@
       "export": "Exporter des données CSV",
       "noLimits": "Sans limites, sans pub — Pour toujours"
     }
+  },
+  "proGate": {
+    "unlockPro": "Débloquer avec Pro",
+    "proFeature": "Fonction Pro",
+    "upgradeMessage": "Passez à Pro pour débloquer cette fonction — paiement unique",
+    "upgrade": "Passer à Pro"
   },
   "aiGate": {
     "title": "Rencontrez votre Coach IA",

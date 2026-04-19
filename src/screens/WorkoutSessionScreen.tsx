@@ -21,11 +21,15 @@ import {
 } from '../utils/supersetUtils';
 import { getExerciseName } from '../constants/exercises';
 import { useTheme } from '../context/ThemeContext';
+import { useFeatureAccess } from '../hooks/useFeatureAccess';
 
 export const WorkoutSessionScreen = ({ navigation }: any) => {
     const { t } = useTranslation();
     const { colors } = useTheme();
     const styles = createStyles(colors);
+    const { canAccess } = useFeatureAccess();
+    const canAccessSupersets = canAccess('supersets');
+    const canAccessRpe = canAccess('rpeTracking');
     const {
         currentWorkout,
         finishWorkout,
@@ -405,6 +409,7 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
                                             isLinkMode={isLinkMode}
                                             isSelected={selectedForLink.includes(log.id)}
                                             onUnlink={undefined}
+                                            canAccessRpe={canAccessRpe}
                                         />
                                     </View>
                                 );
@@ -466,6 +471,7 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
                                                                 isSelected={selectedForLink.includes(log.id)}
                                                                 onUnlink={() => handleUnlink(log.id)}
                                                                 isLastInGroup={i === groupExercises.length - 1}
+                                                                canAccessRpe={canAccessRpe}
                                                             />
                                                         </View>
                                                     );
@@ -489,12 +495,18 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
                     />
                     {currentWorkout.exercises.length >= 2 && !isLinkMode && (
                         <TouchableOpacity
-                            onPress={handleToggleLinkMode}
+                            onPress={() => {
+                                if (!canAccessSupersets) {
+                                    navigation.navigate('Paywall');
+                                    return;
+                                }
+                                handleToggleLinkMode();
+                            }}
                             style={styles.linkModeBtn}
                             activeOpacity={0.7}
                         >
                             <Typography variant="bodySmall" color={colors.secondary} bold>
-                                🔗 {t('superset.linkExercises')}
+                                {!canAccessSupersets ? '🔒 ' : '🔗 '}{t('superset.linkExercises')}
                             </Typography>
                         </TouchableOpacity>
                     )}
@@ -622,6 +634,7 @@ const ExerciseCard = ({
     isSelected,
     onUnlink,
     isLastInGroup,
+    canAccessRpe = true,
 }: {
     log: ExerciseLog;
     index: number;
@@ -633,6 +646,7 @@ const ExerciseCard = ({
     isSelected: boolean;
     onUnlink: (() => void) | undefined;
     isLastInGroup?: boolean;
+    canAccessRpe?: boolean;
 }) => {
     const { t } = useTranslation();
     const { colors } = useTheme();
@@ -790,6 +804,7 @@ const ExerciseCard = ({
                 />
 
                 {/* RPE Button */}
+                {canAccessRpe ? (
                 <TouchableOpacity
                     onPress={() => setShowRpeSelector(!showRpeSelector)}
                     style={[
@@ -807,6 +822,13 @@ const ExerciseCard = ({
                         {rpe !== null ? rpe : 'RPE'}
                     </Typography>
                 </TouchableOpacity>
+                ) : (
+                <View style={[styles.rpeInputBtn, { opacity: 0.4 }]}>
+                    <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 11 }}>
+                        🔒
+                    </Typography>
+                </View>
+                )}
 
                 <TouchableOpacity
                     onPress={handleAddSet}
