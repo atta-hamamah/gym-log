@@ -172,7 +172,7 @@ export default function WorkoutAuraScreen() {
   };
 
   const handleFinish = () => {
-    navigation.navigate("Home" as never);
+    navigation.navigate("Main" as never);
   };
 
   // ── Loading State ──

@@ -20,7 +20,8 @@
     "strength": "शक्ति",
     "cardioType": "कार्डियो",
     "all": "सभी",
-    "rpe": "RPE"
+    "rpe": "RPE",
+    "finish":"समाप्त"
   },
   "tabs": {
     "dashboard": "डैशबोर्ड",

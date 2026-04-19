@@ -20,7 +20,8 @@
     "strength": "قوة",
     "cardioType": "كارديو",
     "all": "الكل",
-    "rpe": "RPE"
+    "rpe": "RPE",
+    "finish":"إنهاء"
   },
   "tabs": {
     "dashboard": "الرئيسية",

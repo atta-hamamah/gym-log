@@ -20,7 +20,8 @@
     "strength": "Strength",
     "cardioType": "Cardio",
     "all": "All",
-    "rpe": "RPE"
+    "rpe": "RPE",
+    "finish":"Finish"
   },
   "tabs": {
     "dashboard": "Dashboard",
