@@ -249,21 +249,28 @@ export const generateWorkoutAura = action({
   args: {
     workoutId: v.id("workouts"),
   },
-  handler: async (ctx, args) => {
+  handler: async (ctx, args): Promise<{
+    auraTitle: string;
+    auraDescription: string;
+    durationMin?: number;
+    exerciseCount?: number;
+    totalVolume?: number;
+    totalSets?: number;
+  }> => {
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     });
 
-    const details = await ctx.runQuery(api.workouts.getWorkoutDetailsForAura, {
+    const details: any = await ctx.runQuery(api.workouts.getWorkoutDetailsForAura, {
       workoutId: args.workoutId,
     });
 
-    const durationMin = details.workout.endTime && details.workout.startTime
+    const durationMin: number | null = details.workout.endTime && details.workout.startTime
       ? Math.round((details.workout.endTime - details.workout.startTime) / 60000)
       : null;
 
     let exerciseSummary = "";
-    details.exercises.forEach((ex) => {
+    details.exercises.forEach((ex: any) => {
       exerciseSummary += `- ${ex.name}: ${ex.sets} sets, ${ex.volume}kg total volume\n`;
     });
 
@@ -311,7 +318,14 @@ Do NOT wrap it in markdown block quotes. Just raw JSON.
         auraDescription,
       });
 
-      return { auraTitle, auraDescription };
+      return {
+        auraTitle,
+        auraDescription,
+        durationMin: durationMin ?? undefined,
+        exerciseCount: details.exercises.length,
+        totalVolume: Math.round(details.totalVolume),
+        totalSets: details.totalSets,
+      };
     } catch (e) {
       console.error("Failed to generate aura:", e);
       return {

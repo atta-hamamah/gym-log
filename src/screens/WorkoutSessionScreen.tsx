@@ -176,6 +176,9 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
         return getExerciseGroups(currentWorkout.exercises);
     }, [currentWorkout?.exercises]);
 
+    // Store the Convex workout ID returned by finishWorkout (needed for Aura)
+    const [convexWorkoutId, setConvexWorkoutId] = useState<string | null>(null);
+
     // When finishWorkout completes, check for PRs
     useEffect(() => {
         if (pendingGoBack && lastDetectedPRs.length > 0) {
@@ -183,19 +186,19 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
             setPendingGoBack(false);
         } else if (pendingGoBack && lastDetectedPRs.length === 0) {
             setPendingGoBack(false);
-            if (currentWorkout) {
-                navigation.replace('WorkoutAura', { workoutId: currentWorkout.id });
+            if (convexWorkoutId) {
+                navigation.replace('WorkoutAura', { workoutId: convexWorkoutId });
             } else {
                 navigation.goBack();
             }
         }
-    }, [pendingGoBack, lastDetectedPRs, currentWorkout?.id, navigation]);
+    }, [pendingGoBack, lastDetectedPRs, convexWorkoutId, navigation]);
 
     const handleDismissPR = () => {
         setShowPRCelebration(false);
         clearDetectedPRs();
-        if (currentWorkout) {
-            navigation.replace('WorkoutAura', { workoutId: currentWorkout.id });
+        if (convexWorkoutId) {
+            navigation.replace('WorkoutAura', { workoutId: convexWorkoutId });
         } else {
             navigation.goBack();
         }
@@ -231,7 +234,8 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
             t('workoutSession.finishTitle'),
             t('workoutSession.finishMessage'),
             async () => {
-                await finishWorkout(notes, mood || undefined);
+                const cloudId = await finishWorkout(notes, mood || undefined);
+                setConvexWorkoutId(cloudId);
                 setPendingGoBack(true);
             },
             'success',
@@ -837,15 +841,6 @@ const ExerciseCard = ({
                 >
                     <Typography variant="body" color={colors.black} bold>✓</Typography>
                 </TouchableOpacity>
-
-                {/* Plate Calculator Button */}
-                <TouchableOpacity
-                    onPress={() => setShowPlateCalc(true)}
-                    style={styles.plateCalcBtn}
-                    activeOpacity={0.7}
-                >
-                    <Image source={require('../../assets/plate_calc.jpg')} style={{ width: 30, height: 30, borderRadius: 4 }} />
-                </TouchableOpacity>
             </View>
 
             {/* RPE Selector Row */}
@@ -881,6 +876,18 @@ const ExerciseCard = ({
                     ))}
                 </View>
             )}
+
+            {/* Plate Calculator — full width */}
+            <TouchableOpacity
+                onPress={() => setShowPlateCalc(true)}
+                style={styles.plateCalcRow}
+                activeOpacity={0.7}
+            >
+                <Image source={require('../../assets/plate_calc.jpg')} style={{ width: 22, height: 22, borderRadius: 3 }} />
+                <Typography variant="caption" color={colors.textSecondary} style={{ marginLeft: 8, fontSize: 12 }}>
+                    {t('plateCalculator.title')}
+                </Typography>
+            </TouchableOpacity>
 
             {/* Per-Exercise Notes */}
             <TouchableOpacity
@@ -1093,14 +1100,14 @@ const createStyles = (colors: any) => StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    // Plate Calc Button
-    plateCalcBtn: {
-        height: 44,
-        width: 40,
+    plateCalcRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 12,
+        paddingVertical: 10,
+        paddingHorizontal: 14,
         borderRadius: borderRadius.s,
         backgroundColor: colors.surfaceLight,
-        alignItems: 'center',
-        justifyContent: 'center',
         borderWidth: 1,
         borderColor: colors.border,
     },

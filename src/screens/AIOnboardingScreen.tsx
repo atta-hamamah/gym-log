@@ -51,6 +51,12 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
   const [pendingVerification, setPendingVerification] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  // ── Forgot Password Fields ──
+  const [forgotPasswordMode, setForgotPasswordMode] = useState(false);
+  const [resetCode, setResetCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [pendingReset, setPendingReset] = useState(false);
+
   // ── Profile Fields ──
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date(2000, 0, 1));
@@ -173,6 +179,72 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
   }, [isSignInLoaded, signIn, email, password, setSignInActive, navigation, convex]);
 
   // ══════════════════════════════════════════════════════
+  // FORGOT PASSWORD
+  // ══════════════════════════════════════════════════════
+  const handleForgotPassword = useCallback(async () => {
+    if (!isSignInLoaded) return;
+    if (!email) {
+      setError(t('aiOnboarding.enterEmailFirst', 'Please enter your email address first'));
+      return;
+    }
+    setLoading(true);
+    setError('');
+
+    try {
+      await signIn.create({
+        strategy: 'reset_password_email_code',
+        identifier: email,
+      });
+      setPendingReset(true);
+    } catch (err: any) {
+      setError(err.errors?.[0]?.longMessage || err.message || 'Failed to send reset code');
+    } finally {
+      setLoading(false);
+    }
+  }, [isSignInLoaded, signIn, email, t]);
+
+  const handleResetPassword = useCallback(async () => {
+    if (!isSignInLoaded) return;
+    setLoading(true);
+    setError('');
+
+    try {
+      const result = await signIn.attemptFirstFactor({
+        strategy: 'reset_password_email_code',
+        code: resetCode,
+        password: newPassword,
+      });
+
+      if (result.status === 'complete') {
+        await setSignInActive({ session: result.createdSessionId });
+
+        // Link RevenueCat
+        const clerkUserId = (result as any)?.createdUserId;
+        if (clerkUserId) {
+          await identifyUser(clerkUserId);
+          await refreshSubscriptionState();
+        }
+
+        // Restore cloud data
+        setStep('migrating');
+        setMigrationProgress({ step: 'restoring', current: 0, total: 1 });
+        await syncConvexToLocal(convex);
+        setMigrationProgress({ step: 'restoring', current: 1, total: 1 });
+
+        setTimeout(() => {
+          navigation.goBack();
+        }, 1000);
+      } else {
+        setError(t('aiOnboarding.resetIncomplete', 'Password reset could not be completed.'));
+        setLoading(false);
+      }
+    } catch (err: any) {
+      setError(err.errors?.[0]?.longMessage || err.message || 'Reset failed');
+      setLoading(false);
+    }
+  }, [isSignInLoaded, signIn, resetCode, newPassword, setSignInActive, navigation, convex, refreshSubscriptionState, t]);
+
+  // ══════════════════════════════════════════════════════
   // STEP: PROFILE COMPLETION + MIGRATION
   // ══════════════════════════════════════════════════════
   const handleCompleteProfile = useCallback(async () => {
@@ -241,20 +313,136 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
         <Typography variant="h2" style={{ marginTop: 12 }}>
           {pendingVerification
             ? t('aiOnboarding.verifyEmail')
-            : authMode === 'signup'
-              ? t('aiOnboarding.createAccount')
-              : t('aiOnboarding.signIn', 'Sign In')}
+            : forgotPasswordMode
+              ? t('aiOnboarding.resetPassword', 'Reset Password')
+              : authMode === 'signup'
+                ? t('aiOnboarding.createAccount')
+                : t('aiOnboarding.signIn', 'Sign In')}
         </Typography>
         <Typography variant="body" color={colors.textSecondary} style={{ marginTop: 4 }}>
           {pendingVerification
             ? t('aiOnboarding.verificationSent', { email })
-            : authMode === 'signup'
-              ? t('aiOnboarding.accountRequired')
-              : t('aiOnboarding.signInDesc', 'Welcome back to your AI Coach')}
+            : forgotPasswordMode
+              ? (pendingReset
+                ? t('aiOnboarding.resetCodeSent', 'Enter the code sent to {{email}} and your new password', { email })
+                : t('aiOnboarding.resetDesc', 'We\'ll send a code to your email'))
+              : authMode === 'signup'
+                ? t('aiOnboarding.accountRequired')
+                : t('aiOnboarding.signInDesc', 'Welcome back to your AI Coach')}
         </Typography>
       </View>
 
-      {!pendingVerification ? (
+      {forgotPasswordMode ? (
+        /* ── Forgot Password Flow ── */
+        !pendingReset ? (
+          <>
+            <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 4 }}>
+              {t('aiOnboarding.email')}
+            </Typography>
+            <TextInput
+              style={styles.input}
+              value={email}
+              onChangeText={setEmail}
+              placeholder="you@example.com"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+
+            {error ? (
+              <Typography variant="caption" color={colors.error} style={{ marginTop: 8 }}>
+                {error}
+              </Typography>
+            ) : null}
+
+            <Button
+              title={loading ? t('subscription.processing') : t('aiOnboarding.sendResetCode', 'Send Reset Code')}
+              onPress={handleForgotPassword}
+              size="large"
+              style={{ marginTop: 24 }}
+              disabled={loading || !email}
+            />
+
+            <TouchableOpacity
+              onPress={() => {
+                setForgotPasswordMode(false);
+                setError('');
+              }}
+              style={{ marginTop: 16, alignItems: 'center' }}
+            >
+              <Typography variant="bodySmall" color={colors.primary}>
+                {t('aiOnboarding.backToSignIn', 'Back to Sign In')}
+              </Typography>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <>
+            <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 4 }}>
+              {t('aiOnboarding.resetCodeLabel', 'Reset Code')}
+            </Typography>
+            <TextInput
+              style={styles.input}
+              value={resetCode}
+              onChangeText={setResetCode}
+              placeholder="123456"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="number-pad"
+            />
+
+            <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 4 }}>
+              {t('aiOnboarding.newPassword', 'New Password')}
+            </Typography>
+            <View style={styles.passwordContainer}>
+              <TextInput
+                style={[styles.input, { marginBottom: 0, paddingRight: 45 }]}
+                value={newPassword}
+                onChangeText={setNewPassword}
+                placeholder="••••••••"
+                placeholderTextColor={colors.textMuted}
+                secureTextEntry={!showPassword}
+              />
+              <TouchableOpacity
+                onPress={() => setShowPassword(!showPassword)}
+                style={styles.eyeIcon}
+                activeOpacity={0.7}
+              >
+                {showPassword ? (
+                  <EyeOff color={colors.textMuted} size={20} />
+                ) : (
+                  <Eye color={colors.textMuted} size={20} />
+                )}
+              </TouchableOpacity>
+            </View>
+
+            {error ? (
+              <Typography variant="caption" color={colors.error} style={{ marginTop: 8 }}>
+                {error}
+              </Typography>
+            ) : null}
+
+            <Button
+              title={loading ? t('subscription.processing') : t('aiOnboarding.resetAndSignIn', 'Reset & Sign In')}
+              onPress={handleResetPassword}
+              size="large"
+              style={{ marginTop: 24 }}
+              disabled={loading || !resetCode || !newPassword}
+            />
+
+            <TouchableOpacity
+              onPress={() => {
+                setPendingReset(false);
+                setForgotPasswordMode(false);
+                setError('');
+              }}
+              style={{ marginTop: 16, alignItems: 'center' }}
+            >
+              <Typography variant="bodySmall" color={colors.primary}>
+                {t('aiOnboarding.backToSignIn', 'Back to Sign In')}
+              </Typography>
+            </TouchableOpacity>
+          </>
+        )
+      ) : !pendingVerification ? (
         <>
           {authMode === 'signup' && (
             <View style={styles.nameRow}>
@@ -339,9 +527,26 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
             disabled={loading || !email || !password || (authMode === 'signup' && !firstName)}
           />
 
+          {/* Forgot Password link — only in sign-in mode */}
+          {authMode === 'signin' && (
+            <TouchableOpacity
+              onPress={() => {
+                setForgotPasswordMode(true);
+                setError('');
+              }}
+              style={{ marginTop: 14, alignItems: 'center' }}
+            >
+              <Typography variant="caption" color={colors.textSecondary}>
+                {t('aiOnboarding.forgotPassword', 'Forgot your password?')}
+              </Typography>
+            </TouchableOpacity>
+          )}
+
           <TouchableOpacity
             onPress={() => {
               setAuthMode(authMode === 'signup' ? 'signin' : 'signup');
+              setForgotPasswordMode(false);
+              setPendingReset(false);
               setError('');
             }}
             style={{ marginTop: 16, alignItems: 'center' }}
@@ -383,7 +588,7 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
       <Button
         title={t('common.cancel')}
         variant="ghost"
-        onPress={() => { setPendingVerification(false); navigation.goBack(); setError(''); }}
+        onPress={() => { setPendingVerification(false); setForgotPasswordMode(false); setPendingReset(false); navigation.goBack(); setError(''); }}
         style={{ marginTop: 12 }}
       />
     </ScrollView>

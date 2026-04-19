@@ -19,7 +19,7 @@ interface WorkoutContextType {
     bodyMeasurements: BodyMeasurement[];
 
     startWorkout: (name?: string) => void;
-    finishWorkout: (notes?: string, mood?: number) => Promise<void>;
+    finishWorkout: (notes?: string, mood?: number) => Promise<string | null>;
     cancelWorkout: () => Promise<void>;
 
     addExerciseToWorkout: (exercise: Exercise) => void;
@@ -122,8 +122,10 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         StorageService.saveCurrentWorkout(newSession);
     }, []);
 
-    const finishWorkout = useCallback(async (notes?: string, mood?: number) => {
-        if (!currentWorkout) return;
+    const finishWorkout = useCallback(async (notes?: string, mood?: number): Promise<string | null> => {
+        if (!currentWorkout) return null;
+
+        let convexWorkoutId: string | null = null;
 
         const completedSession: WorkoutSession = {
             ...currentWorkout,
@@ -172,7 +174,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (shouldSyncToCloud) {
             try {
                 console.log('[WorkoutContext] ✅ Syncing workout to Convex...');
-                await cloudSaveWorkout({
+                const cloudId = await cloudSaveWorkout({
                     localId: completedSession.id,
                     name: completedSession.name,
                     startTime: completedSession.startTime,
@@ -195,7 +197,8 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
                         })),
                     })),
                 });
-                console.log('[WorkoutContext] ✅ Workout synced successfully!');
+                convexWorkoutId = cloudId as string;
+                console.log('[WorkoutContext] ✅ Workout synced successfully! Convex ID:', convexWorkoutId);
             } catch (e) {
                 console.warn('[WorkoutContext] Cloud workout save failed:', e);
             }
@@ -205,6 +208,8 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         setCurrentWorkout(null);
         await StorageService.saveCurrentWorkout(null);
+
+        return convexWorkoutId;
     }, [currentWorkout, workouts, shouldSyncToCloud, cloudSaveWorkout, cloudSavePRs]);
 
     const cancelWorkout = useCallback(async () => {
