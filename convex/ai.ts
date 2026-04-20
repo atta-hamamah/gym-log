@@ -248,6 +248,7 @@ const AURA_MODEL = "gpt-4o-mini";
 export const generateWorkoutAura = action({
   args: {
     workoutId: v.id("workouts"),
+    language: v.optional(v.string()),
   },
   handler: async (ctx, args): Promise<{
     auraTitle: string;
@@ -274,6 +275,17 @@ export const generateWorkoutAura = action({
       exerciseSummary += `- ${ex.name}: ${ex.sets} sets, ${ex.volume}kg total volume\n`;
     });
 
+    // Language instruction for the AI
+    const lang = args.language || "en";
+    const LANGUAGE_MAP: Record<string, string> = {
+      en: "Write your response in English.",
+      ar: "Write your response in Egyptian Arabic dialect (عامية مصرية). Use casual Egyptian Arabic, not formal/classical Arabic (فصحى).",
+      fr: "Write your response in French.",
+      es: "Write your response in Spanish.",
+      hi: "Write your response in Hindi.",
+    };
+    const languageInstruction = LANGUAGE_MAP[lang] || `Write your response in the language with code: ${lang}.`;
+
     const prompt = `
 You are an analyzer for a fitness app. Look at this user's workout data from today:
 - Duration: ${durationMin ? durationMin + " minutes" : "Unknown"}
@@ -287,6 +299,10 @@ Your task:
 1. Assign them a funny, slightly sarcastic "Gym Archetype" title based on their behavior (e.g., if they rest a lot, if they rush, if they only did arms).
 2. Calculate what real-world object their total volume (in kg) roughly equals (e.g., a small car, 3 grizzly bears, etc.). Use an absolutely ridiculous but accurate equivalent.
 3. Write a 2-sentence summary combining their archetype and the real-world object. Make it witty and optimized for Gen-Z/Millennial humor.
+
+IMPORTANT RULES:
+- ${languageInstruction}
+- Do NOT use any religious references (no "gods", "divine", "blessed", "آلهة", etc.). Keep it purely gym/fitness themed.
 
 Return ONLY a JSON object with this exact structure:
 {

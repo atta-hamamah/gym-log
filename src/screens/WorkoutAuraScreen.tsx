@@ -23,7 +23,7 @@ interface RouteParams {
 }
 
 export default function WorkoutAuraScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const route = useRoute();
   const navigation = useNavigation();
   const { workoutId } = route.params as RouteParams;
@@ -145,6 +145,7 @@ export default function WorkoutAuraScreen() {
         setLoading(true);
         const result = await generateAura({
           workoutId: workoutId as Id<"workouts">,
+          language: i18n.language,
         });
         setAura(result);
         setTimeout(animateCardIn, 100);
