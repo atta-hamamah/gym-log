@@ -347,7 +347,9 @@
     "migratedWorkouts": "{{count}} entrenamientos sincronizados",
     "migratedPRs": "{{count}} récords personales sincronizados",
     "migratedMeasurements": "{{count}} mediciones sincronizadas",
-    "startChatting": "Chatea con tu IA 💬"
+    "startChatting": "Chatea con tu IA 💬",
+    "fitnessGoal": "¿Cuál es tu objetivo fitness?",
+    "goalPlaceholder": "ej. Ganar músculo, perder grasa, ser más fuerte..."
   },
   "settings": {
     "title": "Ajustes",
@@ -398,7 +400,10 @@
     "confirmDeleteAccount": "Eliminar cuenta",
     "understandDelete": "Entiendo que esto es permanente",
     "deleteAccount": "Eliminar cuenta",
-    "deleteError": "Error al eliminar la cuenta."
+    "deleteError": "Error al eliminar la cuenta.",
+    "fitnessGoal": "Objetivo Fitness",
+    "saveGoal": "Guardar Objetivo",
+    "goalSaved": "Tu objetivo fitness ha sido actualizado. RepAI adaptará los consejos a este objetivo."
   },
   "aiChat": {
     "subtitle": "Tu coach de fitness con IA",

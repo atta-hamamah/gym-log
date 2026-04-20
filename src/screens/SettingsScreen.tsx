@@ -51,7 +51,7 @@ export const SettingsScreen = ({ navigation }: any) => {
     const [weight, setWeight] = useState('');
     const [bodyFat, setBodyFat] = useState('');
     const [height, setHeight] = useState('');
-    const [fitnessGoal, setFitnessGoal] = useState('');
+    const [fitnessGoal, setFitnessGoal] = useState<string | null>(null);
 
     // Body measurements state
     const [showMeasurements, setShowMeasurements] = useState(false);
@@ -336,7 +336,7 @@ export const SettingsScreen = ({ navigation }: any) => {
                         </View>
                         <TextInput
                             style={styles.goalInput}
-                            value={fitnessGoal || convexUser?.goal || ''}
+                            value={fitnessGoal !== null ? fitnessGoal : (convexUser?.goal || '')}
                             onChangeText={setFitnessGoal}
                             placeholder={t('aiOnboarding.goalPlaceholder', 'e.g. Build muscle, lose fat, get stronger...')}
                             placeholderTextColor={colors.textMuted}
@@ -345,7 +345,7 @@ export const SettingsScreen = ({ navigation }: any) => {
                             maxLength={200}
                             textAlignVertical="top"
                         />
-                        {fitnessGoal && fitnessGoal !== (convexUser?.goal || '') && (
+                        {fitnessGoal !== null && fitnessGoal !== (convexUser?.goal || '') && (
                             <TouchableOpacity
                                 style={styles.saveGoalButton}
                                 onPress={async () => {
@@ -354,6 +354,7 @@ export const SettingsScreen = ({ navigation }: any) => {
                                             userId: convexUser._id,
                                             goal: fitnessGoal.trim(),
                                         });
+                                        setFitnessGoal(null);
                                         showModal(
                                             t('settings.saved'),
                                             t('settings.goalSaved', 'Your fitness goal has been updated. RepAI will tailor advice to this goal.'),

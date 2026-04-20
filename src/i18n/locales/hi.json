@@ -347,7 +347,9 @@
     "migratedWorkouts": "{{count}} वर्कआउट सिंक किए गए",
     "migratedPRs": "{{count}} व्यक्तिगत रिकॉर्ड सिंक किए गए",
     "migratedMeasurements": "{{count}} माप सिंक किए गए",
-    "startChatting": "AI से बात करें 💬"
+    "startChatting": "AI से बात करें 💬",
+    "fitnessGoal": "आपका फिटनेस लक्ष्य क्या है?",
+    "goalPlaceholder": "जैसे मांसपेशी बनाना, वसा कम करना, मजबूत होना..."
   },
   "settings": {
     "title": "सेटिंग्स",
@@ -398,7 +400,10 @@
     "confirmDeleteAccount": "खाता हटाएं",
     "understandDelete": "मुझे समझ में आता है कि यह स्थायी है",
     "deleteAccount": "खाता हटाएं",
-    "deleteError": "खाता हटाने में विफल।"
+    "deleteError": "खाता हटाने में विफल।",
+    "fitnessGoal": "फिटनेस लक्ष्य",
+    "saveGoal": "लक्ष्य सहेजें",
+    "goalSaved": "आपका फिटनेस लक्ष्य अपडेट किया गया है। RepAI इस लक्ष्य के अनुसार सलाह देगा।"
   },
   "aiChat": {
     "subtitle": "आपका AI फिटनेस कोच",

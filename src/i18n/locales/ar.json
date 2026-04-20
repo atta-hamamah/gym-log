@@ -347,7 +347,9 @@
     "migratedWorkouts": "تمت مزامنة {{count}} تمرين",
     "migratedPRs": "تمت مزامنة {{count}} أرقام قياسية",
     "migratedMeasurements": "تمت مزامنة {{count}} قياسات",
-    "startChatting": "ابدأ المحادثة مع الذكاء 💬"
+    "startChatting": "ابدأ المحادثة مع الذكاء 💬",
+    "fitnessGoal": "ما هو هدفك الرياضي؟",
+    "goalPlaceholder": "مثال: بناء العضلات، خسارة الدهون، زيادة القوة..."
   },
   "settings": {
     "title": "الإعدادات",
@@ -398,7 +400,10 @@
     "confirmDeleteAccount": "حذف الحساب",
     "understandDelete": "أفهم أن هذا الإجراء دائم",
     "deleteAccount": "حذف الحساب",
-    "deleteError": "فشل حذف الحساب."
+    "deleteError": "فشل حذف الحساب.",
+    "fitnessGoal": "الهدف الرياضي",
+    "saveGoal": "حفظ الهدف",
+    "goalSaved": "تم تحديث هدفك الرياضي. سيقوم RepAI بتخصيص النصائح وفقاً لهذا الهدف."
   },
   "aiChat": {
     "subtitle": "مدربك الرياضي الذكي",

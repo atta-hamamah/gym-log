@@ -347,7 +347,9 @@
     "migratedWorkouts": "{{count}} workouts synced",
     "migratedPRs": "{{count}} personal records synced",
     "migratedMeasurements": "{{count}} measurements synced",
-    "startChatting": "Start Chatting with AI 💬"
+    "startChatting": "Start Chatting with AI 💬",
+    "fitnessGoal": "What's your fitness goal?",
+    "goalPlaceholder": "e.g. Build muscle, lose fat, get stronger..."
   },
   "settings": {
     "title": "Settings",
@@ -398,7 +400,10 @@
     "confirmDeleteAccount": "Delete Account",
     "understandDelete": "I understand this is permanent",
     "deleteAccount": "Delete Account",
-    "deleteError": "Failed to delete account."
+    "deleteError": "Failed to delete account.",
+    "fitnessGoal": "Fitness Goal",
+    "saveGoal": "Save Goal",
+    "goalSaved": "Your fitness goal has been updated. RepAI will tailor advice to this goal."
   },
   "aiChat": {
     "subtitle": "Your AI fitness coach",
