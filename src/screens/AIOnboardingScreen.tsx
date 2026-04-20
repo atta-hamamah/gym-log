@@ -27,7 +27,7 @@ import { useTheme } from '../context/ThemeContext';
 
 type OnboardingStep = 'signup' | 'profile' | 'migrating' | 'complete';
 
-export const AIOnboardingScreen = ({ navigation }: any) => {
+export const AIOnboardingScreen = ({ navigation, route }: any) => {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const styles = createStyles(colors);
@@ -38,9 +38,12 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
   const { isSignedIn } = useAuth();
   const { user } = useUser();
 
+  // Read route params — AIGateScreen passes { mode: 'signin' } for returning users
+  const initialMode = route?.params?.mode || 'signup';
+
   // Start at signup or skip to profile if already signed in
   const [step, setStep] = useState<OnboardingStep>(isSignedIn ? 'profile' : 'signup');
-  const [authMode, setAuthMode] = useState<'signup' | 'signin'>('signup');
+  const [authMode, setAuthMode] = useState<'signup' | 'signin'>(initialMode);
 
   // ── Signup/Signin Fields ──
   const [email, setEmail] = useState('');
@@ -149,22 +152,30 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
       if (result.status === 'complete') {
         await setSignInActive({ session: result.createdSessionId });
 
-        // Link RevenueCat to Clerk user and refresh entitlements
-        const clerkUserId = (signIn as any)?.createdUserId || (result as any)?.createdUserId;
-        if (clerkUserId) {
-          await identifyUser(clerkUserId);
-          await refreshSubscriptionState();
-        }
-        
-        // Show restoring UI
+        // Show restoring UI immediately
         setStep('migrating');
         setMigrationProgress({ step: 'restoring', current: 0, total: 1 });
-        
-        await syncConvexToLocal(convex);
+
+        // Wait for Clerk to propagate user state, then link RevenueCat.
+        // The SubscriptionContext also does this via useEffect on user?.id,
+        // but we do it explicitly here to ensure it completes before navigating.
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Refresh subscription — by now the SubscriptionContext's useEffect
+        // should have called identifyUser(). This ensures entitlements are current.
+        await refreshSubscriptionState();
+
+        // Sync cloud data to local storage (works for any signed-in user)
+        try {
+          await syncConvexToLocal(convex);
+        } catch (syncErr) {
+          console.warn('[AIOnboarding] Cloud sync failed (user may be new):', syncErr);
+        }
         
         setMigrationProgress({ step: 'restoring', current: 1, total: 1 });
 
-        // Returning user - go back to AI tab (wrapper will show chat)
+        // Navigate back — AITabScreen will check isAISubscriber && isSignedIn
+        // and show chat (active sub) or gate (expired/cancelled sub)
         setTimeout(() => {
           navigation.goBack();
         }, 1000);
@@ -176,7 +187,7 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
       setError(err.errors?.[0]?.longMessage || err.message || 'Sign in failed');
       setLoading(false);
     }
-  }, [isSignInLoaded, signIn, email, password, setSignInActive, navigation, convex]);
+  }, [isSignInLoaded, signIn, email, password, setSignInActive, navigation, convex, refreshSubscriptionState]);
 
   // ══════════════════════════════════════════════════════
   // FORGOT PASSWORD
@@ -218,17 +229,20 @@ export const AIOnboardingScreen = ({ navigation }: any) => {
       if (result.status === 'complete') {
         await setSignInActive({ session: result.createdSessionId });
 
-        // Link RevenueCat
-        const clerkUserId = (result as any)?.createdUserId;
-        if (clerkUserId) {
-          await identifyUser(clerkUserId);
-          await refreshSubscriptionState();
-        }
-
-        // Restore cloud data
+        // Show restoring UI
         setStep('migrating');
         setMigrationProgress({ step: 'restoring', current: 0, total: 1 });
-        await syncConvexToLocal(convex);
+
+        // Wait for Clerk to propagate user state, then refresh subscription
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        await refreshSubscriptionState();
+
+        // Restore cloud data
+        try {
+          await syncConvexToLocal(convex);
+        } catch (syncErr) {
+          console.warn('[AIOnboarding] Cloud sync failed after password reset:', syncErr);
+        }
         setMigrationProgress({ step: 'restoring', current: 1, total: 1 });
 
         setTimeout(() => {

@@ -83,7 +83,7 @@ export const AIGateScreen = ({ navigation }: any) => {
   }, [purchaseAISubscription, navigation]);
 
   const handleSignIn = useCallback(() => {
-    navigation.navigate('AIOnboarding');
+    navigation.navigate('AIOnboarding', { mode: 'signin' });
   }, [navigation]);
 
   // If already subscribed but not signed in to Clerk — needs to complete onboarding

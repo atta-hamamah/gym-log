@@ -132,7 +132,7 @@ export type RootStackParamList = {
   WorkoutDetails: { workoutId: string };
   ProgramDetail: { programId: string };
   Paywall: undefined;
-  AIOnboarding: undefined;
+  AIOnboarding: { mode?: 'signin' | 'signup' } | undefined;
   WorkoutAura: { workoutId: string };
 };
 
