@@ -14,7 +14,7 @@ const ENABLE_DYNAMIC_MODEL = true;
 
 // Model definitions
 const MODEL_CHEAP = "gpt-4o-mini";   // Fast, cheap — simple Q&A, classification
-const MODEL_SMART = "gpt-4.1";        // Powerful — deep analysis & advice
+const MODEL_SMART = "gpt-5.1";        // Powerful — deep analysis & advice
 
 /**
  * Use a tiny, cheap AI call to classify whether the user's message

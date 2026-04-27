@@ -24,6 +24,7 @@ import { Check, Brain, Cloud, ChevronRight, Calendar, Users, Sparkles, X, Eye, E
 import { identifyUser } from '../services/billing';
 import { useSubscription } from '../context/SubscriptionContext';
 import { useTheme } from '../context/ThemeContext';
+import { useWorkout } from '../context/WorkoutContext';
 
 type OnboardingStep = 'signup' | 'profile' | 'migrating' | 'complete';
 
@@ -31,6 +32,7 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const styles = createStyles(colors);
+  const { refreshData } = useWorkout();
 
   // ── Clerk Auth State ──
   const { signUp, setActive, isLoaded: isSignUpLoaded } = useSignUp();
@@ -168,6 +170,7 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
         // Sync cloud data to local storage (works for any signed-in user)
         try {
           await syncConvexToLocal(convex);
+          await refreshData();
         } catch (syncErr) {
           console.warn('[AIOnboarding] Cloud sync failed (user may be new):', syncErr);
         }
@@ -240,6 +243,7 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
         // Restore cloud data
         try {
           await syncConvexToLocal(convex);
+          await refreshData();
         } catch (syncErr) {
           console.warn('[AIOnboarding] Cloud sync failed after password reset:', syncErr);
         }

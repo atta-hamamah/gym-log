@@ -60,6 +60,13 @@ export const saveWorkout = mutation({
   handler: async (ctx, args) => {
     const userId = await getUserId(ctx);
 
+    // Skip if already synced (idempotent)
+    const existing = await ctx.db
+      .query("workouts")
+      .withIndex("by_localId", (q: any) => q.eq("localId", args.localId))
+      .first();
+    if (existing && existing.userId === userId) return existing._id;
+
     // Insert workout
     const workoutId = await ctx.db.insert("workouts", {
       userId,

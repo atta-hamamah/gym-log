@@ -392,6 +392,8 @@ export const SettingsScreen = ({ navigation }: any) => {
                             onPress={async () => {
                                 await signOut();
                                 await StorageService.setIsLive(false);
+                                await StorageService.clearSyncData();
+                                await refreshData();
                             }}
                             activeOpacity={0.7}
                         >

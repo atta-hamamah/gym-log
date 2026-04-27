@@ -291,5 +291,25 @@ export const StorageService = {
       return [];
     }
   },
+
+  /**
+   * Clear all cloud-synced data from local storage.
+   * Called on sign-out to prevent stale data merging on next sign-in.
+   * Preserves user preferences (theme, language, purchase status, etc.).
+   */
+  async clearSyncData(): Promise<void> {
+    try {
+      await AsyncStorage.multiRemove([
+        KEYS.WORKOUTS,
+        KEYS.CUSTOM_EXERCISES,
+        KEYS.PERSONAL_RECORDS,
+        KEYS.BODY_MEASUREMENTS,
+        KEYS.CURRENT_WORKOUT,
+        KEYS.USER_STATS,
+      ]);
+    } catch (e) {
+      console.error('Failed to clear sync data', e);
+    }
+  },
 };
 

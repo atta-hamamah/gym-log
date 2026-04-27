@@ -92,6 +92,16 @@ export const migrateLocalData = mutation({
 
     // ── 1. Migrate Workouts (flatten nested structure) ──
     for (const workout of workouts) {
+      // Skip if already migrated (idempotent)
+      const existing = await ctx.db
+        .query("workouts")
+        .withIndex("by_localId", (q) => q.eq("localId", workout.id))
+        .first();
+      if (existing && existing.userId === userId) {
+        totalInserted++;
+        continue;
+      }
+
       const workoutId = await ctx.db.insert("workouts", {
         userId,
         localId: workout.id,
