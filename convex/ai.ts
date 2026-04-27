@@ -280,7 +280,7 @@ export const generateWorkoutAura = action({
     const lang = args.language || "en";
     const LANGUAGE_MAP: Record<string, string> = {
       en: "Write your response in English.",
-      ar: "Write your response in Egyptian Arabic dialect (عامية مصرية). Use casual Egyptian Arabic, not formal/classical Arabic (فصحى).",
+      ar: "Write your response in Arabic.",
       fr: "Write your response in French.",
       es: "Write your response in Spanish.",
       hi: "Write your response in Hindi.",

@@ -157,7 +157,7 @@ export default function WorkoutAuraScreen() {
       actionsOpacity.setValue(0);
       const result = await generateAura({
         workoutId: workoutId as Id<"workouts">,
-        language: "en",
+        language: i18n.language.split('-')[0] || "en",
         characterMode: mode,
       });
       setAura(result);
