@@ -375,7 +375,7 @@ const createStyles = (colors: any, bottomInset: number = 0) => StyleSheet.create
     alignItems: 'flex-end',
     paddingHorizontal: 12,
     paddingTop: 10,
-    paddingBottom: Math.max(10, bottomInset),
+    paddingBottom: Math.max(40, bottomInset),
     borderTopWidth: 1,
     borderTopColor: colors.border,
     gap: 8,
