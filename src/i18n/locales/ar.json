@@ -21,7 +21,8 @@
     "cardioType": "كارديو",
     "all": "الكل",
     "rpe": "RPE",
-    "finish":"إنهاء"
+    "finish":"إنهاء",
+    "continue":"متابعة"
   },
   "tabs": {
     "dashboard": "الرئيسية",
@@ -426,6 +427,9 @@
     "todaysAura": "هالة اليوم",
     "verifiedBy": "موثق بواسطة RepAI",
     "shareToStory": "مشاركة في القصة",
-    "shareTitle": "شارك هالة تمرينك"
+    "shareTitle": "شارك هالة تمرينك",
+    "tryAnotherVibe": "جرّب مود تاني",
+    "gymBroBtn": "🔥 أهينّي",
+    "couchPotatoBtn": "🛋️ حبّطني"
   }
 }

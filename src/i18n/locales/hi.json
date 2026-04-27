@@ -21,7 +21,8 @@
     "cardioType": "कार्डियो",
     "all": "सभी",
     "rpe": "RPE",
-    "finish":"समाप्त"
+    "finish":"समाप्त",
+    "continue":"जारी रखें"
   },
   "tabs": {
     "dashboard": "डैशबोर्ड",
@@ -426,6 +427,9 @@
     "todaysAura": "आज की आभा",
     "verifiedBy": "RepAI द्वारा सत्यापित",
     "shareToStory": "स्टोरी पर शेयर करें",
-    "shareTitle": "अपने व्यायाम की आभा साझा करें"
+    "shareTitle": "अपने व्यायाम की आभा साझा करें",
+    "tryAnotherVibe": "दूसरा अंदाज़ आज़माएं",
+    "gymBroBtn": "🔥 भुना डालो",
+    "couchPotatoBtn": "🛋️ हौसला तोड़ दो"
   }
 }

@@ -21,7 +21,8 @@
     "cardioType": "Cardio",
     "all": "Tout",
     "rpe": "RPE",
-    "finish":"Terminer"
+    "finish":"Terminer",
+    "continue":"Continuer"
   },
   "tabs": {
     "dashboard": "Accueil",
@@ -426,6 +427,9 @@
     "todaysAura": "AURA DU JOUR",
     "verifiedBy": "Vérifié par RepAI",
     "shareToStory": "Partager en Story",
-    "shareTitle": "Partagez votre aura d'entraînement"
+    "shareTitle": "Partagez votre aura d'entraînement",
+    "tryAnotherVibe": "Essayez un autre style",
+    "gymBroBtn": "🔥 Grille-moi",
+    "couchPotatoBtn": "🛋️ Démotive-moi"
   }
 }

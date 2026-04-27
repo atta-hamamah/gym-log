@@ -41,6 +41,14 @@ export default function WorkoutAuraScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [loadingPhaseIndex, setLoadingPhaseIndex] = useState(0);
+  const [characterMode, setCharacterMode] = useState<"default" | "gym_bro" | "couch_potato">("default");
+
+  const CHARACTER_COLORS = {
+    default: { glow: "#FF3B30", accent: "#FF3B30" },
+    gym_bro: { glow: "#FF6B00", accent: "#FF6B00" },
+    couch_potato: { glow: "#8B5CF6", accent: "#8B5CF6" },
+  };
+  const activeColors = CHARACTER_COLORS[characterMode];
 
   const viewShotRef = useRef<ViewShot>(null);
 
@@ -139,25 +147,37 @@ export default function WorkoutAuraScreen() {
     }).start();
   };
 
-  useEffect(() => {
-    async function fetchAura() {
-      try {
-        setLoading(true);
-        const result = await generateAura({
-          workoutId: workoutId as Id<"workouts">,
-          language: i18n.language,
-        });
-        setAura(result);
-        setTimeout(animateCardIn, 100);
-      } catch (e) {
-        console.error(e);
-        setError(true);
-      } finally {
-        setLoading(false);
-      }
+  const fetchAura = async (mode: string = "default") => {
+    try {
+      setLoading(true);
+      setError(false);
+      cardScale.setValue(0.85);
+      cardOpacity.setValue(0);
+      statsOpacity.setValue(0);
+      actionsOpacity.setValue(0);
+      const result = await generateAura({
+        workoutId: workoutId as Id<"workouts">,
+        language: i18n.language,
+        characterMode: mode,
+      });
+      setAura(result);
+      setTimeout(animateCardIn, 100);
+    } catch (e) {
+      console.error(e);
+      setError(true);
+    } finally {
+      setLoading(false);
     }
-    fetchAura();
+  };
+
+  useEffect(() => {
+    fetchAura("default");
   }, [workoutId]);
+
+  const handleCharacterSwitch = (mode: "default" | "gym_bro" | "couch_potato") => {
+    setCharacterMode(mode);
+    fetchAura(mode);
+  };
 
   const handleShare = async () => {
     if (!viewShotRef.current?.capture) return;
@@ -245,6 +265,8 @@ export default function WorkoutAuraScreen() {
             {
               opacity: glowPulse,
               transform: [{ scale: cardScale }],
+              backgroundColor: activeColors.glow,
+              shadowColor: activeColors.glow,
             },
           ]}
         />
@@ -261,10 +283,10 @@ export default function WorkoutAuraScreen() {
           >
             <View style={styles.card}>
               {/* Accent line */}
-              <View style={styles.accentLine} />
+              <View style={[styles.accentLine, { backgroundColor: activeColors.accent }]} />
 
               {/* Label */}
-              <Text style={styles.label}>{t("aura.todaysAura")}</Text>
+              <Text style={[styles.label, { color: activeColors.accent }]}>{t("aura.todaysAura")}</Text>
 
               {/* Title */}
               <Text style={styles.title}>{aura.auraTitle}</Text>
@@ -311,7 +333,7 @@ export default function WorkoutAuraScreen() {
               {/* Footer */}
               <View style={styles.footer}>
                 <Text style={styles.watermark}>🤖 {t("aura.verifiedBy")}</Text>
-                <Text style={styles.appName}>RepAI</Text>
+                <Text style={[styles.appName, { color: activeColors.accent }]}>RepAI</Text>
               </View>
             </View>
           </ViewShot>
@@ -321,7 +343,7 @@ export default function WorkoutAuraScreen() {
       {/* Actions */}
       <Animated.View style={[styles.actions, { opacity: actionsOpacity }]}>
         <TouchableOpacity
-          style={styles.btnShare}
+          style={[styles.btnShare, { backgroundColor: activeColors.accent }]}
           onPress={handleShare}
           activeOpacity={0.8}
         >
@@ -339,6 +361,35 @@ export default function WorkoutAuraScreen() {
         >
           <Text style={styles.btnFinishText}>{t("common.finish")}</Text>
         </TouchableOpacity>
+
+        {/* Character Selector */}
+        <View style={styles.characterSection}>
+          <Text style={styles.characterSectionLabel}>{t("aura.tryAnotherVibe")}</Text>
+          <View style={styles.characterRow}>
+            <TouchableOpacity
+              style={[
+                styles.characterBtn,
+                styles.characterBtnGymBro,
+                characterMode === "gym_bro" && styles.characterBtnActive,
+              ]}
+              onPress={() => handleCharacterSwitch("gym_bro")}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.characterBtnText}>{t("aura.gymBroBtn")}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.characterBtn,
+                styles.characterBtnCouch,
+                characterMode === "couch_potato" && styles.characterBtnActive,
+              ]}
+              onPress={() => handleCharacterSwitch("couch_potato")}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.characterBtnText}>{t("aura.couchPotatoBtn")}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </Animated.View>
     </SafeAreaView>
   );
@@ -558,5 +609,49 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
+  },
+
+  // ── Character Selector ──
+  characterSection: {
+    marginTop: 8,
+    alignItems: "center",
+  },
+  characterSectionLabel: {
+    color: "#8E8E93",
+    fontSize: 12,
+    fontWeight: "600",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+    marginBottom: 10,
+  },
+  characterRow: {
+    flexDirection: "row",
+    gap: 10,
+    width: "100%",
+  },
+  characterBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#1C1C1E",
+    borderWidth: 1.5,
+    borderColor: "#2C2C2E",
+  },
+  characterBtnGymBro: {
+    borderColor: "#FF6B00",
+  },
+  characterBtnCouch: {
+    borderColor: "#8B5CF6",
+  },
+  characterBtnActive: {
+    borderWidth: 2,
+    backgroundColor: "#2C2C2E",
+  },
+  characterBtnText: {
+    color: "#fff",
+    fontSize: 14,
+    fontWeight: "700",
   },
 });
