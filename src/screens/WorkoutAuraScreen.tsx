@@ -5,11 +5,11 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   Dimensions,
   Animated,
   Easing,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import ViewShot from "react-native-view-shot";
