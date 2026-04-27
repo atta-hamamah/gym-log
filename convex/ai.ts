@@ -10,7 +10,7 @@ import OpenAI from "openai";
 // Set to true to enable smart model for complex queries.
 // When false, ALL queries use the cheap model (saves cost).
 // ══════════════════════════════════════════════════════════
-const ENABLE_DYNAMIC_MODEL = false;
+const ENABLE_DYNAMIC_MODEL = true;
 
 // Model definitions
 const MODEL_CHEAP = "gpt-4o-mini";   // Fast, cheap — simple Q&A, classification
@@ -242,8 +242,8 @@ ${userContext}`;
   },
 });
 
-// Model for Aura Generation. Change to "gpt-4o" for better reasoning/humor.
-const AURA_MODEL = "gpt-4o-mini";
+// Model for Aura Generation. Using GPT-5.3 for premium-quality aura outputs.
+const AURA_MODEL = "gpt-5.3";
 
 export const generateWorkoutAura = action({
   args: {
