@@ -11,6 +11,7 @@ import {
   Animated,
 } from 'react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Typography } from '../components/Typography';
 import { borderRadius } from '../theme/colors';
 import { useAction, useQuery } from 'convex/react';
@@ -31,7 +32,8 @@ interface ChatMessage {
 export const AIChatScreen = ({ navigation }: any) => {
   const { t } = useTranslation();
   const { colors } = useTheme();
-  const styles = createStyles(colors);
+  const insets = useSafeAreaInsets();
+  const styles = createStyles(colors, insets.bottom);
   const { userId: clerkUserId } = useAuth();
   const chatAction = useAction(api.ai.chat);
 
@@ -180,7 +182,7 @@ export const AIChatScreen = ({ navigation }: any) => {
   );
 
   return (
-    <ScreenLayout noPadding>
+    <ScreenLayout noPadding edges={['top', 'left', 'right']}>
       <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
         {/* Header */}
         <View style={styles.header}>
@@ -206,8 +208,8 @@ export const AIChatScreen = ({ navigation }: any) => {
         {/* Messages */}
         <KeyboardAvoidingView
           style={styles.chatArea}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          keyboardVerticalOffset={90}
+          behavior="padding"
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
         >
           {messages.length === 0 ? (
             renderWelcome()
@@ -220,6 +222,8 @@ export const AIChatScreen = ({ navigation }: any) => {
               contentContainerStyle={styles.messagesList}
               showsVerticalScrollIndicator={false}
               onContentSizeChange={scrollToBottom}
+              keyboardDismissMode="interactive"
+              keyboardShouldPersistTaps="handled"
             />
           )}
 
@@ -267,7 +271,7 @@ export const AIChatScreen = ({ navigation }: any) => {
 };
 
 // ── Styles ────────────────────────────────────────────────
-const createStyles = (colors: any) => StyleSheet.create({
+const createStyles = (colors: any, bottomInset: number = 0) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -370,7 +374,8 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingTop: 10,
+    paddingBottom: Math.max(10, bottomInset),
     borderTopWidth: 1,
     borderTopColor: colors.border,
     gap: 8,
