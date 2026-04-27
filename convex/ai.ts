@@ -243,7 +243,7 @@ ${userContext}`;
 });
 
 // Model for Aura Generation. Change to "gpt-4o" for better reasoning/humor.
-const AURA_MODEL = "gpt-4o-mini";
+const AURA_MODEL = "gpt-5.3";
 
 export const generateWorkoutAura = action({
   args: {
