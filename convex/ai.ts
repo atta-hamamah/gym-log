@@ -243,7 +243,7 @@ ${userContext}`;
 });
 
 // Model for Aura Generation. Change to "gpt-4o" for better reasoning/humor.
-const AURA_MODEL = "gpt-5.3";
+const AURA_MODEL = "gpt-4o";
 
 export const generateWorkoutAura = action({
   args: {
@@ -280,10 +280,10 @@ export const generateWorkoutAura = action({
     const lang = args.language || "en";
     const LANGUAGE_MAP: Record<string, string> = {
       en: "Write your response in English.",
-      ar: "Write your response in Arabic.",
+      ar: "Write your response in Arabic",
       fr: "Write your response in French.",
       es: "Write your response in Spanish.",
-      hi: "Write your response in Hindi.",
+      hi: "Write your response in English.",
     };
     const languageInstruction = LANGUAGE_MAP[lang] || `Write your response in the language with code: ${lang}.`;
 
