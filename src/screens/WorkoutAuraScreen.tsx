@@ -100,6 +100,13 @@ export default function WorkoutAuraScreen() {
     return () => spin.stop();
   }, [loading]);
 
+  // When starting in stats mode, show actions immediately
+  useEffect(() => {
+    if (viewMode === "stats") {
+      actionsOpacity.setValue(1);
+    }
+  }, [viewMode]);
+
   const spinInterpolate = spinValue.interpolate({
     inputRange: [0, 1],
     outputRange: ["0deg", "360deg"],
