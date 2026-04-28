@@ -429,7 +429,10 @@
     "shareToStory": "स्टोरी पर शेयर करें",
     "shareTitle": "अपने व्यायाम की आभा साझा करें",
     "tryAnotherVibe": "दूसरी राय लें",
-    "chadBtn": " Chad की राय",
-    "kevinBtn": " Kevin की राय"
+    "chadBtn": "🔥 Chad की राय",
+    "kevinBtn": "🛋️ Kevin की राय",
+    "aiRequiredTitle": "AI सुविधा",
+    "aiRequiredDesc": "वर्कआउट ऑरा AI से चलता है। व्यक्तिगत वर्कआउट विश्लेषण अनलॉक करने के लिए AI Coach की सदस्यता लें।",
+    "goToAI": "AI Coach अनलॉक करें ✨"
   }
 }

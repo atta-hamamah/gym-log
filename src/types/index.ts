@@ -133,7 +133,17 @@ export type RootStackParamList = {
   ProgramDetail: { programId: string };
   Paywall: undefined;
   AIOnboarding: { mode?: 'signin' | 'signup' } | undefined;
-  WorkoutAura: { workoutId: string };
+  WorkoutAura: {
+    workoutId?: string;
+    localStats?: {
+      name: string;
+      durationMin: number | null;
+      totalSets: number;
+      totalVolume: number;
+      exerciseCount: number;
+      exercises: { name: string; bestWeight: number; bestReps: number }[];
+    };
+  };
 };
 
 export type TabParamList = {

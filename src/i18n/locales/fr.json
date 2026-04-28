@@ -429,7 +429,10 @@
     "shareToStory": "Partager en Story",
     "shareTitle": "Partagez votre aura d'entraînement",
     "tryAnotherVibe": "Un autre avis",
-    "chadBtn": " L'avis de Chad",
-    "kevinBtn": " L'avis de Kevin"
+    "chadBtn": "🔥 L'avis de Chad",
+    "kevinBtn": "🛋️ L'avis de Kevin",
+    "aiRequiredTitle": "Fonctionnalité IA",
+    "aiRequiredDesc": "L'Aura d'entraînement est alimentée par l'IA. Abonnez-vous à AI Coach pour débloquer l'analyse personnalisée.",
+    "goToAI": "Débloquer AI Coach ✨"
   }
 }

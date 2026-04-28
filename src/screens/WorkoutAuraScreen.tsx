@@ -8,40 +8,65 @@ import {
   Dimensions,
   Animated,
   Easing,
+  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAction } from "convex/react";
+import { useAction, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import ViewShot from "react-native-view-shot";
 import * as Sharing from "expo-sharing";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Id } from "../../convex/_generated/dataModel";
-import { Share2, X } from "lucide-react-native";
+import { Share2, X, BarChart3, Lock } from "lucide-react-native";
+import { useSubscription } from "../context/SubscriptionContext";
 
 interface RouteParams {
-  workoutId: string;
+  workoutId?: string;
+  localStats?: {
+    name: string;
+    durationMin: number | null;
+    totalSets: number;
+    totalVolume: number;
+    exerciseCount: number;
+    exercises: { name: string; bestWeight: number; bestReps: number }[];
+  };
 }
 
 export default function WorkoutAuraScreen() {
   const { t, i18n } = useTranslation();
   const route = useRoute();
   const navigation = useNavigation();
-  const { workoutId } = route.params as RouteParams;
+  const { workoutId, localStats } = route.params as RouteParams;
+  const { isAISubscriber } = useSubscription();
 
   const generateAura = useAction(api.ai.generateWorkoutAura);
 
-  const [aura, setAura] = useState<{
+  type AuraData = {
     auraTitle: string;
     auraDescription: string;
     durationMin?: number;
     exerciseCount?: number;
     totalVolume?: number;
     totalSets?: number;
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
+  };
+
+  const [aura, setAura] = useState<AuraData | null>(null);
+  const [auraCache, setAuraCache] = useState<Record<string, AuraData>>({});
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [loadingPhaseIndex, setLoadingPhaseIndex] = useState(0);
   const [characterMode, setCharacterMode] = useState<"default" | "chad" | "kevin">("default");
+  const [viewMode, setViewMode] = useState<"aura" | "stats">("stats");
+  const [showAIGateModal, setShowAIGateModal] = useState(false);
+
+  // Stats card data from Convex (only when AI subscriber + workoutId exists)
+  const statsData = useQuery(
+    api.workouts.getWorkoutStatsCard,
+    workoutId ? { workoutId: workoutId as Id<"workouts"> } : "skip"
+  );
+
+  // Merged stats: prefer Convex data, fall back to localStats
+  const mergedStats = statsData || localStats || null;
 
   const CHARACTER_COLORS = {
     default: { glow: "#FF3B30", accent: "#FF3B30" },
@@ -148,6 +173,17 @@ export default function WorkoutAuraScreen() {
   };
 
   const fetchAura = async (mode: string = "default") => {
+    if (!workoutId) return; // No Convex ID = no AI aura
+
+    // Check cache first
+    if (auraCache[mode]) {
+      setAura(auraCache[mode]);
+      setCharacterMode(mode as any);
+      setLoading(false);
+      setTimeout(animateCardIn, 100);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(false);
@@ -160,6 +196,8 @@ export default function WorkoutAuraScreen() {
         language: i18n.language.split('-')[0] || "en",
         characterMode: mode,
       });
+      // Cache the result
+      setAuraCache((prev) => ({ ...prev, [mode]: result }));
       setAura(result);
       setTimeout(animateCardIn, 100);
     } catch (e) {
@@ -170,13 +208,31 @@ export default function WorkoutAuraScreen() {
     }
   };
 
-  useEffect(() => {
-    fetchAura("default");
-  }, [workoutId]);
+  // Gate AI features behind subscription
+  const handleAuraToggle = () => {
+    if (!isAISubscriber) {
+      setShowAIGateModal(true);
+      return;
+    }
+    setViewMode("aura");
+    if (!aura && !loading) {
+      fetchAura("default");
+    }
+  };
 
   const handleCharacterSwitch = (mode: "default" | "chad" | "kevin") => {
+    if (!isAISubscriber) {
+      setShowAIGateModal(true);
+      return;
+    }
     setCharacterMode(mode);
+    setViewMode("aura");
     fetchAura(mode);
+  };
+
+  const handleGoToAI = () => {
+    setShowAIGateModal(false);
+    (navigation as any).navigate("Main", { screen: "AI" });
   };
 
   const handleShare = async () => {
@@ -196,8 +252,8 @@ export default function WorkoutAuraScreen() {
     navigation.navigate("Main" as never);
   };
 
-  // ── Loading State ──
-  if (loading) {
+  // ── Loading State (only for aura view) ──
+  if (loading && viewMode === "aura") {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
@@ -228,8 +284,8 @@ export default function WorkoutAuraScreen() {
     );
   }
 
-  // ── Error State ──
-  if (error || !aura) {
+  // ── Error State (only for aura view) ──
+  if (viewMode === "aura" && (error || !aura)) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
@@ -257,140 +313,213 @@ export default function WorkoutAuraScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Card */}
-      <View style={styles.shotWrapper}>
-        <Animated.View
-          style={[
-            styles.glowWrapper,
-            {
-              opacity: glowPulse,
-              transform: [{ scale: cardScale }],
-              backgroundColor: activeColors.glow,
-              shadowColor: activeColors.glow,
-            },
-          ]}
-        />
-        <Animated.View
-          style={{
-            opacity: cardOpacity,
-            transform: [{ scale: cardScale }],
-          }}
-        >
-          <ViewShot
-            ref={viewShotRef}
-            options={{ format: "jpg", quality: 0.95 }}
-            style={styles.cardOuter}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
+        {/* View Mode Toggle */}
+        <View style={styles.viewToggle}>
+          <TouchableOpacity
+            style={[styles.viewToggleBtn, viewMode === "aura" && styles.viewToggleBtnActive]}
+            onPress={handleAuraToggle}
+            activeOpacity={0.7}
           >
-            <View style={styles.card}>
-              {/* Accent line */}
-              <View style={[styles.accentLine, { backgroundColor: activeColors.accent }]} />
+            {!isAISubscriber && <Lock color="#8E8E93" size={12} style={{ marginRight: 4 }} />}
+            <Text style={[styles.viewToggleText, viewMode === "aura" && styles.viewToggleTextActive]}>✨ Aura</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.viewToggleBtn, viewMode === "stats" && styles.viewToggleBtnActive]}
+            onPress={() => setViewMode("stats")}
+            activeOpacity={0.7}
+          >
+            <BarChart3 color={viewMode === "stats" ? "#000" : "#8E8E93"} size={14} />
+            <Text style={[styles.viewToggleText, viewMode === "stats" && styles.viewToggleTextActive, { marginLeft: 4 }]}>Stats</Text>
+          </TouchableOpacity>
+        </View>
 
-              {/* Label */}
-              <Text style={[styles.label, { color: activeColors.accent }]}>{t("aura.todaysAura")}</Text>
-
-              {/* Title */}
-              <Text style={styles.title}>{aura.auraTitle}</Text>
-
-              {/* Description */}
-              <Text style={styles.description}>{aura.auraDescription}</Text>
-
-              {/* Stats row (if available from cloud) */}
-              {(aura.durationMin || aura.totalVolume || aura.exerciseCount) && (
-                <View style={styles.statsRow}>
-                  {aura.durationMin ? (
-                    <View style={styles.statItem}>
-                      <Text style={styles.statValue}>{aura.durationMin}</Text>
-                      <Text style={styles.statLabel}>min</Text>
+        {/* Card Area */}
+        <View style={styles.shotWrapper}>
+          {viewMode === "aura" ? (
+            <>
+              <Animated.View
+                style={[
+                  styles.glowWrapper,
+                  {
+                    opacity: glowPulse,
+                    transform: [{ scale: cardScale }],
+                    backgroundColor: activeColors.glow,
+                    shadowColor: activeColors.glow,
+                  },
+                ]}
+              />
+              <Animated.View
+                style={{
+                  opacity: cardOpacity,
+                  transform: [{ scale: cardScale }],
+                }}
+              >
+                <ViewShot
+                  ref={viewShotRef}
+                  options={{ format: "jpg", quality: 0.95 }}
+                  style={styles.cardOuter}
+                >
+                  <View style={styles.card}>
+                    <View style={[styles.accentLine, { backgroundColor: activeColors.accent }]} />
+                    <Text style={[styles.label, { color: activeColors.accent }]}>{t("aura.todaysAura")}</Text>
+                    <Text style={styles.title}>{aura?.auraTitle}</Text>
+                    <Text style={styles.description}>{aura?.auraDescription}</Text>
+                    {(aura?.durationMin || aura?.totalVolume || aura?.exerciseCount) && (
+                      <View style={styles.statsRow}>
+                        {aura.durationMin ? (<View style={styles.statItem}><Text style={styles.statValue}>{aura.durationMin}</Text><Text style={styles.statLabel}>min</Text></View>) : null}
+                        {aura.exerciseCount ? (<View style={styles.statItem}><Text style={styles.statValue}>{aura.exerciseCount}</Text><Text style={styles.statLabel}>exercises</Text></View>) : null}
+                        {aura.totalSets ? (<View style={styles.statItem}><Text style={styles.statValue}>{aura.totalSets}</Text><Text style={styles.statLabel}>sets</Text></View>) : null}
+                        {aura.totalVolume ? (<View style={styles.statItem}><Text style={styles.statValue}>{aura.totalVolume >= 1000 ? `${(aura.totalVolume / 1000).toFixed(1)}k` : aura.totalVolume}</Text><Text style={styles.statLabel}>kg</Text></View>) : null}
+                      </View>
+                    )}
+                    <View style={styles.footer}>
+                      <Text style={styles.watermark}>🤖 {t("aura.verifiedBy")}</Text>
+                      <Text style={[styles.appName, { color: activeColors.accent }]}>RepAI</Text>
                     </View>
+                  </View>
+                </ViewShot>
+              </Animated.View>
+            </>
+          ) : (
+            /* ── Stats Card ── */
+            <ViewShot
+              ref={viewShotRef}
+              options={{ format: "jpg", quality: 0.95 }}
+              style={styles.cardOuter}
+            >
+              <View style={styles.statsCard}>
+                <View style={styles.statsAccentBar} />
+                <Text style={styles.statsCardLabel}>WORKOUT COMPLETED</Text>
+                <Text style={styles.statsCardTitle}>
+                  {mergedStats?.name || aura?.auraTitle || "Workout"}
+                </Text>
+                <View style={styles.statsCardVolume}>
+                  <Text style={styles.statsCardVolumeNumber}>
+                    {mergedStats
+                      ? mergedStats.totalVolume >= 1000
+                        ? `${(mergedStats.totalVolume / 1000).toFixed(1)}k`
+                        : mergedStats.totalVolume
+                      : "—"}
+                  </Text>
+                  <Text style={styles.statsCardVolumeUnit}>KG TOTAL VOLUME</Text>
+                </View>
+                <View style={styles.statsCardQuickRow}>
+                  {mergedStats?.durationMin ? (
+                    <Text style={styles.statsCardQuickText}>{mergedStats.durationMin} MIN</Text>
                   ) : null}
-                  {aura.exerciseCount ? (
-                    <View style={styles.statItem}>
-                      <Text style={styles.statValue}>
-                        {aura.exerciseCount}
-                      </Text>
-                      <Text style={styles.statLabel}>exercises</Text>
-                    </View>
+                  {mergedStats?.durationMin && mergedStats?.totalSets ? (
+                    <Text style={styles.statsCardQuickDot}>•</Text>
                   ) : null}
-                  {aura.totalSets ? (
-                    <View style={styles.statItem}>
-                      <Text style={styles.statValue}>{aura.totalSets}</Text>
-                      <Text style={styles.statLabel}>sets</Text>
-                    </View>
+                  {mergedStats?.totalSets ? (
+                    <Text style={styles.statsCardQuickText}>{mergedStats.totalSets} SETS</Text>
                   ) : null}
-                  {aura.totalVolume ? (
-                    <View style={styles.statItem}>
-                      <Text style={styles.statValue}>
-                        {aura.totalVolume >= 1000
-                          ? `${(aura.totalVolume / 1000).toFixed(1)}k`
-                          : aura.totalVolume}
-                      </Text>
-                      <Text style={styles.statLabel}>kg</Text>
-                    </View>
+                  {mergedStats?.totalSets && mergedStats?.exerciseCount ? (
+                    <Text style={styles.statsCardQuickDot}>•</Text>
+                  ) : null}
+                  {mergedStats?.exerciseCount ? (
+                    <Text style={styles.statsCardQuickText}>{mergedStats.exerciseCount} EXERCISES</Text>
                   ) : null}
                 </View>
-              )}
-
-              {/* Footer */}
-              <View style={styles.footer}>
-                <Text style={styles.watermark}>🤖 {t("aura.verifiedBy")}</Text>
-                <Text style={[styles.appName, { color: activeColors.accent }]}>RepAI</Text>
+                <View style={styles.statsCardDivider} />
+                {mergedStats?.exercises.map((ex, i) => (
+                  <View key={i} style={styles.statsCardExRow}>
+                    <Text style={styles.statsCardExName}>{ex.name}</Text>
+                    <Text style={styles.statsCardExValue}>
+                      {ex.bestWeight}kg × {ex.bestReps}
+                    </Text>
+                  </View>
+                ))}
+                <View style={styles.statsCardFooter}>
+                  <Text style={styles.statsCardWatermark}>✅ RepAI Verified Workout</Text>
+                  <Text style={styles.statsCardAppName}>RepAI</Text>
+                </View>
               </View>
-            </View>
-          </ViewShot>
-        </Animated.View>
-      </View>
+            </ViewShot>
+          )}
+        </View>
 
-      {/* Actions */}
-      <Animated.View style={[styles.actions, { opacity: actionsOpacity }]}>
-        <TouchableOpacity
-          style={[styles.btnShare, { backgroundColor: activeColors.accent }]}
-          onPress={handleShare}
-          activeOpacity={0.8}
-        >
-          <Share2 color="#fff" size={20} />
-          <Text style={styles.btnShareText}>
-            {" "}
-            {t("aura.shareToStory")}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.btnFinish}
-          onPress={handleFinish}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.btnFinishText}>{t("common.finish")}</Text>
-        </TouchableOpacity>
-
-        {/* Character Selector */}
-        <View style={styles.characterSection}>
-          <Text style={styles.characterSectionLabel}>{t("aura.tryAnotherVibe")}</Text>
-          <View style={styles.characterRow}>
+        {/* Actions */}
+        <Animated.View style={[styles.actions, { opacity: actionsOpacity }]}>
+          {/* Share + Finish row */}
+          <View style={styles.btnRow}>
             <TouchableOpacity
-              style={[
-                styles.characterBtn,
-                styles.characterBtnChad,
-                characterMode === "chad" && styles.characterBtnActive,
-              ]}
-              onPress={() => handleCharacterSwitch("chad")}
-              activeOpacity={0.7}
+              style={[styles.btnShare, { backgroundColor: activeColors.accent }]}
+              onPress={handleShare}
+              activeOpacity={0.8}
             >
-              <Text style={styles.characterBtnText}>{t("aura.chadBtn")}</Text>
+              <Share2 color="#fff" size={18} />
+              <Text style={styles.btnShareText}>{t("aura.shareToStory")}</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[
-                styles.characterBtn,
-                styles.characterBtnKevin,
-                characterMode === "kevin" && styles.characterBtnActive,
-              ]}
-              onPress={() => handleCharacterSwitch("kevin")}
+              style={styles.btnFinish}
+              onPress={handleFinish}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.btnFinishText}>{t("common.finish")}</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Character Selector */}
+          <View style={styles.characterSection}>
+            <Text style={styles.characterSectionLabel}>{t("aura.tryAnotherVibe")}</Text>
+            <View style={styles.characterRow}>
+              <TouchableOpacity
+                style={[
+                  styles.characterBtn,
+                  styles.characterBtnChad,
+                  characterMode === "chad" && styles.characterBtnActive,
+                ]}
+                onPress={() => handleCharacterSwitch("chad")}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.characterBtnText}>{t("aura.chadBtn")}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.characterBtn,
+                  styles.characterBtnKevin,
+                  characterMode === "kevin" && styles.characterBtnActive,
+                ]}
+                onPress={() => handleCharacterSwitch("kevin")}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.characterBtnText}>{t("aura.kevinBtn")}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Animated.View>
+      </ScrollView>
+
+      {/* AI Gate Modal */}
+      {showAIGateModal && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalIconCircle}>
+              <Lock color="#fff" size={28} />
+            </View>
+            <Text style={styles.modalTitle}>{t("aura.aiRequiredTitle")}</Text>
+            <Text style={styles.modalDesc}>{t("aura.aiRequiredDesc")}</Text>
+            <TouchableOpacity
+              style={styles.modalBtn}
+              onPress={handleGoToAI}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.modalBtnText}>{t("aura.goToAI")}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setShowAIGateModal(false)}
               activeOpacity={0.7}
             >
-              <Text style={styles.characterBtnText}>{t("aura.kevinBtn")}</Text>
+              <Text style={styles.modalDismiss}>{t("common.cancel")}</Text>
             </TouchableOpacity>
           </View>
         </View>
-      </Animated.View>
+      )}
     </SafeAreaView>
   );
 }
@@ -414,6 +543,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#1C1C1E",
     alignItems: "center",
     justifyContent: "center",
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 20,
   },
 
   // ── Loading ──
@@ -471,9 +604,9 @@ const styles = StyleSheet.create({
 
   // ── Card ──
   shotWrapper: {
-    flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    paddingVertical: 16,
   },
   glowWrapper: {
     position: "absolute",
@@ -579,31 +712,37 @@ const styles = StyleSheet.create({
   // ── Actions ──
   actions: {
     paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingBottom: 20,
     gap: 12,
+  },
+  btnRow: {
+    flexDirection: "row",
+    gap: 10,
   },
   btnShare: {
     backgroundColor: "#FF3B30",
     flexDirection: "row",
-    height: 56,
-    borderRadius: 28,
+    flex: 1,
+    height: 52,
+    borderRadius: 26,
     alignItems: "center",
     justifyContent: "center",
+    gap: 6,
   },
   btnShareText: {
     color: "#fff",
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: "700",
-    marginLeft: 8,
   },
   btnFinish: {
-    height: 56,
-    borderRadius: 28,
+    height: 52,
+    borderRadius: 26,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#1C1C1E",
     borderWidth: 1,
     borderColor: "#2C2C2E",
+    paddingHorizontal: 24,
   },
   btnFinishText: {
     color: "#fff",
@@ -653,5 +792,210 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 14,
     fontWeight: "700",
+  },
+
+  // ── View Mode Toggle ──
+  viewToggle: {
+    flexDirection: "row",
+    marginHorizontal: 20,
+    marginBottom: 8,
+    backgroundColor: "#1C1C1E",
+    borderRadius: 16,
+    padding: 3,
+  },
+  viewToggleBtn: {
+    flex: 1,
+    height: 36,
+    borderRadius: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  viewToggleBtnActive: {
+    backgroundColor: "#fff",
+  },
+  viewToggleText: {
+    color: "#8E8E93",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  viewToggleTextActive: {
+    color: "#000",
+  },
+
+  // ── Stats Card ──
+  statsCard: {
+    backgroundColor: "#111113",
+    padding: 28,
+    borderWidth: 1,
+    borderColor: "#2C2C2E",
+  },
+  statsAccentBar: {
+    width: "100%",
+    height: 3,
+    backgroundColor: "#10B981",
+    borderRadius: 2,
+    marginBottom: 24,
+  },
+  statsCardLabel: {
+    color: "#10B981",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 3,
+    marginBottom: 6,
+  },
+  statsCardTitle: {
+    color: "#fff",
+    fontSize: 26,
+    fontWeight: "800",
+    lineHeight: 32,
+    marginBottom: 20,
+  },
+  statsCardVolume: {
+    alignItems: "center",
+    marginBottom: 16,
+    paddingVertical: 16,
+    backgroundColor: "#1A1A1D",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#2C2C2E",
+  },
+  statsCardVolumeNumber: {
+    color: "#fff",
+    fontSize: 44,
+    fontWeight: "900",
+    letterSpacing: -1,
+  },
+  statsCardVolumeUnit: {
+    color: "#8E8E93",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 2,
+    marginTop: 4,
+  },
+  statsCardQuickRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+    gap: 6,
+  },
+  statsCardQuickText: {
+    color: "#EBEBF5",
+    fontSize: 13,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
+  statsCardQuickDot: {
+    color: "#3A3A3C",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  statsCardDivider: {
+    height: 1,
+    backgroundColor: "#2C2C2E",
+    marginBottom: 16,
+  },
+  statsCardExRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#1C1C1E",
+  },
+  statsCardExName: {
+    color: "#EBEBF5",
+    fontSize: 15,
+    fontWeight: "600",
+    flex: 1,
+  },
+  statsCardExValue: {
+    color: "#10B981",
+    fontSize: 15,
+    fontWeight: "800",
+    marginLeft: 12,
+  },
+  statsCardFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 20,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: "#2C2C2E",
+  },
+  statsCardWatermark: {
+    color: "#8E8E93",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  statsCardAppName: {
+    color: "#10B981",
+    fontSize: 14,
+    fontWeight: "900",
+    letterSpacing: 1,
+  },
+
+  // ── AI Gate Modal ──
+  modalOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.85)",
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 30,
+  },
+  modalCard: {
+    backgroundColor: "#1C1C1E",
+    borderRadius: 24,
+    padding: 32,
+    alignItems: "center",
+    width: "100%",
+    borderWidth: 1,
+    borderColor: "#2C2C2E",
+  },
+  modalIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "#8B5CF6",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
+  },
+  modalTitle: {
+    color: "#fff",
+    fontSize: 20,
+    fontWeight: "800",
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  modalDesc: {
+    color: "#8E8E93",
+    fontSize: 14,
+    fontWeight: "500",
+    textAlign: "center",
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  modalBtn: {
+    backgroundColor: "#8B5CF6",
+    height: 52,
+    borderRadius: 26,
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    marginBottom: 12,
+  },
+  modalBtnText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  modalDismiss: {
+    color: "#8E8E93",
+    fontSize: 14,
+    fontWeight: "600",
+    paddingVertical: 8,
   },
 });

@@ -429,7 +429,10 @@
     "shareToStory": "Share to Story",
     "shareTitle": "Share your workout aura",
     "tryAnotherVibe": "Get Another Opinion",
-    "chadBtn": " Chad's Take",
-    "kevinBtn": " Kevin's Take"
+    "chadBtn": "🔥 Chad's Take",
+    "kevinBtn": "🛋️ Kevin's Take",
+    "aiRequiredTitle": "AI Feature",
+    "aiRequiredDesc": "Workout Aura is powered by AI. Subscribe to AI Coach to unlock personalized workout analysis and more.",
+    "goToAI": "Unlock AI Coach ✨"
   }
 }

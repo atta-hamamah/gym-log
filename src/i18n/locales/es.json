@@ -429,7 +429,10 @@
     "shareToStory": "Compartir en Historia",
     "shareTitle": "Comparte el aura de tu entrenamiento",
     "tryAnotherVibe": "Otra opinión",
-    "chadBtn": " Opinión de Chad",
-    "kevinBtn": " Opinión de Kevin"
+    "chadBtn": "🔥 Opinión de Chad",
+    "kevinBtn": "🛋️ Opinión de Kevin",
+    "aiRequiredTitle": "Función IA",
+    "aiRequiredDesc": "El Aura del entrenamiento funciona con IA. Suscríbete a AI Coach para desbloquear análisis personalizados.",
+    "goToAI": "Desbloquear AI Coach ✨"
   }
 }

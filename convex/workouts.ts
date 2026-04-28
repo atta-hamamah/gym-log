@@ -153,3 +153,70 @@ export const updateWorkoutAura = mutation({
     });
   },
 });
+
+/**
+ * Get detailed workout stats for the shareable stats card.
+ * Returns per-exercise best sets, totals, and workout metadata.
+ */
+export const getWorkoutStatsCard = query({
+  args: { workoutId: v.id("workouts") },
+  handler: async (ctx, args) => {
+    const workout = await ctx.db.get(args.workoutId);
+    if (!workout) throw new Error("Workout not found");
+
+    const exerciseLogs = await ctx.db
+      .query("exerciseLogs")
+      .withIndex("by_workoutId", (q) => q.eq("workoutId", args.workoutId))
+      .collect();
+
+    let totalSets = 0;
+    let totalVolume = 0;
+    const exercises: {
+      name: string;
+      bestWeight: number;
+      bestReps: number;
+      sets: number;
+      volume: number;
+    }[] = [];
+
+    for (const log of exerciseLogs) {
+      const sets = await ctx.db
+        .query("sets")
+        .withIndex("by_exerciseLogId", (q) => q.eq("exerciseLogId", log._id))
+        .collect();
+      const validSets = sets.filter((s) => s.type === "normal" && s.completed);
+      totalSets += validSets.length;
+      const volume = validSets.reduce((acc, s) => acc + s.weight * s.reps, 0);
+      totalVolume += volume;
+
+      const bestSet = validSets.reduce(
+        (best, s) => (s.weight > (best?.weight || 0) ? s : best),
+        validSets[0]
+      );
+
+      if (bestSet) {
+        exercises.push({
+          name: log.exerciseName,
+          bestWeight: bestSet.weight,
+          bestReps: bestSet.reps,
+          sets: validSets.length,
+          volume,
+        });
+      }
+    }
+
+    const durationMin =
+      workout.endTime && workout.startTime
+        ? Math.round((workout.endTime - workout.startTime) / 60000)
+        : null;
+
+    return {
+      name: workout.name,
+      durationMin,
+      totalSets,
+      totalVolume: Math.round(totalVolume),
+      exerciseCount: exerciseLogs.length,
+      exercises,
+    };
+  },
+});

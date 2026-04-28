@@ -178,6 +178,44 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
 
     // Store the Convex workout ID returned by finishWorkout (needed for Aura)
     const [convexWorkoutId, setConvexWorkoutId] = useState<string | null>(null);
+    const [localStatsForAura, setLocalStatsForAura] = useState<any>(null);
+
+    // Helper: compute local stats from a completed workout session
+    const computeLocalStats = (session: any) => {
+        const exercises = session.exercises.map((ex: any) => {
+            const validSets = ex.sets.filter((s: any) => s.type === 'normal' && s.completed);
+            const bestSet = validSets.reduce(
+                (best: any, s: any) => (s.weight > (best?.weight || 0) ? s : best),
+                validSets[0]
+            );
+            return {
+                name: ex.exerciseName,
+                bestWeight: bestSet?.weight || 0,
+                bestReps: bestSet?.reps || 0,
+            };
+        }).filter((ex: any) => ex.bestWeight > 0);
+
+        const totalSets = session.exercises.reduce(
+            (acc: number, ex: any) => acc + ex.sets.filter((s: any) => s.type === 'normal' && s.completed).length, 0
+        );
+        const totalVolume = Math.round(session.exercises.reduce(
+            (acc: number, ex: any) => acc + ex.sets
+                .filter((s: any) => s.type === 'normal' && s.completed)
+                .reduce((a: number, s: any) => a + s.weight * s.reps, 0), 0
+        ));
+        const durationMin = session.endTime
+            ? Math.round((session.endTime - session.startTime) / 60000)
+            : null;
+
+        return {
+            name: session.name,
+            durationMin,
+            totalSets,
+            totalVolume,
+            exerciseCount: session.exercises.length,
+            exercises,
+        };
+    };
 
     // When finishWorkout completes, check for PRs
     useEffect(() => {
@@ -186,22 +224,20 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
             setPendingGoBack(false);
         } else if (pendingGoBack && lastDetectedPRs.length === 0) {
             setPendingGoBack(false);
-            if (convexWorkoutId) {
-                navigation.replace('WorkoutAura', { workoutId: convexWorkoutId });
-            } else {
-                navigation.goBack();
-            }
+            navigation.replace('WorkoutAura', {
+                ...(convexWorkoutId ? { workoutId: convexWorkoutId } : {}),
+                ...(localStatsForAura ? { localStats: localStatsForAura } : {}),
+            });
         }
-    }, [pendingGoBack, lastDetectedPRs, convexWorkoutId, navigation]);
+    }, [pendingGoBack, lastDetectedPRs, convexWorkoutId, localStatsForAura, navigation]);
 
     const handleDismissPR = () => {
         setShowPRCelebration(false);
         clearDetectedPRs();
-        if (convexWorkoutId) {
-            navigation.replace('WorkoutAura', { workoutId: convexWorkoutId });
-        } else {
-            navigation.goBack();
-        }
+        navigation.replace('WorkoutAura', {
+            ...(convexWorkoutId ? { workoutId: convexWorkoutId } : {}),
+            ...(localStatsForAura ? { localStats: localStatsForAura } : {}),
+        });
     };
 
     if (!currentWorkout) {
@@ -234,6 +270,11 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
             t('workoutSession.finishTitle'),
             t('workoutSession.finishMessage'),
             async () => {
+                // Compute local stats before finishing (currentWorkout gets cleared)
+                if (currentWorkout) {
+                    const completed = { ...currentWorkout, endTime: Date.now() };
+                    setLocalStatsForAura(computeLocalStats(completed));
+                }
                 const cloudId = await finishWorkout(notes, mood || undefined);
                 setConvexWorkoutId(cloudId);
                 setPendingGoBack(true);
