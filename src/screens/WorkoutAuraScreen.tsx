@@ -41,12 +41,12 @@ export default function WorkoutAuraScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [loadingPhaseIndex, setLoadingPhaseIndex] = useState(0);
-  const [characterMode, setCharacterMode] = useState<"default" | "gym_bro" | "couch_potato">("default");
+  const [characterMode, setCharacterMode] = useState<"default" | "chad" | "kevin">("default");
 
   const CHARACTER_COLORS = {
     default: { glow: "#FF3B30", accent: "#FF3B30" },
-    gym_bro: { glow: "#FF6B00", accent: "#FF6B00" },
-    couch_potato: { glow: "#8B5CF6", accent: "#8B5CF6" },
+    chad: { glow: "#FF6B00", accent: "#FF6B00" },
+    kevin: { glow: "#8B5CF6", accent: "#8B5CF6" },
   };
   const activeColors = CHARACTER_COLORS[characterMode];
 
@@ -174,7 +174,7 @@ export default function WorkoutAuraScreen() {
     fetchAura("default");
   }, [workoutId]);
 
-  const handleCharacterSwitch = (mode: "default" | "gym_bro" | "couch_potato") => {
+  const handleCharacterSwitch = (mode: "default" | "chad" | "kevin") => {
     setCharacterMode(mode);
     fetchAura(mode);
   };
@@ -369,24 +369,24 @@ export default function WorkoutAuraScreen() {
             <TouchableOpacity
               style={[
                 styles.characterBtn,
-                styles.characterBtnGymBro,
-                characterMode === "gym_bro" && styles.characterBtnActive,
+                styles.characterBtnChad,
+                characterMode === "chad" && styles.characterBtnActive,
               ]}
-              onPress={() => handleCharacterSwitch("gym_bro")}
+              onPress={() => handleCharacterSwitch("chad")}
               activeOpacity={0.7}
             >
-              <Text style={styles.characterBtnText}>{t("aura.gymBroBtn")}</Text>
+              <Text style={styles.characterBtnText}>{t("aura.chadBtn")}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[
                 styles.characterBtn,
-                styles.characterBtnCouch,
-                characterMode === "couch_potato" && styles.characterBtnActive,
+                styles.characterBtnKevin,
+                characterMode === "kevin" && styles.characterBtnActive,
               ]}
-              onPress={() => handleCharacterSwitch("couch_potato")}
+              onPress={() => handleCharacterSwitch("kevin")}
               activeOpacity={0.7}
             >
-              <Text style={styles.characterBtnText}>{t("aura.couchPotatoBtn")}</Text>
+              <Text style={styles.characterBtnText}>{t("aura.kevinBtn")}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -639,10 +639,10 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: "#2C2C2E",
   },
-  characterBtnGymBro: {
+  characterBtnChad: {
     borderColor: "#FF6B00",
   },
-  characterBtnCouch: {
+  characterBtnKevin: {
     borderColor: "#8B5CF6",
   },
   characterBtnActive: {
