@@ -1,0 +1,259 @@
+# RepAI — Product & Monetization Overview
+
+> **Document Purpose:** Provide an external evaluator/marketing agency with a complete understanding of RepAI's features, subscription model, technology stack, and monetization strategy.
+>
+> **Last Updated:** April 28, 2026
+
+---
+
+## 1. App Identity
+
+| Field | Value |
+|---|---|
+| **App Name** | RepAI: AI Gym Log & Tracker |
+| **Package ID** | `com.gymlog.tracker` |
+| **Current Version** | 1.0.1 (versionCode 6) |
+| **Platform** | Android (Google Play) — iOS-ready codebase |
+| **Category** | Health & Fitness |
+| **Languages** | English, French (Français), Spanish (Español), Hindi (हिन्दी), Arabic (العربية) — with full RTL support |
+| **Theme** | Dark mode & Light mode |
+
+---
+
+## 2. Target Audience
+
+- Gym-goers and weightlifters (beginners → advanced)
+- People who want to track strength training progress over time
+- Fitness enthusiasts looking for AI-powered coaching and workout analysis
+- Gen-Z / Millennial demographic (app tone, humor, Aura feature)
+
+---
+
+## 3. Subscription Tiers & Pricing
+
+RepAI uses a **reverse trial + hybrid monetization** model:
+
+| Tier | Price | Duration | Description |
+|---|---|---|---|
+| **Pro Trial** | **Free** | 14 days | New users get ALL Pro features free for 14 days (reverse trial). No credit card required. |
+| **Free** | **$0** | Forever | After trial expires, the app still works with core features. Limited functionality. |
+| **Pro (Lifetime)** | **~$4.99** (one-time) | Forever | One-time purchase. Unlocks all local/offline Pro features permanently. |
+| **AI Subscriber** | **Monthly subscription ~$14.99** | Recurring | Everything in Pro **plus** AI Coach, Cloud Sync, Cloud Backup, Workout Aura. Requires account creation. |
+
+> **Billing Provider:** RevenueCat (wrapping Google Play Billing).  
+> **Entitlements:** `RepAI Pro` (one-time), `RepAI AI` (monthly subscription).  
+> **Offerings:** `pro_lifetime`, `ai_monthly`.
+
+---
+
+## 4. Feature Breakdown by Tier
+
+### 4.1 Features Available to ALL Users (Free Tier Included)
+
+These features remain accessible **forever**, even after the 14-day trial expires:
+
+| Feature | Description |
+|---|---|
+| **Workout Logging** | Start a workout session, name it, add exercises, log sets (weight × reps) in real time |
+| **Exercise Library** | Browse a built-in library of exercises organized by muscle group and category (strength, cardio, flexibility) |
+| **Custom Exercises** | Create your own exercises with custom name, category, and muscle group |
+| **Workout History** | View all past workouts with full details (exercises, sets, volume, duration, notes) |
+| **Progress Charts** | Visualize exercise progress over time with charts for Max Weight, Total Volume, and Best Set |
+| **Workout Programs** | Browse built-in training programs filterable by level (beginner/intermediate/advanced) and goal (strength/hypertrophy/general/fat loss) with detailed day-by-day breakdowns |
+| **Weekly Stats Dashboard** | Home screen shows weekly sessions count, total sets, minutes, and volume (kg) |
+| **Lifetime Stats** | Total workouts, total sets, total volume lifted — all time |
+| **Session Timer** | Live workout duration timer during active sessions |
+| **Rest Timer** | Configurable rest timer between sets with header badge countdown |
+| **Session Notes** | Add notes to individual workouts |
+| **Mood/Energy Tracking** | Rate energy level (1–5 emoji scale) per workout |
+| **Body Stats** | Track weight (kg), height (cm), and body fat (%) |
+| **Localization** | Full app in 5 languages with RTL support |
+| **Dark/Light Theme** | User-selectable appearance mode |
+| **Personal Records** | Automatic PR detection for Max Weight, Best Volume, and Estimated 1RM with celebration animations |
+| **Restore Purchases** | Restore previous purchases after reinstalling |
+
+### 4.2 Pro-Only Features (Locked After Trial)
+
+These features are accessible during the **14-day trial** and require a **Pro Lifetime** purchase or **AI Subscription** after the trial expires:
+
+| Feature | Description |
+|---|---|
+| **Body Measurements** | Track 7 body measurements over time: neck, chest, waist, hips, biceps, thighs, calves (cm). Includes history with change indicators (↑/↓). |
+| **Supersets / Circuits / Giant Sets** | Link 2+ exercises into supersets, circuits, or giant sets with visual grouping, colored sidebars, and position labels |
+| **CSV Export** | Export all workout data as CSV (Date, Time, Workout Name, Exercise, Set #, Weight, Reps, Volume, Notes) via native share sheet |
+| **RPE Tracking** | Log Rate of Perceived Exertion (1–10) per set with color-coded badges |
+| **Workout Aura** (requires AI account) | Post-workout AI-generated "aura card" — a funny, shareable summary of the workout with stats, sharable as an image |
+
+### 4.3 AI Subscriber–Only Features
+
+Available **only** with an active AI monthly subscription + Clerk account:
+
+| Feature | Description |
+|---|---|
+| **AI Coach Chat** | Full conversational AI assistant (powered by OpenAI GPT-5.1 / GPT-4o-mini with dynamic model routing). Has access to the user's complete workout history, PRs, body measurements, and profile. Provides data-driven advice, program suggestions, progress analysis, plateau detection, nutrition guidance. |
+| **Smart Model Routing** | Automatically classifies user messages as SIMPLE or COMPLEX and routes to the appropriate AI model (cheap for quick questions, powerful for deep analysis) — optimizes cost while maintaining quality. |
+| **Workout Aura** | AI-generated post-workout summary card with 3 character modes: Default (witty), Gym Bro (roast mode), Couch Potato (passive-aggressive). Shareable as image to social media. Includes workout stats overlay. |
+| **Cloud Sync** | All workout data is synced to the cloud (Convex) in real-time. Data persists across devices and reinstalls. |
+| **Cloud Backup** | Workouts, exercise logs, sets, personal records, body measurements, and custom exercises are all backed up server-side. |
+| **Paginated Cloud History** | History screen loads workouts from the cloud with infinite scroll pagination (vs. local-only for free users). |
+| **AI Onboarding** | Guided onboarding flow to create a Clerk account, enter profile details (name, DOB, gender, weight, height, body fat, fitness goal), and migrate local data to the cloud. |
+| **Fitness Goal Personalization** | Set and update a fitness goal in Settings that the AI uses to tailor all advice. |
+| **Subscription Management** | Manage/cancel subscription directly from Settings via Google Play. |
+| **Account Management** | Sign out, or permanently delete account and all cloud data. |
+
+---
+
+## 5. Monetization Flow
+
+```
+┌──────────────────────────────────────────────────────┐
+│                    NEW USER INSTALLS                 │
+│                                                      │
+│   ┌──────────────┐                                   │
+│   │  14-Day Pro   │  All Pro features unlocked       │
+│   │    Trial      │  No signup required               │
+│   └──────┬───────┘                                   │
+│          │ Trial expires                             │
+│          ▼                                           │
+│   ┌──────────────┐                                   │
+│   │   Free Tier   │  Core features still work        │
+│   │              │  Pro features locked               │
+│   └──────┬───────┘                                   │
+│          │                                           │
+│    ┌─────┴──────┐                                    │
+│    ▼            ▼                                    │
+│ ┌────────┐  ┌──────────────┐                         │
+│ │Pro ~$5 │  │ AI Monthly   │                         │
+│ │Lifetime│  │ Subscription │                         │
+│ │        │  │              │                         │
+│ │Local   │  │ Everything   │                         │
+│ │features│  │ in Pro PLUS  │                         │
+│ │forever │  │ AI + Cloud   │                         │
+│ └────────┘  └──────────────┘                         │
+└──────────────────────────────────────────────────────┘
+```
+
+### Revenue Streams
+
+| Stream | Type | Notes |
+|---|---|---|
+| **Pro Lifetime** | One-time purchase (~$4.99) | Unlocks all local features forever. No recurring revenue. |
+| **AI Subscription** | Monthly recurring | Higher ARPU. Requires Clerk account. Includes server-side costs (OpenAI API, Convex hosting). |
+
+### Upsell Strategy
+
+- Trial banner on Home screen during the 14-day trial (shows days remaining)
+- Paywall screen when trial expires or when user taps locked features
+- Pro users see an "Upgrade to AI" upsell in Settings
+- AI tab shows a dedicated gate screen with feature highlights for non-subscribers
+
+---
+
+## 6. Technical Architecture
+
+### 6.1 Frontend Stack
+
+| Technology | Purpose |
+|---|---|
+| **React Native** (Expo) | Cross-platform mobile framework |
+| **TypeScript** | Type-safe codebase |
+| **Expo Router / React Navigation** | Tab + stack navigation |
+| **AsyncStorage** | Local data persistence (free/Pro users) |
+| **i18next** | Internationalization (5 languages + RTL) |
+| **Lucide React Native** | Icon library |
+| **date-fns** | Date formatting & calculations |
+| **react-native-view-shot** | Screenshot capture for Aura sharing |
+| **expo-sharing** | Native share sheet integration |
+
+### 6.2 Backend & Cloud Services
+
+| Service | Purpose | Cost Implications |
+|---|---|---|
+| **Convex** | Real-time cloud database, serverless functions, mutations/queries | Per-usage pricing |
+| **OpenAI API** (GPT-5.1 + GPT-4o-mini) | AI Chat + Workout Aura generation | Per-token pricing, optimized with smart model routing |
+| **Clerk** | User authentication (sign up, sign in, account deletion) | Per-MAU pricing |
+| **RevenueCat** | In-app purchase management, entitlement tracking, subscription analytics | Revenue-share or flat pricing |
+| **EAS (Expo Application Services)** | Build, submit, and OTA updates | Expo pricing |
+
+### 6.3 Database Schema (Convex)
+
+| Table | Description |
+|---|---|
+| `users` | User profiles (Clerk ID, name, email, DOB, gender, weight, height, body fat, goal) |
+| `workouts` | Workout sessions (name, timestamps, notes, mood, aura data) |
+| `exerciseLogs` | Exercise entries within a workout (exercise name, superset group, order) |
+| `sets` | Individual sets within an exercise log (weight, reps, RPE, type) |
+| `customExercises` | User-created exercises |
+| `personalRecords` | PRs (max weight, best volume, estimated 1RM) |
+| `bodyMeasurements` | Body measurements over time (7 body parts) |
+
+---
+
+## 7. Key Differentiators & Competitive Advantages
+
+| Advantage | Details |
+|---|---|
+| **AI-Powered Coaching** | Not just a logger — the AI has full access to the user's data and gives personalized, data-driven advice. Uses dynamic model routing to optimize cost. |
+| **Workout Aura** | Unique, viral-ready, shareable post-workout cards with humor. 3 character modes. Designed for social media sharing (Instagram Stories, etc.). Strong organic growth potential. |
+| **Reverse Trial Model** | Users get the full Pro experience for 14 days with zero friction. Higher conversion than traditional free-with-upsell. |
+| **Hybrid Offline/Online** | Works fully offline for free/Pro users (AsyncStorage). AI subscribers get cloud sync. No internet dependency for core features. |
+| **Multi-Language + RTL** | 5 languages including Arabic with full RTL — targets Middle East and South Asian markets underserved by competitors. |
+| **One-Time Purchase Option** | Unlike competitors that force subscriptions, RepAI offers a $4.99 lifetime option. Appeals to subscription-fatigued users. |
+| **Superset/Circuit Support** | Visual grouping of exercises into supersets, circuits, and giant sets — a feature missing from many competitors. |
+| **Personal Record Detection** | Automatic PR detection with celebration animations — gamification that drives engagement. |
+| **Low Entry Barrier** | No account required to use the app. Account only needed for AI features. |
+
+---
+
+## 8. App Screens Summary
+
+| Screen | Tab | Purpose |
+|---|---|---|
+| **Home** | Home | Dashboard with quick-start workout, weekly stats, recent activity |
+| **Programs** | Programs | Browse built-in training programs by level/goal |
+| **Program Detail** | — | Detailed program view with day-by-day exercise breakdown |
+| **History** | History | Paginated workout history (local or cloud) |
+| **Workout Details** | — | Detailed view of a completed workout |
+| **Progress** | Progress | Exercise progress charts with metric toggles |
+| **AI (Gate)** | AI | Subscription gate for AI features |
+| **AI Chat** | AI | Conversational AI coach |
+| **AI Onboarding** | — | Account creation + profile setup + data migration |
+| **Workout Session** | — | Active workout screen with exercise cards, set logging, rest timer |
+| **Workout Aura** | — | Post-workout AI-generated summary card |
+| **Exercise List** | — | Exercise picker (built-in + custom) |
+| **Paywall** | — | Pro upgrade screen |
+| **Settings** | Settings | Profile, subscription management, language, theme, body stats, measurements, data management |
+
+---
+
+## 9. Cost Structure (Recurring)
+
+| Cost | Type | Notes |
+|---|---|---|
+| **OpenAI API** | Variable | Smart routing minimizes this. ~$0.00002 per classification + $0.01–$0.03 per chat response. Aura generation per workout. |
+| **Convex Hosting** | Variable | Serverless — scales with active AI subscribers. Free tier covers low usage. |
+| **Clerk Auth** | Per-MAU | Only AI subscribers create accounts. |
+| **RevenueCat** | Revenue share or flat | Manages all billing/entitlements. |
+| **Google Play** | 15–30% commission | Standard store fee on all purchases. |
+
+---
+
+## 10. Summary for Valuation
+
+| Metric | Value |
+|---|---|
+| **Revenue Model** | Hybrid: one-time purchase ($4.99) + monthly AI subscription |
+| **Trial Strategy** | 14-day reverse trial (full Pro features) |
+| **Platforms** | Android (live), iOS (codebase ready) |
+| **Languages** | 5 (EN, FR, ES, HI, AR) |
+| **Core Features** | 15+ free features, 5 Pro-gated, 10+ AI-exclusive |
+| **AI Backend** | OpenAI GPT-5.1 with cost-optimized dynamic routing |
+| **Cloud Backend** | Convex (real-time, serverless) |
+| **Auth** | Clerk |
+| **Billing** | RevenueCat + Google Play |
+| **Unique Features** | Workout Aura (shareable), AI Coach with full data access, superset support, multi-language + RTL |
+| **Growth Levers** | Workout Aura social sharing, reverse trial conversion, multi-language reach |
+
+---
+
+*This document was generated from the RepAI source code as of April 28, 2026.*
