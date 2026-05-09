@@ -6,6 +6,7 @@ import { Button } from './Button';
 import { borderRadius } from '../theme/colors';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
+import { useUnits } from '../context/UnitsContext';
 
 // Standard Olympic plates in kg (descending order)
 const AVAILABLE_PLATES = [25, 20, 15, 10, 5, 2.5, 1.25, 1, 0.5];
@@ -96,6 +97,7 @@ export const PlateCalculator: React.FC<PlateCalculatorProps> = ({ visible, onClo
     const { t } = useTranslation();
     const { colors } = useTheme();
     const styles = createStyles(colors);
+    const { weightUnit } = useUnits();
     const [barWeight, setBarWeight] = useState(20);
 
     const BAR_OPTIONS = [20, 15, 10];
@@ -149,7 +151,7 @@ export const PlateCalculator: React.FC<PlateCalculatorProps> = ({ visible, onClo
                             {weight}
                         </Typography>
                         <Typography variant="bodySmall" color={colors.textSecondary}>
-                            {t('common.kg')}
+                            {weightUnit}
                         </Typography>
                     </View>
 
@@ -174,7 +176,7 @@ export const PlateCalculator: React.FC<PlateCalculatorProps> = ({ visible, onClo
                                         color={barWeight === bw ? colors.black : colors.textSecondary}
                                         bold={barWeight === bw}
                                     >
-                                        {bw} {t('common.kg')}
+                                        {bw} {weightUnit}
                                     </Typography>
                                 </TouchableOpacity>
                             ))}
@@ -223,7 +225,7 @@ export const PlateCalculator: React.FC<PlateCalculatorProps> = ({ visible, onClo
                                 {/* Bar */}
                                 <View style={styles.bar}>
                                     <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 9 }}>
-                                        {barWeight}{t('common.kg')}
+                                        {barWeight}{weightUnit}
                                     </Typography>
                                 </View>
 
@@ -271,7 +273,7 @@ export const PlateCalculator: React.FC<PlateCalculatorProps> = ({ visible, onClo
                     {breakdown.length > 0 && (
                         <View style={styles.breakdownSection}>
                             <Typography variant="label" style={{ marginBottom: 8 }}>
-                                {t('plateCalculator.perSide')} ({weightPerSide} {t('common.kg')})
+                                {t('plateCalculator.perSide')} ({weightPerSide} {weightUnit})
                             </Typography>
                             <View style={styles.breakdownList}>
                                 {breakdown.map(({ plate, count }) => (
@@ -283,7 +285,7 @@ export const PlateCalculator: React.FC<PlateCalculatorProps> = ({ visible, onClo
                                             ]}
                                         />
                                         <Typography variant="body" bold>
-                                            {plate} {t('common.kg')}
+                                            {plate} {weightUnit}
                                         </Typography>
                                         <Typography variant="body" color={colors.textSecondary} style={{ marginLeft: 4 }}>
                                             × {count}

@@ -19,6 +19,7 @@ import {
 } from '../utils/supersetUtils';
 import { getExerciseName } from '../constants/exercises';
 import { useTheme } from '../context/ThemeContext';
+import { useUnits } from '../context/UnitsContext';
 
 // ── Build groupable render list ──────────────────────────
 interface RenderItem {
@@ -53,6 +54,7 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
     const { t } = useTranslation();
     const { colors } = useTheme();
     const styles = createStyles(colors);
+    const { weightUnit, displayWeight } = useUnits();
     const { workoutId } = route.params as { workoutId: string };
     const { workouts, deleteWorkout } = useWorkout();
 
@@ -163,7 +165,7 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
                     {bestWeight > 0 && (
                         <View style={styles.prBadge}>
                             <Typography variant="label" color={colors.primary} style={{ fontSize: 10 }}>
-                                {t('workoutDetails.best')} {bestWeight}{t('common.kg')}
+                                {t('workoutDetails.best')} {displayWeight(bestWeight)}{weightUnit}
                             </Typography>
                         </View>
                     )}
@@ -172,7 +174,7 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
                 {/* Table */}
                 <View style={styles.tableHeader}>
                     <Typography variant="label" style={styles.colSet}>{t('common.set')}</Typography>
-                    <Typography variant="label" style={styles.colData}>{t('common.kgLabel')}</Typography>
+                    <Typography variant="label" style={styles.colData}>{weightUnit}</Typography>
                     <Typography variant="label" style={styles.colData}>{t('common.repsLabel')}</Typography>
                     <Typography variant="label" style={styles.colData}>{t('common.rpe')}</Typography>
                     <Typography variant="label" style={[styles.colData, { textAlign: 'right' }]}>{t('common.vol')}</Typography>
@@ -183,13 +185,13 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
                         <View style={styles.setBadge}>
                             <Typography variant="bodySmall" bold align="center">{index + 1}</Typography>
                         </View>
-                        <Typography variant="body" style={styles.colData} bold>{set.weight}</Typography>
+                        <Typography variant="body" style={styles.colData} bold>{displayWeight(set.weight)}</Typography>
                         <Typography variant="body" style={styles.colData}>{set.reps}</Typography>
                         <Typography variant="body" style={styles.colData} color={set.rpe ? (set.rpe <= 5 ? colors.success : set.rpe <= 7 ? colors.warning : set.rpe <= 8 ? '#FF9800' : colors.error) : colors.textMuted}>
                             {set.rpe || '—'}
                         </Typography>
                         <Typography variant="bodySmall" color={colors.textMuted} style={[styles.colData, { textAlign: 'right' }]}>
-                            {set.weight * set.reps}
+                            {Math.round(displayWeight(set.weight * set.reps))}
                         </Typography>
                     </View>
                 ))}
@@ -197,7 +199,7 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
                 {/* Exercise totals */}
                 <View style={styles.exFooter}>
                     <Typography variant="caption" color={colors.textSecondary}>
-                        {log.sets.length} {t('common.sets')} • {exVolume.toLocaleString()} {t('workoutDetails.kgTotal')}
+                        {log.sets.length} {t('common.sets')} • {Math.round(displayWeight(exVolume)).toLocaleString()} {weightUnit}
                     </Typography>
                 </View>
 
@@ -247,8 +249,8 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
                     </Card>
                     <Card style={styles.summaryCard} variant="glass">
                         <StatBadge
-                            value={totalVolume > 999 ? `${(totalVolume / 1000).toFixed(1)}k` : totalVolume}
-                            label={t('common.kg')}
+                            value={displayWeight(totalVolume) > 999 ? `${(displayWeight(totalVolume) / 1000).toFixed(1)}k` : Math.round(displayWeight(totalVolume))}
+                            label={weightUnit}
                             color={colors.accent}
                         />
                     </Card>

@@ -45,6 +45,7 @@
     "workouts": "Séances",
     "minutes": "Minutes",
     "kgVolume": "kg Volume",
+    "volume": "Volume",
     "recentActivity": "Activité récente",
     "noWorkoutsYet": "Aucune séance enregistrée.\nCommencez votre première séance !",
     "newWorkout": "Nouvelle séance",
@@ -414,7 +415,14 @@
     "deleteError": "Échec de la suppression du compte.",
     "fitnessGoal": "Objectif Fitness",
     "saveGoal": "Enregistrer l'objectif",
-    "goalSaved": "Votre objectif fitness a été mis à jour. RepAI adaptera ses conseils à cet objectif."
+    "goalSaved": "Votre objectif fitness a été mis à jour. RepAI adaptera ses conseils à cet objectif.",
+    "units": "Unités",
+    "unitsDescription": "Choisissez votre système de mesure préféré",
+    "metric": "Métrique (kg, cm)",
+    "imperial": "Impérial (lbs, in)",
+    "weight": "Poids",
+    "height": "Taille",
+    "totalLabel": "Total"
   },
   "aiChat": {
     "subtitle": "Votre coach fitness IA",

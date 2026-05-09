@@ -162,6 +162,7 @@ USER PROFILE:
 - Height: ${user.height ? `${user.height}cm` : "unknown"}
 - Body Fat: ${user.bodyFat ? `${user.bodyFat}%` : "unknown"}
 - Fitness Goal: ${user.goal || "not specified"}
+- Preferred Units: ${user.unitPreference === "imperial" ? "Imperial (lbs, inches)" : "Metric (kg, cm)"}
 
 ${yearlyStatsBlock}
 
@@ -212,7 +213,7 @@ Rules:
 - If you don't have enough data to answer accurately, say so.
 - Never invent data that doesn't exist.
 - When suggesting workouts, consider what muscles they recently trained (avoid overlap).
-- Use metric units (kg, cm) by default.
+- Use the user's preferred unit system (see "Preferred Units" in their profile). Convert values accordingly when giving advice.
 - If asked about nutrition, give general guidance but clarify you're not a nutritionist.
 
 Here is the user's current data:

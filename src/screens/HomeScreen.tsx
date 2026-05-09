@@ -13,11 +13,13 @@ import { borderRadius } from '../theme/colors';
 import { WorkoutSession } from '../types';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
+import { useUnits } from '../context/UnitsContext';
 
 export const HomeScreen = ({ navigation }: any) => {
     const { t } = useTranslation();
     const { colors } = useTheme();
     const styles = createStyles(colors);
+    const { weightUnit, displayWeight } = useUnits();
     const { currentWorkout, startWorkout, workouts } = useWorkout();
     const { tier } = useSubscription();
     const [nameModalVisible, setNameModalVisible] = useState(false);
@@ -135,8 +137,8 @@ export const HomeScreen = ({ navigation }: any) => {
                     </Card>
                     <Card style={styles.statCell}>
                         <StatBadge
-                            value={weeklyStats.volume > 999 ? `${(weeklyStats.volume / 1000).toFixed(1)}k` : weeklyStats.volume}
-                            label={t('home.kgVolume')}
+                            value={displayWeight(weeklyStats.volume) > 999 ? `${(displayWeight(weeklyStats.volume) / 1000).toFixed(1)}k` : Math.round(displayWeight(weeklyStats.volume))}
+                            label={`${weightUnit} ${t('home.volume')}`}
                             color={colors.accent}
                         />
                     </Card>
@@ -174,7 +176,7 @@ export const HomeScreen = ({ navigation }: any) => {
                                             </Typography>
                                             <Typography variant="caption" style={{ marginTop: 2 }}>
                                                 {format(workout.startTime, 'EEE, MMM dd')} • {workout.exercises.length} {t('common.exercises')} • {duration} {t('common.min')}
-                                                {volume > 0 ? ` • ${volume > 999 ? `${(volume / 1000).toFixed(1)}k` : volume} ${t('common.kg')}` : ''}
+                                                {volume > 0 ? ` • ${displayWeight(volume) > 999 ? `${(displayWeight(volume) / 1000).toFixed(1)}k` : Math.round(displayWeight(volume))} ${weightUnit}` : ''}
                                             </Typography>
                                         </View>
                                         <Typography variant="body" color={colors.primary} style={{ fontSize: 18 }}>›</Typography>

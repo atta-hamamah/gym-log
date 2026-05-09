@@ -13,6 +13,7 @@ import { Exercise, WorkoutSession, ExerciseLog, Set as WorkoutSet } from '../typ
 import { useTranslation } from 'react-i18next';
 import { getExerciseName, getMuscleGroupName } from '../constants/exercises';
 import { useTheme } from '../context/ThemeContext';
+import { useUnits } from '../context/UnitsContext';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -22,6 +23,7 @@ export const ProgressScreen = () => {
     const { t } = useTranslation();
     const { colors } = useTheme();
     const styles = createStyles(colors);
+    const { weightUnit, displayWeight } = useUnits();
     const { workouts, exercises } = useWorkout();
     const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
     const [modalVisible, setModalVisible] = useState(false);
@@ -70,16 +72,21 @@ export const ProgressScreen = () => {
             .slice(-12) as { label: string; value: number }[];
     }, [selectedExercise, workouts, metric]);
 
+    // Convert chart data values to display units
+    const displayChartData = useMemo(() => {
+        return chartData.map(d => ({ ...d, value: Math.round(displayWeight(d.value)) }));
+    }, [chartData, displayWeight]);
+
     const stats = useMemo(() => {
-        if (!selectedExercise || chartData.length === 0) return null;
-        const values = chartData.map(d => d.value);
+        if (!selectedExercise || displayChartData.length === 0) return null;
+        const values = displayChartData.map(d => d.value);
         const max = Math.max(...values);
         const latest = values[values.length - 1];
         const first = values[0];
         const improvement = latest - first;
         const improvementPct = first > 0 ? Math.round((improvement / first) * 100) : 0;
-        return { max, latest, improvement, improvementPct, sessions: chartData.length };
-    }, [selectedExercise, chartData]);
+        return { max, latest, improvement, improvementPct, sessions: displayChartData.length };
+    }, [selectedExercise, displayChartData]);
 
     // ── Overview / aggregate data (shown before any exercise is selected) ──
 
@@ -148,8 +155,8 @@ export const ProgressScreen = () => {
             }
         });
 
-        return buckets.map(b => ({ label: b.label, value: Math.round(b.value) }));
-    }, [workouts]);
+        return buckets.map(b => ({ label: b.label, value: Math.round(displayWeight(b.value)) }));
+    }, [workouts, displayWeight]);
 
     const muscleGroupData = useMemo(() => {
         if (workouts.length === 0) return [];
@@ -213,9 +220,9 @@ export const ProgressScreen = () => {
     };
 
     const metricUnit = {
-        maxWeight: t('common.kg'),
-        totalVolume: t('common.kg'),
-        bestSet: t('common.kg'),
+        maxWeight: weightUnit,
+        totalVolume: weightUnit,
+        bestSet: weightUnit,
     };
 
     const barColors = [
@@ -281,7 +288,7 @@ export const ProgressScreen = () => {
 
                         {/* Chart */}
                         <ProgressChart
-                            data={chartData}
+                            data={displayChartData}
                             width={screenWidth - 40}
                             height={220}
                             unit={metricUnit[metric]}
@@ -334,7 +341,7 @@ export const ProgressScreen = () => {
                             </Card>
                             <Card style={styles.statCard} variant="glass">
                                 <StatBadge
-                                    value={formatVolume(overviewStats.totalVolume)}
+                                    value={formatVolume(Math.round(displayWeight(overviewStats.totalVolume)))}
                                     label={t('progress.totalVolumeAll')}
                                     color={colors.secondary}
                                 />
@@ -365,7 +372,7 @@ export const ProgressScreen = () => {
                                     data={weeklyVolumeData}
                                     width={screenWidth - 40}
                                     height={200}
-                                    unit={t('common.kg')}
+                                    unit={weightUnit}
                                     color={colors.secondary}
                                     gradientTo={colors.primary}
                                 />

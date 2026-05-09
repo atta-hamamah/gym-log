@@ -14,6 +14,7 @@ import { usePaginatedQuery, useQuery, useConvexAuth } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { useSubscription } from '../context/SubscriptionContext';
 import { useTheme } from '../context/ThemeContext';
+import { useUnits } from '../context/UnitsContext';
 
 const PAGE_SIZE = 10;
 
@@ -21,6 +22,7 @@ export const HistoryScreen = ({ navigation }: any) => {
     const { t } = useTranslation();
     const { colors } = useTheme();
     const styles = createStyles(colors);
+    const { weightUnit, displayWeight } = useUnits();
     const { workouts: localWorkouts, deleteWorkout } = useWorkout();
     const { isAuthenticated } = useConvexAuth();
     const { isAISubscriber } = useSubscription();
@@ -179,9 +181,9 @@ export const HistoryScreen = ({ navigation }: any) => {
                         <View style={styles.divider} />
                         <View style={styles.stat}>
                             <Typography variant="bodySmall" color={colors.accent} bold>
-                                {totalVolume > 999 ? `${(totalVolume / 1000).toFixed(1)}k` : totalVolume}
+                                {Math.round(displayWeight(totalVolume)) > 999 ? `${(displayWeight(totalVolume) / 1000).toFixed(1)}k` : Math.round(displayWeight(totalVolume))}
                             </Typography>
-                            <Typography variant="caption" style={{ fontSize: 11 }}>{t('common.kg')}</Typography>
+                            <Typography variant="caption" style={{ fontSize: 11 }}>{weightUnit}</Typography>
                         </View>
                     </View>
 

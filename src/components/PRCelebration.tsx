@@ -8,6 +8,7 @@ import { DetectedPR, PRType } from '../types';
 import { useTranslation } from 'react-i18next';
 import { getExerciseName } from '../constants/exercises';
 import { useTheme } from '../context/ThemeContext';
+import { useUnits } from '../context/UnitsContext';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -117,6 +118,7 @@ export const PRCelebration: React.FC<PRCelebrationProps> = ({ visible, prs, onDi
     const { t } = useTranslation();
     const { colors } = useTheme();
     const styles = createStyles(colors);
+    const { weightUnit, displayWeight } = useUnits();
     const scaleAnim = useRef(new Animated.Value(0)).current;
     const glowAnim = useRef(new Animated.Value(0)).current;
 
@@ -242,10 +244,10 @@ export const PRCelebration: React.FC<PRCelebrationProps> = ({ visible, prs, onDi
                                         <View style={styles.prValueRow}>
                                             <Typography variant="h3" color={config.color} style={{ fontSize: 18 }}>
                                                 {pr.type === 'max_weight'
-                                                    ? `${pr.newValue} ${t('common.kg')} × ${pr.reps}`
+                                                    ? `${displayWeight(pr.newValue)} ${weightUnit} × ${pr.reps}`
                                                     : pr.type === 'est_1rm'
-                                                        ? `${pr.newValue} ${t('common.kg')}`
-                                                        : `${pr.newValue} ${t('common.kg')}`}
+                                                        ? `${displayWeight(pr.newValue)} ${weightUnit}`
+                                                        : `${displayWeight(pr.newValue)} ${weightUnit}`}
                                             </Typography>
                                             <Typography variant="caption" color={colors.textMuted} style={{ marginLeft: 8, fontSize: 11 }}>
                                                 {t(`pr.types.${pr.type}`)}
@@ -253,7 +255,7 @@ export const PRCelebration: React.FC<PRCelebrationProps> = ({ visible, prs, onDi
                                         </View>
                                         {pr.previousValue != null && pr.previousValue > 0 && (
                                             <Typography variant="caption" color={colors.success} style={{ fontSize: 11, marginTop: 2 }}>
-                                                ↑ +{Math.round(pr.newValue - pr.previousValue)} {t('common.kg')} {t('pr.fromPrevious')}
+                                                ↑ +{Math.round(displayWeight(pr.newValue - pr.previousValue))} {weightUnit} {t('pr.fromPrevious')}
                                             </Typography>
                                         )}
                                     </View>

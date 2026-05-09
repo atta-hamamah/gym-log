@@ -20,14 +20,16 @@ import { generateId } from '../utils/generateId';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-import { Crown, Sparkles, Zap, CreditCard, LogOut, Sun, Moon, Target } from 'lucide-react-native';
+import { Crown, Sparkles, Zap, CreditCard, LogOut, Sun, Moon, Target, Ruler, Weight } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
+import { useUnits, UnitSystem } from '../context/UnitsContext';
 
 
 export const SettingsScreen = ({ navigation }: any) => {
     const { t, i18n } = useTranslation();
     const { colors, themeMode, setThemeMode } = useTheme();
     const styles = createStyles(colors);
+    const { unitSystem, setUnitSystem, weightUnit, lengthUnit, displayWeight, displayLength, toMetricWeight, toMetricLength } = useUnits();
     const { updateUserStats, userStats, workouts, refreshData, bodyMeasurements, addBodyMeasurement } = useWorkout();
     const {
         tier,
@@ -111,11 +113,11 @@ export const SettingsScreen = ({ navigation }: any) => {
 
     useEffect(() => {
         if (userStats) {
-            setWeight(userStats.weight?.toString() || '');
+            setWeight(userStats.weight ? displayWeight(userStats.weight).toString() : '');
             setBodyFat(userStats.bodyFat?.toString() || '');
-            setHeight(userStats.height?.toString() || '');
+            setHeight(userStats.height ? displayLength(userStats.height).toString() : '');
         }
-    }, [userStats]);
+    }, [userStats, unitSystem]);
 
     const handleSaveStats = async () => {
         const w = parseFloat(weight);
@@ -128,10 +130,11 @@ export const SettingsScreen = ({ navigation }: any) => {
         const bf = parseFloat(bodyFat);
         const h = parseFloat(height);
 
+        // Always store in metric (kg / cm)
         await updateUserStats({
-            weight: w,
+            weight: toMetricWeight(w),
             bodyFat: isNaN(bf) ? undefined : bf,
-            height: isNaN(h) ? undefined : h,
+            height: isNaN(h) ? undefined : toMetricLength(h),
         });
         showModal(t('settings.saved'), t('settings.savedMessage'), undefined, 'success');
     };
@@ -269,20 +272,31 @@ export const SettingsScreen = ({ navigation }: any) => {
     const currentLang = i18n.language as SupportedLanguage;
 
     const handleSaveMeasurements = async () => {
-        const vals = {
-            neck: parseFloat(mNeck) || undefined,
-            chest: parseFloat(mChest) || undefined,
-            waist: parseFloat(mWaist) || undefined,
-            hips: parseFloat(mHips) || undefined,
-            biceps: parseFloat(mBiceps) || undefined,
-            thighs: parseFloat(mThighs) || undefined,
-            calves: parseFloat(mCalves) || undefined,
+        const parse = (v: string) => {
+            const n = parseFloat(v);
+            return isNaN(n) ? undefined : n;
         };
 
-        const hasAny = Object.values(vals).some(v => v !== undefined);
+        const raw = {
+            neck: parse(mNeck),
+            chest: parse(mChest),
+            waist: parse(mWaist),
+            hips: parse(mHips),
+            biceps: parse(mBiceps),
+            thighs: parse(mThighs),
+            calves: parse(mCalves),
+        };
+
+        const hasAny = Object.values(raw).some(v => v !== undefined);
         if (!hasAny) {
             showModal(t('measurements.error'), t('measurements.errorEmpty'), undefined, 'danger');
             return;
+        }
+
+        // Convert to metric (cm) for storage
+        const vals: Record<string, number | undefined> = {};
+        for (const [key, v] of Object.entries(raw)) {
+            vals[key] = v !== undefined ? toMetricLength(v) : undefined;
         }
 
         const measurement: BodyMeasurement = {
@@ -571,15 +585,71 @@ export const SettingsScreen = ({ navigation }: any) => {
                     </View>
                 </Card>
 
+                {/* Units */}
+                <Card>
+                    <Typography variant="h3" style={{ marginBottom: 4 }}>{t('settings.units')}</Typography>
+                    <Typography variant="caption" style={{ marginBottom: 16 }}>
+                        {t('settings.unitsDescription')}
+                    </Typography>
+                    <View style={styles.themeSegment}>
+                        <TouchableOpacity
+                            style={[styles.themeOption, unitSystem === 'metric' && styles.themeOptionActive]}
+                            onPress={async () => {
+                                await setUnitSystem('metric');
+                                if (convexUser?._id) {
+                                    await updateUserProfile({ userId: convexUser._id, unitPreference: 'metric' });
+                                }
+                            }}
+                            activeOpacity={0.85}
+                        >
+                            <View style={styles.themeOptionInner}>
+                                <Ruler color={unitSystem === 'metric' ? colors.black : colors.textSecondary} size={15} />
+                                <Typography
+                                    variant="bodySmall"
+                                    color={unitSystem === 'metric' ? colors.black : colors.textSecondary}
+                                    bold={unitSystem === 'metric'}
+                                    style={{ marginLeft: 6 }}
+                                >
+                                    {t('settings.metric')}
+                                </Typography>
+                            </View>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[styles.themeOption, unitSystem === 'imperial' && styles.themeOptionActive]}
+                            onPress={async () => {
+                                await setUnitSystem('imperial');
+                                if (convexUser?._id) {
+                                    await updateUserProfile({ userId: convexUser._id, unitPreference: 'imperial' });
+                                }
+                            }}
+                            activeOpacity={0.85}
+                        >
+                            <View style={styles.themeOptionInner}>
+                                <Ruler color={unitSystem === 'imperial' ? colors.black : colors.textSecondary} size={15} />
+                                <Typography
+                                    variant="bodySmall"
+                                    color={unitSystem === 'imperial' ? colors.black : colors.textSecondary}
+                                    bold={unitSystem === 'imperial'}
+                                    style={{ marginLeft: 6 }}
+                                >
+                                    {t('settings.imperial')}
+                                </Typography>
+                            </View>
+                        </TouchableOpacity>
+                    </View>
+                </Card>
+
                 {/* Body Stats */}
                 <Card>
                     <Typography variant="h3" style={{ marginBottom: 16 }}>{t('settings.bodyStats')}</Typography>
 
                     <View style={styles.inputContainer}>
-                        <Typography variant="label" style={styles.inputLabel}>{t('settings.weightKg')}</Typography>
+                        <Typography variant="label" style={styles.inputLabel}>
+                            {t('settings.weight')} ({weightUnit})
+                        </Typography>
                         <TextInput
                             style={styles.input}
-                            placeholder="e.g. 75"
+                            placeholder={unitSystem === 'metric' ? 'e.g. 75' : 'e.g. 165'}
                             keyboardType="numeric"
                             placeholderTextColor={colors.textSecondary}
                             value={weight}
@@ -588,10 +658,12 @@ export const SettingsScreen = ({ navigation }: any) => {
                     </View>
 
                     <View style={styles.inputContainer}>
-                        <Typography variant="label" style={styles.inputLabel}>{t('settings.heightCm')}</Typography>
+                        <Typography variant="label" style={styles.inputLabel}>
+                            {t('settings.height')} ({lengthUnit})
+                        </Typography>
                         <TextInput
                             style={styles.input}
-                            placeholder="e.g. 180"
+                            placeholder={unitSystem === 'metric' ? 'e.g. 180' : 'e.g. 71'}
                             keyboardType="numeric"
                             placeholderTextColor={colors.textSecondary}
                             value={height}
@@ -634,9 +706,11 @@ export const SettingsScreen = ({ navigation }: any) => {
                         </View>
                         <View style={styles.lifetimeStat}>
                             <Typography variant="h2" color={colors.warning}>
-                                {totalVolume > 9999 ? `${(totalVolume / 1000).toFixed(0)}k` : totalVolume}
+                                {displayWeight(totalVolume) > 9999
+                                    ? `${(displayWeight(totalVolume) / 1000).toFixed(0)}k`
+                                    : Math.round(displayWeight(totalVolume))}
                             </Typography>
-                            <Typography variant="caption">{t('settings.kgTotal')}</Typography>
+                            <Typography variant="caption">{weightUnit} {t('settings.totalLabel')}</Typography>
                         </View>
                     </View>
                 </Card>
@@ -670,7 +744,7 @@ export const SettingsScreen = ({ navigation }: any) => {
                                         </Typography>
                                         <TextInput
                                             style={styles.measureInput}
-                                            placeholder="cm"
+                                            placeholder={lengthUnit}
                                             keyboardType="numeric"
                                             placeholderTextColor={colors.textMuted}
                                             value={field.state}
@@ -712,14 +786,14 @@ export const SettingsScreen = ({ navigation }: any) => {
                                                                     {f.label}
                                                                 </Typography>
                                                                 <Typography variant="caption" bold style={{ fontSize: 11 }}>
-                                                                    {val}
+                                                                    {displayLength(val)}
                                                                     {diff !== 0 && (
                                                                         <Typography
                                                                             variant="caption"
                                                                             color={diff > 0 ? colors.error : colors.success}
                                                                             style={{ fontSize: 9 }}
                                                                         >
-                                                                            {' '}{diff > 0 ? '↑' : '↓'}{Math.abs(diff).toFixed(1)}
+                                                                            {' '}{diff > 0 ? '↑' : '↓'}{Math.abs(displayLength(diff)).toFixed(1)}
                                                                         </Typography>
                                                                     )}
                                                                 </Typography>

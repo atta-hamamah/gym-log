@@ -15,6 +15,7 @@ const KEYS = {
   IS_LIVE: '@gym_log_is_live',
   AI_SUBSCRIPTION_STATUS: '@gym_log_ai_sub_status',
   THEME_PREFERENCE: '@gym_log_theme_preference',
+  UNIT_PREFERENCE: '@gym_log_unit_preference',
 };
 
 export const StorageService = {
@@ -279,6 +280,26 @@ export const StorageService = {
       await AsyncStorage.setItem(KEYS.THEME_PREFERENCE, mode);
     } catch (e) {
       console.error('Failed to set theme preference', e);
+    }
+  },
+
+  // UNIT SYSTEM
+  async getUnitPreference(): Promise<'metric' | 'imperial' | null> {
+    try {
+      const value = await AsyncStorage.getItem(KEYS.UNIT_PREFERENCE);
+      if (value === 'metric' || value === 'imperial') return value;
+      return null;
+    } catch (e) {
+      console.error('Failed to get unit preference', e);
+      return null;
+    }
+  },
+
+  async setUnitPreference(unit: 'metric' | 'imperial'): Promise<void> {
+    try {
+      await AsyncStorage.setItem(KEYS.UNIT_PREFERENCE, unit);
+    } catch (e) {
+      console.error('Failed to set unit preference', e);
     }
   },
 

@@ -13,6 +13,7 @@ export default defineSchema({
     bodyFat: v.optional(v.float64()),      // percentage
     height: v.optional(v.float64()),       // cm
     goal: v.optional(v.string()),          // fitness goal text
+    unitPreference: v.optional(v.union(v.literal("metric"), v.literal("imperial"))),
     createdAt: v.float64(),
     migrationComplete: v.boolean(),
   })

@@ -21,12 +21,14 @@ import {
 } from '../utils/supersetUtils';
 import { getExerciseName } from '../constants/exercises';
 import { useTheme } from '../context/ThemeContext';
+import { useUnits } from '../context/UnitsContext';
 import { useFeatureAccess } from '../hooks/useFeatureAccess';
 
 export const WorkoutSessionScreen = ({ navigation }: any) => {
     const { t } = useTranslation();
     const { colors } = useTheme();
     const styles = createStyles(colors);
+    const { weightUnit, displayWeight, toMetricWeight } = useUnits();
     const { canAccess } = useFeatureAccess();
     const canAccessSupersets = canAccess('supersets');
     const canAccessRpe = canAccess('rpeTracking');
@@ -323,7 +325,7 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
                             </Typography>
                         </View>
                         <Typography variant="caption" style={{ marginLeft: 12 }}>
-                            {totalSets} {t('common.sets')} • {totalVolume > 0 ? `${totalVolume.toLocaleString()} ${t('common.kg')}` : '—'}
+                            {totalSets} {t('common.sets')} • {totalVolume > 0 ? `${Math.round(displayWeight(totalVolume)).toLocaleString()} ${weightUnit}` : '—'}
                         </Typography>
                     </View>
                 </View>
@@ -696,6 +698,7 @@ const ExerciseCard = ({
     const { t } = useTranslation();
     const { colors } = useTheme();
     const styles = createStyles(colors);
+    const { weightUnit, displayWeight, toMetricWeight } = useUnits();
     const { logSet, deleteSet, removeExerciseFromWorkout, updateExerciseNotes } = useWorkout();
     const [weight, setWeight] = useState('');
     const [reps, setReps] = useState('');
@@ -715,7 +718,7 @@ const ExerciseCard = ({
         }
 
         logSet(log.id, {
-            weight: w,
+            weight: toMetricWeight(w),
             reps: r,
             type: 'normal',
             ...(rpe !== null ? { rpe } : {}),
@@ -753,7 +756,7 @@ const ExerciseCard = ({
                         <Typography variant="h3">{getExerciseName(log.exerciseId, t, log.exerciseName)}</Typography>
                         {log.sets.length > 0 && (
                             <Typography variant="caption" style={{ marginTop: 2 }}>
-                                {log.sets.length} {t('common.sets')} • {exerciseVolume} {t('common.kg')}
+                                {log.sets.length} {t('common.sets')} • {Math.round(displayWeight(exerciseVolume))} {weightUnit}
                             </Typography>
                         )}
                     </View>
@@ -783,7 +786,7 @@ const ExerciseCard = ({
             {/* Table Header */}
             <View style={[styles.row, styles.tableHeader]}>
                 <Typography variant="label" style={styles.colSet}>{t('common.set')}</Typography>
-                <Typography variant="label" style={styles.colVal}>{t('common.kgLabel')}</Typography>
+                <Typography variant="label" style={styles.colVal}>{weightUnit}</Typography>
                 <Typography variant="label" style={styles.colVal}>{t('common.repsLabel')}</Typography>
                 <Typography variant="label" style={styles.colRpe}>{t('common.rpe')}</Typography>
                 <View style={{ width: 36 }} />
@@ -797,7 +800,7 @@ const ExerciseCard = ({
                             {i + 1}
                         </Typography>
                     </View>
-                    <Typography variant="body" style={styles.colVal} bold>{set.weight}</Typography>
+                    <Typography variant="body" style={styles.colVal} bold>{displayWeight(set.weight)}</Typography>
                     <Typography variant="body" style={styles.colVal}>{set.reps}</Typography>
                     <View style={styles.colRpe}>
                         {set.rpe ? (
@@ -830,7 +833,7 @@ const ExerciseCard = ({
 
                 <TextInput
                     style={styles.input}
-                    placeholder={t('common.kg')}
+                    placeholder={weightUnit}
                     keyboardType="numeric"
                     placeholderTextColor={colors.textMuted}
                     value={weight}

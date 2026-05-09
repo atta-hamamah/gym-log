@@ -45,6 +45,7 @@
     "workouts": "Workouts",
     "minutes": "Minutes",
     "kgVolume": "kg Volume",
+    "volume": "Volume",
     "recentActivity": "Recent Activity",
     "noWorkoutsYet": "No workouts logged yet.\nStart your first session!",
     "newWorkout": "New Workout",
@@ -414,7 +415,14 @@
     "deleteError": "Failed to delete account.",
     "fitnessGoal": "Fitness Goal",
     "saveGoal": "Save Goal",
-    "goalSaved": "Your fitness goal has been updated. RepAI will tailor advice to this goal."
+    "goalSaved": "Your fitness goal has been updated. RepAI will tailor advice to this goal.",
+    "units": "Units",
+    "unitsDescription": "Choose your preferred measurement system",
+    "metric": "Metric (kg, cm)",
+    "imperial": "Imperial (lbs, in)",
+    "weight": "Weight",
+    "height": "Height",
+    "totalLabel": "Total"
   },
   "aiChat": {
     "subtitle": "Your AI fitness coach",

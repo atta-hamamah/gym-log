@@ -10,6 +10,7 @@ import { tokenCache } from './src/services/auth';
 import { SubscriptionProvider } from './src/context/SubscriptionContext';
 import { WorkoutProvider } from './src/context/WorkoutContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+import { UnitsProvider } from './src/context/UnitsContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
 
 // ── Convex & Clerk Configuration ─────────────────────────
@@ -38,7 +39,9 @@ const AppContent = () => {
                 <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
                     <SubscriptionProvider>
                         <WorkoutProvider>
-                            <AppNavigator />
+                            <UnitsProvider>
+                                <AppNavigator />
+                            </UnitsProvider>
                         </WorkoutProvider>
                     </SubscriptionProvider>
                 </ConvexProviderWithClerk>
