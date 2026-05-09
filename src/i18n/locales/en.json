@@ -151,7 +151,17 @@
     "basedOnSessions": "Based on {{count}} sessions",
     "trackYourGains": "Track Your Gains",
     "trackDescription": "Select an exercise to see your\nprogress over time.",
-    "completeFirst": "Complete workouts first to track progress."
+    "completeFirst": "Complete workouts first to track progress.",
+    "overviewTitle": "Training Overview",
+    "totalWorkouts": "Workouts",
+    "totalVolumeAll": "Total Volume",
+    "totalSets": "Total Sets",
+    "avgDuration": "Avg Duration",
+    "weeklyVolume": "Weekly Volume",
+    "weeklyFrequency": "Weekly Frequency",
+    "muscleBreakdown": "Muscle Breakdown",
+    "drillDown": "Explore Exercise Progress",
+    "drillDownHint": "Tap to select a specific exercise and see detailed charts."
   },
   "exerciseList": {
     "selectExercise": "Select Exercise",

@@ -151,7 +151,17 @@
     "basedOnSessions": "Basado en {{count}} sesiones",
     "trackYourGains": "Sigue tus ganancias",
     "trackDescription": "Selecciona un ejercicio para\nver tu progreso en el tiempo.",
-    "completeFirst": "Completa entrenamientos para seguir el progreso."
+    "completeFirst": "Completa entrenamientos para seguir el progreso.",
+    "overviewTitle": "Resumen de Entrenamiento",
+    "totalWorkouts": "Entrenamientos",
+    "totalVolumeAll": "Volumen Total",
+    "totalSets": "Series Totales",
+    "avgDuration": "Duración Prom.",
+    "weeklyVolume": "Volumen Semanal",
+    "weeklyFrequency": "Frecuencia Semanal",
+    "muscleBreakdown": "Distribución Muscular",
+    "drillDown": "Explorar Progreso por Ejercicio",
+    "drillDownHint": "Toca para seleccionar un ejercicio específico y ver gráficas detalladas."
   },
   "exerciseList": {
     "selectExercise": "Seleccionar ejercicio",

@@ -151,7 +151,17 @@
     "basedOnSessions": "بناءً على {{count}} جلسات",
     "trackYourGains": "تابع تقدمك",
     "trackDescription": "اختر تمريناً لرؤية\nتقدمك عبر الزمن.",
-    "completeFirst": "أكمل تمارين أولاً لمتابعة التقدم."
+    "completeFirst": "أكمل تمارين أولاً لمتابعة التقدم.",
+    "overviewTitle": "نظرة عامة على التدريب",
+    "totalWorkouts": "التمارين",
+    "totalVolumeAll": "الحجم الكلي",
+    "totalSets": "إجمالي المجموعات",
+    "avgDuration": "متوسط المدة",
+    "weeklyVolume": "الحجم الأسبوعي",
+    "weeklyFrequency": "التكرار الأسبوعي",
+    "muscleBreakdown": "توزيع العضلات",
+    "drillDown": "استكشف تقدم التمرين",
+    "drillDownHint": "اضغط لاختيار تمرين معين ورؤية رسوم بيانية مفصلة."
   },
   "exerciseList": {
     "selectExercise": "اختر تمريناً",

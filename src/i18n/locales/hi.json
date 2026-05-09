@@ -151,7 +151,17 @@
     "basedOnSessions": "{{count}} सत्रों के आधार पर",
     "trackYourGains": "अपनी प्रगति ट्रैक करें",
     "trackDescription": "समय के साथ अपनी प्रगति देखने\nके लिए एक अभ्यास चुनें।",
-    "completeFirst": "प्रगति ट्रैक करने के लिए पहले वर्कआउट पूरा करें।"
+    "completeFirst": "प्रगति ट्रैक करने के लिए पहले वर्कआउट पूरा करें।",
+    "overviewTitle": "प्रशिक्षण अवलोकन",
+    "totalWorkouts": "वर्कआउट",
+    "totalVolumeAll": "कुल वॉल्यूम",
+    "totalSets": "कुल सेट",
+    "avgDuration": "औसत अवधि",
+    "weeklyVolume": "साप्ताहिक वॉल्यूम",
+    "weeklyFrequency": "साप्ताहिक आवृत्ति",
+    "muscleBreakdown": "मांसपेशी वितरण",
+    "drillDown": "व्यायाम प्रगति देखें",
+    "drillDownHint": "विस्तृत चार्ट देखने के लिए एक व्यायाम चुनें।"
   },
   "exerciseList": {
     "selectExercise": "अभ्यास चुनें",

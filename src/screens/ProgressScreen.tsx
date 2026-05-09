@@ -8,7 +8,7 @@ import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { borderRadius, spacing } from '../theme/colors';
 import { useWorkout } from '../context/WorkoutContext';
-import { format } from 'date-fns';
+import { format, startOfWeek, subWeeks, isAfter } from 'date-fns';
 import { Exercise, WorkoutSession, ExerciseLog, Set as WorkoutSet } from '../types';
 import { useTranslation } from 'react-i18next';
 import { getExerciseName, getMuscleGroupName } from '../constants/exercises';
@@ -81,6 +81,131 @@ export const ProgressScreen = () => {
         return { max, latest, improvement, improvementPct, sessions: chartData.length };
     }, [selectedExercise, chartData]);
 
+    // ── Overview / aggregate data (shown before any exercise is selected) ──
+
+    const overviewStats = useMemo(() => {
+        if (workouts.length === 0) return null;
+
+        let totalSets = 0;
+        let totalVolume = 0;
+        let totalDurationMin = 0;
+        let durationCount = 0;
+
+        workouts.forEach((w: WorkoutSession) => {
+            w.exercises.forEach((e: ExerciseLog) => {
+                totalSets += e.sets.length;
+                e.sets.forEach((s: WorkoutSet) => {
+                    totalVolume += s.weight * s.reps;
+                });
+            });
+            if (w.endTime && w.startTime) {
+                const dur = (w.endTime - w.startTime) / 60000;
+                if (dur > 0 && dur < 600) {
+                    totalDurationMin += dur;
+                    durationCount++;
+                }
+            }
+        });
+
+        const avgDuration = durationCount > 0 ? Math.round(totalDurationMin / durationCount) : 0;
+
+        return {
+            totalWorkouts: workouts.length,
+            totalSets,
+            totalVolume: Math.round(totalVolume),
+            avgDuration,
+        };
+    }, [workouts]);
+
+    const weeklyVolumeData = useMemo(() => {
+        if (workouts.length === 0) return [];
+
+        const now = new Date();
+        const weekCount = 8;
+        const buckets: { weekStart: Date; label: string; value: number }[] = [];
+
+        for (let i = weekCount - 1; i >= 0; i--) {
+            const ws = startOfWeek(subWeeks(now, i), { weekStartsOn: 1 });
+            buckets.push({
+                weekStart: ws,
+                label: format(ws, 'MM/dd'),
+                value: 0,
+            });
+        }
+
+        const cutoff = buckets[0].weekStart;
+
+        workouts.forEach((w: WorkoutSession) => {
+            if (!isAfter(new Date(w.startTime), cutoff) && new Date(w.startTime).getTime() !== cutoff.getTime()) return;
+            const wWeekStart = startOfWeek(new Date(w.startTime), { weekStartsOn: 1 });
+            const bucket = buckets.find(b => b.weekStart.getTime() === wWeekStart.getTime());
+            if (bucket) {
+                w.exercises.forEach((e: ExerciseLog) => {
+                    e.sets.forEach((s: WorkoutSet) => {
+                        bucket.value += s.weight * s.reps;
+                    });
+                });
+            }
+        });
+
+        return buckets.map(b => ({ label: b.label, value: Math.round(b.value) }));
+    }, [workouts]);
+
+    const muscleGroupData = useMemo(() => {
+        if (workouts.length === 0) return [];
+
+        const counts: Record<string, number> = {};
+
+        workouts.forEach((w: WorkoutSession) => {
+            w.exercises.forEach((e: ExerciseLog) => {
+                const ex = exercises.find(ex => ex.id === e.exerciseId);
+                const group = ex?.muscleGroup || 'Other';
+                counts[group] = (counts[group] || 0) + e.sets.length;
+            });
+        });
+
+        const sorted = Object.entries(counts)
+            .map(([group, sets]) => ({ group, sets }))
+            .sort((a, b) => b.sets - a.sets);
+
+        const maxSets = sorted.length > 0 ? sorted[0].sets : 1;
+
+        return sorted.map(item => ({
+            ...item,
+            pct: Math.round((item.sets / maxSets) * 100),
+        }));
+    }, [workouts, exercises]);
+
+    const weeklyWorkoutCount = useMemo(() => {
+        if (workouts.length === 0) return [];
+
+        const now = new Date();
+        const weekCount = 8;
+        const buckets: { weekStart: Date; label: string; value: number }[] = [];
+
+        for (let i = weekCount - 1; i >= 0; i--) {
+            const ws = startOfWeek(subWeeks(now, i), { weekStartsOn: 1 });
+            buckets.push({
+                weekStart: ws,
+                label: format(ws, 'MM/dd'),
+                value: 0,
+            });
+        }
+
+        const cutoff = buckets[0].weekStart;
+
+        workouts.forEach((w: WorkoutSession) => {
+            if (!isAfter(new Date(w.startTime), cutoff) && new Date(w.startTime).getTime() !== cutoff.getTime()) return;
+            const wWeekStart = startOfWeek(new Date(w.startTime), { weekStartsOn: 1 });
+            const bucket = buckets.find(b => b.weekStart.getTime() === wWeekStart.getTime());
+            if (bucket) {
+                bucket.value += 1;
+            }
+        });
+
+        return buckets.map(b => ({ label: b.label, value: b.value }));
+    }, [workouts]);
+
     const metricLabel: Record<Metric, string> = {
         maxWeight: t('progress.maxWeight'),
         totalVolume: t('progress.totalVolume'),
@@ -91,6 +216,23 @@ export const ProgressScreen = () => {
         maxWeight: t('common.kg'),
         totalVolume: t('common.kg'),
         bestSet: t('common.kg'),
+    };
+
+    const barColors = [
+        colors.primary,
+        colors.secondary,
+        colors.accent,
+        colors.success,
+        colors.warning,
+        colors.primaryLight,
+        colors.secondaryLight,
+        colors.accentLight,
+    ];
+
+    const formatVolume = (v: number): string => {
+        if (v >= 1000000) return `${(v / 1000000).toFixed(1)}M`;
+        if (v >= 1000) return `${(v / 1000).toFixed(1)}k`;
+        return v.toString();
     };
 
     return (
@@ -174,6 +316,126 @@ export const ProgressScreen = () => {
                         <Typography variant="caption" color={colors.textMuted} align="center" style={{ marginTop: 8 }}>
                             {t('progress.basedOnSessions', { count: stats?.sessions || 0 })}
                         </Typography>
+                    </View>
+                ) : overviewStats ? (
+                    /* ── Overview Dashboard ── */
+                    <View>
+                        {/* Summary Stats */}
+                        <Typography variant="h3" style={{ marginBottom: 12 }}>
+                            {t('progress.overviewTitle')}
+                        </Typography>
+                        <View style={styles.statsGrid}>
+                            <Card style={styles.statCard} variant="glass">
+                                <StatBadge
+                                    value={overviewStats.totalWorkouts}
+                                    label={t('progress.totalWorkouts')}
+                                    color={colors.primary}
+                                />
+                            </Card>
+                            <Card style={styles.statCard} variant="glass">
+                                <StatBadge
+                                    value={formatVolume(overviewStats.totalVolume)}
+                                    label={t('progress.totalVolumeAll')}
+                                    color={colors.secondary}
+                                />
+                            </Card>
+                            <Card style={styles.statCard} variant="glass">
+                                <StatBadge
+                                    value={overviewStats.totalSets}
+                                    label={t('progress.totalSets')}
+                                    color={colors.accent}
+                                />
+                            </Card>
+                            <Card style={styles.statCard} variant="glass">
+                                <StatBadge
+                                    value={overviewStats.avgDuration > 0 ? `${overviewStats.avgDuration}m` : '—'}
+                                    label={t('progress.avgDuration')}
+                                    color={colors.success}
+                                />
+                            </Card>
+                        </View>
+
+                        {/* Weekly Volume Chart */}
+                        {weeklyVolumeData.some(d => d.value > 0) && (
+                            <View style={{ marginTop: 20 }}>
+                                <Typography variant="h3" style={{ marginBottom: 12 }}>
+                                    {t('progress.weeklyVolume')}
+                                </Typography>
+                                <ProgressChart
+                                    data={weeklyVolumeData}
+                                    width={screenWidth - 40}
+                                    height={200}
+                                    unit={t('common.kg')}
+                                    color={colors.secondary}
+                                    gradientTo={colors.primary}
+                                />
+                            </View>
+                        )}
+
+                        {/* Weekly Workout Frequency */}
+                        {weeklyWorkoutCount.some(d => d.value > 0) && (
+                            <View style={{ marginTop: 20 }}>
+                                <Typography variant="h3" style={{ marginBottom: 12 }}>
+                                    {t('progress.weeklyFrequency')}
+                                </Typography>
+                                <ProgressChart
+                                    data={weeklyWorkoutCount}
+                                    width={screenWidth - 40}
+                                    height={180}
+                                    unit=""
+                                    color={colors.accent}
+                                    gradientTo={colors.warning}
+                                />
+                            </View>
+                        )}
+
+                        {/* Muscle Group Breakdown */}
+                        {muscleGroupData.length > 0 && (
+                            <View style={{ marginTop: 20 }}>
+                                <Typography variant="h3" style={{ marginBottom: 12 }}>
+                                    {t('progress.muscleBreakdown')}
+                                </Typography>
+                                <Card variant="default" style={{ paddingVertical: 12, paddingHorizontal: 16 }}>
+                                    {muscleGroupData.map((item, index) => (
+                                        <View key={item.group} style={styles.muscleRow}>
+                                            <View style={styles.muscleLabel}>
+                                                <Typography variant="caption" bold style={{ fontSize: 12 }}>
+                                                    {getMuscleGroupName(item.group, t)}
+                                                </Typography>
+                                                <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 11 }}>
+                                                    {item.sets} {t('common.sets')}
+                                                </Typography>
+                                            </View>
+                                            <View style={styles.barContainer}>
+                                                <View
+                                                    style={[
+                                                        styles.bar,
+                                                        {
+                                                            width: `${Math.max(item.pct, 4)}%`,
+                                                            backgroundColor: barColors[index % barColors.length],
+                                                        },
+                                                    ]}
+                                                />
+                                            </View>
+                                        </View>
+                                    ))}
+                                </Card>
+                            </View>
+                        )}
+
+                        {/* Hint to explore per-exercise */}
+                        <TouchableOpacity
+                            style={styles.hintCard}
+                            onPress={() => setModalVisible(true)}
+                            activeOpacity={0.7}
+                        >
+                            <Typography variant="body" color={colors.primary} style={{ fontWeight: '600' }}>
+                                📊 {t('progress.drillDown')}
+                            </Typography>
+                            <Typography variant="caption" color={colors.textMuted} style={{ marginTop: 4 }}>
+                                {t('progress.drillDownHint')}
+                            </Typography>
+                        </TouchableOpacity>
                     </View>
                 ) : (
                     <View style={styles.emptyState}>
@@ -283,7 +545,7 @@ const createStyles = (colors: any) => StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 8,
-        marginTop: 16,
+        marginTop: 4,
     },
     statCard: {
         flex: 1,
@@ -298,6 +560,38 @@ const createStyles = (colors: any) => StyleSheet.create({
         alignItems: 'center',
         paddingTop: 60,
     },
+    // ── Muscle group breakdown bars ──
+    muscleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
+    muscleLabel: {
+        width: 90,
+        marginRight: 10,
+    },
+    barContainer: {
+        flex: 1,
+        height: 14,
+        borderRadius: 7,
+        backgroundColor: colors.surfaceLight,
+        overflow: 'hidden',
+    },
+    bar: {
+        height: '100%',
+        borderRadius: 7,
+    },
+    // ── Drill-down hint ──
+    hintCard: {
+        marginTop: 20,
+        padding: 16,
+        borderRadius: borderRadius.l,
+        borderWidth: 1,
+        borderColor: colors.primary + '30',
+        backgroundColor: colors.primary + '08',
+        alignItems: 'center',
+    },
+    // ── Modal styles ──
     modalOverlay: {
         flex: 1,
         backgroundColor: colors.overlay,
