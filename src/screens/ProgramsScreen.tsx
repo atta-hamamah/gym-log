@@ -103,73 +103,76 @@ export const ProgramsScreen = ({ navigation }: any) => {
 
     return (
         <ScreenLayout>
-            {/* Header */}
-            <View style={styles.headerRow}>
-                <View>
-                    <Typography variant="h1">{t('programs.title')}</Typography>
-                    <Typography variant="caption" style={{ marginTop: 2 }}>
-                        {t('programs.subtitle')}
-                    </Typography>
+            {/* Fixed filter header */}
+            <View style={styles.filterContainer}>
+                {/* Header */}
+                <View style={styles.headerRow}>
+                    <View>
+                        <Typography variant="h1">{t('programs.title')}</Typography>
+                        <Typography variant="caption" style={{ marginTop: 2 }}>
+                            {t('programs.subtitle')}
+                        </Typography>
+                    </View>
                 </View>
+
+                {/* Level Filter */}
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.filterRow}
+                    style={{ flexGrow: 0, marginBottom: 4 }}
+                >
+                    {PROGRAM_LEVELS.map(level => (
+                        <TouchableOpacity
+                            key={level}
+                            style={[
+                                styles.filterChip,
+                                selectedLevel === level && styles.filterChipActive,
+                            ]}
+                            onPress={() => setSelectedLevel(level)}
+                            activeOpacity={0.7}
+                        >
+                            <Typography
+                                variant="caption"
+                                color={selectedLevel === level ? colors.black : colors.textSecondary}
+                                bold={selectedLevel === level}
+                                style={{ fontSize: 10 }}
+                            >
+                                {level === 'all' ? t('common.all') : `${LEVEL_ICONS[level] || ''} ${t(`programs.levels.${level}`)}`}
+                            </Typography>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
+
+                {/* Goal Filter */}
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.filterRow}
+                    style={{ flexGrow: 0 }}
+                >
+                    {PROGRAM_GOALS.map(goal => (
+                        <TouchableOpacity
+                            key={goal}
+                            style={[
+                                styles.filterChip,
+                                selectedGoal === goal && styles.filterChipActiveSecondary,
+                            ]}
+                            onPress={() => setSelectedGoal(goal)}
+                            activeOpacity={0.7}
+                        >
+                            <Typography
+                                variant="caption"
+                                color={selectedGoal === goal ? colors.black : colors.textSecondary}
+                                bold={selectedGoal === goal}
+                                style={{ fontSize: 10 }}
+                            >
+                                {goal === 'all' ? t('common.all') : `${GOAL_ICONS[goal] || ''} ${t(`programs.goals.${goal}`)}`}
+                            </Typography>
+                        </TouchableOpacity>
+                    ))}
+                </ScrollView>
             </View>
-
-            {/* Level Filter */}
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.filterRow}
-                style={{ flexGrow: 0, marginBottom: 4, overflow: 'visible' }}
-            >
-                {PROGRAM_LEVELS.map(level => (
-                    <TouchableOpacity
-                        key={level}
-                        style={[
-                            styles.filterChip,
-                            selectedLevel === level && styles.filterChipActive,
-                        ]}
-                        onPress={() => setSelectedLevel(level)}
-                        activeOpacity={0.7}
-                    >
-                        <Typography
-                            variant="caption"
-                            color={selectedLevel === level ? colors.black : colors.textSecondary}
-                            bold={selectedLevel === level}
-                            style={{ fontSize: 10 }}
-                        >
-                            {level === 'all' ? t('common.all') : `${LEVEL_ICONS[level] || ''} ${t(`programs.levels.${level}`)}`}
-                        </Typography>
-                    </TouchableOpacity>
-                ))}
-            </ScrollView>
-
-            {/* Goal Filter */}
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.filterRow}
-                style={{ flexGrow: 0, marginBottom: 20, overflow: 'visible' }}
-            >
-                {PROGRAM_GOALS.map(goal => (
-                    <TouchableOpacity
-                        key={goal}
-                        style={[
-                            styles.filterChip,
-                            selectedGoal === goal && styles.filterChipActiveSecondary,
-                        ]}
-                        onPress={() => setSelectedGoal(goal)}
-                        activeOpacity={0.7}
-                    >
-                        <Typography
-                            variant="caption"
-                            color={selectedGoal === goal ? colors.black : colors.textSecondary}
-                            bold={selectedGoal === goal}
-                            style={{ fontSize: 10 }}
-                        >
-                            {goal === 'all' ? t('common.all') : `${GOAL_ICONS[goal] || ''} ${t(`programs.goals.${goal}`)}`}
-                        </Typography>
-                    </TouchableOpacity>
-                ))}
-            </ScrollView>
 
             {/* Program List */}
             <FlatList
@@ -178,6 +181,7 @@ export const ProgramsScreen = ({ navigation }: any) => {
                 keyExtractor={item => item.id}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: 24 }}
+                style={{ flex: 1 }}
                 ListEmptyComponent={
                     <Card variant="outlined" style={{ paddingVertical: 40 }}>
                         <Typography variant="body" color={colors.textMuted} align="center">
@@ -191,6 +195,10 @@ export const ProgramsScreen = ({ navigation }: any) => {
 };
 
 const createStyles = (colors: any) => StyleSheet.create({
+    filterContainer: {
+        flexShrink: 0,
+        marginBottom: 12,
+    },
     headerRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -202,8 +210,7 @@ const createStyles = (colors: any) => StyleSheet.create({
         flexDirection: 'row',
         gap: 8,
         paddingRight: 16,
-        paddingVertical: 10,
-        overflow: 'visible',
+        paddingVertical: 4,
     },
     filterChip: {
         height: 40,
@@ -214,7 +221,6 @@ const createStyles = (colors: any) => StyleSheet.create({
         backgroundColor: colors.surfaceLight,
         borderWidth: 1,
         borderColor: colors.border,
-        overflow: 'visible',
     },
     filterChipActive: {
         backgroundColor: colors.primary,
