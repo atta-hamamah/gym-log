@@ -291,6 +291,60 @@ export const generateWorkoutAura = action({
     const characterMode = args.characterMode || "default";
 
     let personalityAndTask = "";
+    let recentWorkoutsContext = "";
+    let userGoalContext = "";
+
+    // For the default (coach) mode, fetch recent workout history & user profile
+    if (characterMode === "default") {
+      try {
+        const userId = details.workout.userId;
+        if (userId) {
+          // Fetch user profile for their fitness goal
+          const user = await ctx.runQuery(api.users.getUserById, { userId });
+          if (user?.goal) {
+            userGoalContext = `\nUser's Fitness Goal: ${user.goal}`;
+          }
+          if (user?.name) {
+            userGoalContext += `\nUser's Name: ${user.name}`;
+          }
+
+          // Fetch last 7 days of workouts for comparison
+          const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+          const recentWorkouts = await ctx.runQuery(api.workouts.getWorkoutsByUser, {
+            userId,
+            limit: 10,
+            sinceTimestamp: oneWeekAgo,
+          });
+
+          // Filter out the current workout and build context
+          const pastWorkouts = recentWorkouts.filter(
+            (w: any) => w._id !== args.workoutId
+          );
+
+          if (pastWorkouts.length > 0) {
+            const pastSummaries = await Promise.all(
+              pastWorkouts.slice(0, 5).map(async (w: any) => {
+                const wDetails: any = await ctx.runQuery(
+                  api.workouts.getWorkoutDetailsForAura,
+                  { workoutId: w._id }
+                );
+                const dur = w.endTime && w.startTime
+                  ? Math.round((w.endTime - w.startTime) / 60000)
+                  : null;
+                const exNames = wDetails.exercises.map((e: any) => e.name).join(", ");
+                return `  - "${w.name}" (${dur ? dur + " min" : "unknown duration"}): ${wDetails.totalSets} sets, ${Math.round(wDetails.totalVolume)}kg volume — Exercises: ${exNames}`;
+              })
+            );
+            recentWorkoutsContext = `\n\nLAST WEEK'S WORKOUTS (for comparison):\n${pastSummaries.join("\n")}`;
+          } else {
+            recentWorkoutsContext = "\n\nNo other workouts in the past 7 days — this is their first session this week.";
+          }
+        }
+      } catch (e) {
+        console.warn("[Aura] Could not fetch recent workouts for coach mode:", e);
+      }
+    }
+
     if (characterMode === "chad") {
       personalityAndTask = `You are Chad — the ultimate gym alpha who's been lifting since birth. You bench 315 for warm-up and look down on everyone's workout with the energy of Gordon Ramsay in a kitchen. You roast the user mercilessly but in a funny, gym-bro way. You refer to yourself as Chad occasionally. Never be actually cruel — just hilariously brutal.
 
@@ -306,24 +360,30 @@ Your task:
 2. Calculate what real-world object their total volume roughly equals, but frame it as absurdly unnecessary effort (e.g., "congratulations, you could've just NOT lifted 3 refrigerators today").
 3. Write a 2-sentence passive-aggressive summary that makes exercise sound pointless but grudgingly acknowledges they showed up. Maximum Kevin energy.`;
     } else {
-      personalityAndTask = `You are an analyzer for a fitness app.
+      personalityAndTask = `You are an elite personal fitness coach — the kind that top athletes pay thousands for. You genuinely care about this person's progress and want to see them succeed. You analyze their workout with expert-level insight, compare it against their recent training history and goals, and deliver a verdict that is encouraging, specific, and actionable.
+
+You are NOT sarcastic or funny in this mode. You are warm, motivating, and data-driven — like the best coach they've ever had.${userGoalContext}
 
 Your task:
-1. Assign them a funny, slightly sarcastic "Gym Archetype" title based on their behavior (e.g., if they rest a lot, if they rush, if they only did arms).
-2. Calculate what real-world object their total volume roughly equals (e.g., a small car, 3 grizzly bears, etc.). Use an absolutely ridiculous but accurate equivalent.
-3. Write a 2-sentence summary combining their archetype and the real-world object. Make it witty and optimized for Gen-Z/Millennial humor.`;
+1. Assign them a powerful, motivating "Session Title" that captures the essence of today's workout (e.g., "Volume PR Crusher", "The Comeback Session", "Consistency King", "Foundation Builder"). Make it feel earned and personal.
+2. Write a 3-4 sentence coaching analysis that:
+   - Highlights what they did well today (specific exercises, volume, effort)
+   - Compares with their recent week if data is available (e.g., "Your volume is up 15% from last session" or "Great to see you hitting legs after focusing on upper body all week")
+   - Connects their effort to their fitness goal if known (e.g., "This kind of progressive overload is exactly how you build the muscle you're after")
+   - Ends with one specific, actionable tip or encouragement for their next session
+   Keep it personal, not generic. Reference their ACTUAL numbers.`;
     }
 
     const prompt = `
 ${personalityAndTask}
 
-Look at this user's workout data from today:
+Today's workout data:
 - Duration: ${durationMin ? durationMin + " minutes" : "Unknown"}
 - Total Exercises: ${details.exercises.length}
 - Total Sets: ${details.totalSets}
 - Total Volume Lifted: ${details.totalVolume} kg
 Exercises:
-${exerciseSummary}
+${exerciseSummary}${recentWorkoutsContext}
 
 IMPORTANT RULES:
 - ${languageInstruction}
@@ -332,7 +392,7 @@ IMPORTANT RULES:
 Return ONLY a JSON object with this exact structure:
 {
   "auraTitle": "The string title here",
-  "auraDescription": "The 2-sentence description here"
+  "auraDescription": "The coaching analysis here"
 }
 Do NOT wrap it in markdown block quotes. Just raw JSON.
 `;
@@ -341,7 +401,7 @@ Do NOT wrap it in markdown block quotes. Just raw JSON.
       const response = await openai.chat.completions.create({
         model: AURA_MODEL,
         messages: [{ role: "user", content: prompt }],
-        temperature: 0.8,
+        temperature: characterMode === "default" ? 0.6 : 0.8,
         response_format: { type: "json_object" },
       });
 

@@ -327,6 +327,22 @@
       "cloudSync": "Cloud Sync Across Devices",
       "backup": "Automatic Data Backup",
       "coaching": "Personalized Training Tips"
+    },
+    "showcase": {
+      "analysisTitle": "Post-Workout Coach",
+      "analysisTag": "After every session",
+      "analysisDesc": "Your AI coach analyzes every workout — comparing volume, exercises, and intensity with your past week. It tracks your progress toward your fitness goal and gives you a personalized, data-driven coaching verdict after each session.",
+      "previewTitle": "\"Volume PR Crusher\"",
+      "previewSubtitle": "Your volume is up 18% from last session...",
+      "charactersTitle": "Gym Characters",
+      "charactersTag": "Fun post-workout reactions",
+      "charactersDesc": "After each workout, get a hilarious take from unique AI personalities. Switch between characters for different vibes — from savage roasts to reluctant admiration.",
+      "chadName": "Chad",
+      "chadVibe": "Savage roasts",
+      "kevinName": "Kevin",
+      "kevinVibe": "Lazy sarcasm",
+      "coachName": "Coach",
+      "coachVibe": "Real analysis"
     }
   },
   "aiOnboarding": {

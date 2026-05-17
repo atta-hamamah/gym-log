@@ -327,6 +327,22 @@
       "cloudSync": "Synchronisation cloud multi-appareils",
       "backup": "Sauvegarde automatique des données",
       "coaching": "Conseils d'entraînement personnalisés"
+    },
+    "showcase": {
+      "analysisTitle": "Coach post-entraînement",
+      "analysisTag": "Après chaque séance",
+      "analysisDesc": "Votre coach IA analyse chaque séance — comparant le volume, les exercices et l'intensité avec votre semaine passée. Il suit vos progrès vers votre objectif de fitness et vous donne un verdict personnalisé, basé sur les données après chaque entraînement.",
+      "previewTitle": "\"Briseur de Record de Volume\"",
+      "previewSubtitle": "Votre volume a augmenté de 18% par rapport à la séance précédente...",
+      "charactersTitle": "Personnages du gym",
+      "charactersTag": "Réactions amusantes après l'entraînement",
+      "charactersDesc": "Après chaque entraînement, découvrez l'avis hilarant de personnalités IA uniques. Changez de personnage pour varier les plaisirs — des moqueries cinglantes à l'admiration réticente.",
+      "chadName": "Chad",
+      "chadVibe": "Moqueries cinglantes",
+      "kevinName": "Kevin",
+      "kevinVibe": "Sarcasme paresseux",
+      "coachName": "Coach",
+      "coachVibe": "Analyse réelle"
     }
   },
   "aiOnboarding": {

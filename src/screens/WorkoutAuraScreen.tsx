@@ -69,7 +69,7 @@ export default function WorkoutAuraScreen() {
   const mergedStats = statsData || localStats || null;
 
   const CHARACTER_COLORS = {
-    default: { glow: "#FF3B30", accent: "#FF3B30" },
+    default: { glow: "#10B981", accent: "#10B981" },
     chad: { glow: "#FF6B00", accent: "#FF6B00" },
     kevin: { glow: "#8B5CF6", accent: "#8B5CF6" },
   };
@@ -333,7 +333,9 @@ export default function WorkoutAuraScreen() {
             activeOpacity={0.7}
           >
             {!isAISubscriber && <Lock color="#8E8E93" size={12} style={{ marginRight: 4 }} />}
-            <Text style={[styles.viewToggleText, viewMode === "aura" && styles.viewToggleTextActive]}>✨ Aura</Text>
+            <Text style={[styles.viewToggleText, viewMode === "aura" && styles.viewToggleTextActive]}>
+              {characterMode === "default" ? "🏆 Coach" : "✨ Aura"}
+            </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.viewToggleBtn, viewMode === "stats" && styles.viewToggleBtnActive]}
@@ -373,7 +375,9 @@ export default function WorkoutAuraScreen() {
                 >
                   <View style={styles.card}>
                     <View style={[styles.accentLine, { backgroundColor: activeColors.accent }]} />
-                    <Text style={[styles.label, { color: activeColors.accent }]}>{t("aura.todaysAura")}</Text>
+                    <Text style={[styles.label, { color: activeColors.accent }]}>
+                      {characterMode === "default" ? "SESSION ANALYSIS" : t("aura.todaysAura")}
+                    </Text>
                     <Text style={styles.title}>{aura?.auraTitle}</Text>
                     <Text style={styles.description}>{aura?.auraDescription}</Text>
                     {(aura?.durationMin || aura?.totalVolume || aura?.exerciseCount) && (
@@ -385,7 +389,9 @@ export default function WorkoutAuraScreen() {
                       </View>
                     )}
                     <View style={styles.footer}>
-                      <Text style={styles.watermark}>🤖 {t("aura.verifiedBy")}</Text>
+                      <Text style={styles.watermark}>
+                        {characterMode === "default" ? "🏆 AI Coach Analysis" : `🤖 ${t("aura.verifiedBy")}`}
+                      </Text>
                       <Text style={[styles.appName, { color: activeColors.accent }]}>RepAI</Text>
                     </View>
                   </View>
