@@ -17,6 +17,7 @@ import { AIGateScreen } from '../screens/AIGateScreen';
 import { AIOnboardingScreen } from '../screens/AIOnboardingScreen';
 import { AIChatScreen } from '../screens/AIChatScreen';
 import WorkoutAuraScreen from '../screens/WorkoutAuraScreen';
+import { AIWorkoutPreviewScreen } from '../screens/AIWorkoutPreviewScreen';
 import { useSubscription } from '../context/SubscriptionContext';
 import { useAuth } from '@clerk/clerk-expo';
 import { useTheme } from '../context/ThemeContext';
@@ -211,6 +212,15 @@ export const AppNavigator = () => {
                 <Stack.Screen
                     name="ProgramDetail"
                     component={ProgramDetailScreen}
+                    options={{
+                        presentation: 'card',
+                        headerShown: false,
+                        animation: 'slide_from_right',
+                    }}
+                />
+                <Stack.Screen
+                    name="AIWorkoutPreview"
+                    component={AIWorkoutPreviewScreen}
                     options={{
                         presentation: 'card',
                         headerShown: false,

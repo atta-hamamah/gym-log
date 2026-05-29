@@ -90,3 +90,17 @@ export const getYearlyStats = query({
     return { totalWorkouts, avgDurationMin, sessionsPerWeek, topExercises };
   },
 });
+
+/**
+ * Get all custom exercises for a user.
+ * Used by the AI workout generator to include custom exercises in the catalog.
+ */
+export const getCustomExercises = query({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("customExercises")
+      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
+      .collect();
+  },
+});

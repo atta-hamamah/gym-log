@@ -468,5 +468,20 @@
     "aiRequiredTitle": "ميزة ذكاء اصطناعي",
     "aiRequiredDesc": "هالة التمرين تعمل بالذكاء الاصطناعي. اشترك في مدرب AI لفتح تحليل التمارين المخصص والمزيد.",
     "goToAI": "فتح مدرب AI ✨"
+  },
+  "aiWorkout": {
+    "generateBtn": "Generate Workout",
+    "generating": "Creating your workout...",
+    "previewTitle": "Your AI Workout",
+    "aiGenerated": "AI Generated",
+    "reasoning": "Why this workout?",
+    "startWorkout": "Start This Workout",
+    "regenerate": "Regenerate",
+    "removeExercise": "Remove",
+    "newExercise": "NEW",
+    "errorTitle": "Generation Failed",
+    "errorMessage": "Could not generate a workout. Please try again.",
+    "workoutActiveTitle": "Workout in Progress",
+    "workoutActiveMessage": "Finish or cancel your current workout before starting a new one."
   }
 }

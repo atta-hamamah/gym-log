@@ -45,7 +45,7 @@ Reply with ONLY the single word: SIMPLE or COMPLEX`,
         },
         { role: "user", content: message },
       ],
-      max_tokens: 3,
+      max_completion_tokens: 3,
       temperature: 0,
     });
 
@@ -235,7 +235,7 @@ ${userContext}`;
     const response = await openai.chat.completions.create({
       model: selectedModel,
       messages: chatMessages,
-      max_tokens: selectedModel === MODEL_SMART ? 1200 : 800,
+      max_completion_tokens: selectedModel === MODEL_SMART ? 1200 : 800,
       temperature: 0.7,
     });
 

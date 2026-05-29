@@ -125,12 +125,33 @@ export interface DetectedPR {
 export type SubscriptionTier = 'pro_trial' | 'free' | 'pro' | 'ai_subscriber';
 // ──────────────────────────────────────────────────────────
 
+// ── AI Workout Generation ────────────────────────────────
+export interface AIGeneratedExercise {
+  isNew: boolean;
+  exerciseId?: string;       // Only when isNew=false
+  exerciseName: string;
+  muscleGroup?: string;      // Only when isNew=true
+  category?: string;         // Only when isNew=true
+  sets: number;
+  reps: string;              // e.g. "8-10", "5", "AMRAP"
+  restSeconds: number;
+  notes?: string;
+}
+
+export interface AIGeneratedWorkout {
+  workoutName: string;
+  reasoning: string;
+  exercises: AIGeneratedExercise[];
+}
+// ──────────────────────────────────────────────────────────
+
 export type RootStackParamList = {
   Main: undefined;
   WorkoutSession: { workoutId?: string };
   ExerciseList: undefined;
   WorkoutDetails: { workoutId: string };
   ProgramDetail: { programId: string };
+  AIWorkoutPreview: { workout: AIGeneratedWorkout };
   Paywall: undefined;
   AIOnboarding: { mode?: 'signin' | 'signup' } | undefined;
   WorkoutAura: {

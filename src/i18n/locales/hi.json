@@ -468,5 +468,20 @@
     "aiRequiredTitle": "AI सुविधा",
     "aiRequiredDesc": "वर्कआउट ऑरा AI से चलता है। व्यक्तिगत वर्कआउट विश्लेषण अनलॉक करने के लिए AI Coach की सदस्यता लें।",
     "goToAI": "AI Coach अनलॉक करें ✨"
+  },
+  "aiWorkout": {
+    "generateBtn": "Generate Workout",
+    "generating": "Creating your workout...",
+    "previewTitle": "Your AI Workout",
+    "aiGenerated": "AI Generated",
+    "reasoning": "Why this workout?",
+    "startWorkout": "Start This Workout",
+    "regenerate": "Regenerate",
+    "removeExercise": "Remove",
+    "newExercise": "NEW",
+    "errorTitle": "Generation Failed",
+    "errorMessage": "Could not generate a workout. Please try again.",
+    "workoutActiveTitle": "Workout in Progress",
+    "workoutActiveMessage": "Finish or cancel your current workout before starting a new one."
   }
 }

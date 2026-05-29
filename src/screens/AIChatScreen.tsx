@@ -18,7 +18,8 @@ import { useAction, useQuery } from 'convex/react';
 import { useAuth } from '@clerk/clerk-expo';
 import { api } from '../../convex/_generated/api';
 import { Id } from '../../convex/_generated/dataModel';
-import { Send, X, Bot, User, Sparkles } from 'lucide-react-native';
+import { Send, X, Bot, User, Sparkles, Zap } from 'lucide-react-native';
+import { AIGeneratedWorkout } from '../types';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
 
@@ -36,6 +37,8 @@ export const AIChatScreen = ({ navigation }: any) => {
   const styles = createStyles(colors, insets.bottom);
   const { userId: clerkUserId } = useAuth();
   const chatAction = useAction(api.ai.chat);
+  const generateWorkoutAction = useAction(api.aiWorkout.generateWorkout);
+  const [generating, setGenerating] = useState(false);
 
   // Get Convex user from Clerk ID
   const convexUser = useQuery(
@@ -114,6 +117,28 @@ export const AIChatScreen = ({ navigation }: any) => {
       setLoading(false);
     }
   }, [input, loading, convexUser, messages, chatAction, scrollToBottom, t]);
+
+  // ── Generate workout handler ──
+  const handleGenerateWorkout = useCallback(async () => {
+    if (generating || !convexUser?._id) return;
+    setGenerating(true);
+    try {
+      const result = await generateWorkoutAction({
+        userId: convexUser._id as Id<"users">,
+      });
+      navigation.navigate('AIWorkoutPreview', { workout: result as AIGeneratedWorkout });
+    } catch (error: any) {
+      const errorMessage: ChatMessage = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: t('aiWorkout.errorMessage'),
+        timestamp: Date.now(),
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setGenerating(false);
+    }
+  }, [generating, convexUser, generateWorkoutAction, navigation, t]);
 
   // ── Render a single message bubble ──
   const renderMessage = useCallback(({ item }: { item: ChatMessage }) => {
@@ -197,12 +222,31 @@ export const AIChatScreen = ({ navigation }: any) => {
               </Typography>
             </View>
           </View>
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={() => navigation.goBack()}
-          >
-            <X color={colors.textSecondary} size={22} />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <TouchableOpacity
+              style={[styles.generateButton, generating && { opacity: 0.6 }]}
+              onPress={handleGenerateWorkout}
+              disabled={generating}
+              activeOpacity={0.7}
+            >
+              {generating ? (
+                <ActivityIndicator size="small" color="#8B5CF6" />
+              ) : (
+                <>
+                  <Zap color="#8B5CF6" size={16} />
+                  <Typography variant="caption" color="#8B5CF6" bold style={{ marginLeft: 4, fontSize: 11 }}>
+                    {t('aiWorkout.generateBtn')}
+                  </Typography>
+                </>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => navigation.goBack()}
+            >
+              <X color={colors.textSecondary} size={22} />
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Messages */}
@@ -304,6 +348,16 @@ const createStyles = (colors: any, bottomInset: number = 0) => StyleSheet.create
     backgroundColor: colors.surfaceLight,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  generateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#8B5CF6' + '12',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#8B5CF6' + '25',
   },
   chatArea: {
     flex: 1,
