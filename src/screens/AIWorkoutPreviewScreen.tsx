@@ -93,9 +93,11 @@ export const AIWorkoutPreviewScreen = ({ route, navigation }: any) => {
     const handleRegenerate = useCallback(async () => {
         if (!convexUser?._id || regenerating) return;
         setRegenerating(true);
+        const comment = route.params?.userComment?.trim();
         try {
             const result = await generateWorkoutAction({
                 userId: convexUser._id as Id<"users">,
+                ...(comment ? { userComment: comment } : {}),
             });
             setWorkout(result as AIGeneratedWorkout);
         } catch (error) {
@@ -106,7 +108,7 @@ export const AIWorkoutPreviewScreen = ({ route, navigation }: any) => {
         } finally {
             setRegenerating(false);
         }
-    }, [convexUser, regenerating, generateWorkoutAction, t]);
+    }, [convexUser, regenerating, generateWorkoutAction, t, route.params?.userComment]);
 
     // ── Start the workout ──
     const handleStartWorkout = useCallback(async () => {

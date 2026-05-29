@@ -51,7 +51,9 @@
     "newWorkout": "تمرين جديد",
     "giveSessionName": "أعطِ جلستك اسماً",
     "namePlaceholder": "مثال: يوم الدفع، يوم الأرجل...",
-    "letsGo": "هيا بنا! 🔥"
+    "letsGo": "هيا بنا! 🔥",
+    "generateWithAI": "إنشاء مع مدرب AI ✨",
+    "aiSubscriptionOnly": "اشتراك AI فقط"
   },
   "programs": {
     "title": "البرامج",
@@ -482,6 +484,10 @@
     "errorTitle": "Generation Failed",
     "errorMessage": "Could not generate a workout. Please try again.",
     "workoutActiveTitle": "Workout in Progress",
-    "workoutActiveMessage": "Finish or cancel your current workout before starting a new one."
+    "workoutActiveMessage": "Finish or cancel your current workout before starting a new one.",
+    "commentTitle": "كيف تشعر؟",
+    "commentDesc": "أضف ملاحظة لمدربك AI (اختياري)",
+    "commentPlaceholder": "مثلاً: أشعر بالتعب اليوم، ركز على الجزء العلوي...",
+    "generate": "إنشاء"
   }
 }

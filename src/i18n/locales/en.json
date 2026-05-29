@@ -51,7 +51,9 @@
     "newWorkout": "New Workout",
     "giveSessionName": "Give your session a name",
     "namePlaceholder": "e.g. Push Day, Leg Day...",
-    "letsGo": "Let's Go! 🔥"
+    "letsGo": "Let's Go! 🔥",
+    "generateWithAI": "Generate with AI Coach ✨",
+    "aiSubscriptionOnly": "AI subscription only"
   },
   "programs": {
     "title": "Programs",
@@ -482,6 +484,10 @@
     "errorTitle": "Generation Failed",
     "errorMessage": "Could not generate a workout. Please try again.",
     "workoutActiveTitle": "Workout in Progress",
-    "workoutActiveMessage": "Finish or cancel your current workout before starting a new one."
+    "workoutActiveMessage": "Finish or cancel your current workout before starting a new one.",
+    "commentTitle": "How are you feeling?",
+    "commentDesc": "Add a note for your AI coach (optional)",
+    "commentPlaceholder": "e.g. I feel tired today, focus on upper body...",
+    "generate": "Generate"
   }
 }

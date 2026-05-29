@@ -63,6 +63,7 @@ const CORE_EXERCISES = [
 export const generateWorkout = action({
   args: {
     userId: v.id("users"),
+    userComment: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const openai = new OpenAI({
@@ -185,25 +186,30 @@ ${prs.length > 0
   : "  No PRs recorded yet."
 }`.trim();
 
-    // ── 9. Build the system prompt ──
+    // ── 9. Build the user comment section (if provided) ──
+    const userCommentSection = args.userComment?.trim()
+      ? `\nUSER'S CURRENT MOOD / REQUEST:\n"${args.userComment.trim()}"\nTake this into account when designing the workout. For example, if the user says they are tired, reduce volume/intensity. If they want to focus on a specific area, prioritize that.\n`
+      : '';
+
+    // ── 10. Build the system prompt ──
     const systemPrompt = `You are an elite personal fitness coach with deep expertise in exercise programming. Your job is to generate the NEXT optimal workout session for this user based on their training history, recovery status, and goals.
 
-AVAILABLE EXERCISES (you MUST prioritize these):
+AVAILABLE EXERCISES (you MUST use these):
 ${catalogLines.join("\n")}
 
 RULES:
 1. Analyze what muscle groups were recently trained and when. Avoid training the same major muscle group within 48 hours unless the program calls for it.
 2. Consider the user's fitness goal when selecting exercises, rep ranges, and volume.
 3. Select 4-7 exercises for the workout. Quality over quantity.
-4. You MUST primarily use exercises from the AVAILABLE EXERCISES list above. Use their exact "ID" values.
-5. If the user appears to be advanced (training 4+ days/week with good volume) and would genuinely benefit from a specialized exercise NOT in the list, you MAY include it by setting "isNew" to true. For beginners or when catalog exercises suffice, do NOT create new exercises.
+4. You MUST use exercises from the AVAILABLE EXERCISES list above. Use their exact "ID" values. The catalog above covers all major movement patterns — there is almost never a reason to create a new exercise.
+5. Creating a new exercise ("isNew": true) is ONLY allowed as an absolute last resort when the user explicitly requests a very specific exercise that has no equivalent in the catalog. In 99% of cases, you should NOT create new exercises.
 6. Set realistic sets (2-5), reps (based on goal), and rest times (30-180 seconds).
 7. Use the user's preferred unit system for any weight references in notes.
 8. Give the workout a short, descriptive name (e.g., "Heavy Pull Day", "Upper Body Hypertrophy").
 9. Write a brief "reasoning" (2-3 sentences) explaining WHY you chose this workout today.
 
 ${userContext}
-
+${userCommentSection}
 Return ONLY a JSON object with this exact structure:
 {
   "workoutName": "string",
@@ -228,7 +234,7 @@ For NEW exercises (isNew: true), also include:
 
 Do NOT wrap the response in markdown. Return raw JSON only.`;
 
-    // ── 10. Call OpenAI ──
+    // ── 11. Call OpenAI ──
     try {
       const response = await openai.chat.completions.create({
         model: "gpt-5.1",

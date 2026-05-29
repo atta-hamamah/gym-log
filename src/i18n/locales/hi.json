@@ -51,7 +51,9 @@
     "newWorkout": "नया वर्कआउट",
     "giveSessionName": "अपने सत्र को नाम दें",
     "namePlaceholder": "जैसे Push Day, Leg Day...",
-    "letsGo": "चलो शुरू करें! 🔥"
+    "letsGo": "चलो शुरू करें! 🔥",
+    "generateWithAI": "AI कोच से बनाएं ✨",
+    "aiSubscriptionOnly": "केवल AI सदस्यता"
   },
   "programs": {
     "title": "प्रोग्राम",
@@ -482,6 +484,10 @@
     "errorTitle": "Generation Failed",
     "errorMessage": "Could not generate a workout. Please try again.",
     "workoutActiveTitle": "Workout in Progress",
-    "workoutActiveMessage": "Finish or cancel your current workout before starting a new one."
+    "workoutActiveMessage": "Finish or cancel your current workout before starting a new one.",
+    "commentTitle": "आप कैसा महसूस कर रहे हैं?",
+    "commentDesc": "अपने AI कोच के लिए एक नोट जोड़ें (वैकल्पिक)",
+    "commentPlaceholder": "जैसे: आज थकान है, ऊपरी शरीर पर ध्यान दें...",
+    "generate": "बनाएं"
   }
 }

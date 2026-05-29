@@ -1,10 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { View, ScrollView, TouchableOpacity, StyleSheet, TextInput, Modal, Image } from 'react-native';
+import { Sparkles } from 'lucide-react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { TrialBanner } from '../components/TrialBanner';
 import { useWorkout } from '../context/WorkoutContext';
 import { useSubscription } from '../context/SubscriptionContext';
+import { useAuth } from '@clerk/clerk-expo';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { StatBadge } from '../components/StatBadge';
@@ -21,7 +23,8 @@ export const HomeScreen = ({ navigation }: any) => {
     const styles = createStyles(colors);
     const { weightUnit, displayWeight } = useUnits();
     const { currentWorkout, startWorkout, workouts } = useWorkout();
-    const { tier } = useSubscription();
+    const { tier, isAISubscriber } = useSubscription();
+    const { isSignedIn } = useAuth();
     const [nameModalVisible, setNameModalVisible] = useState(false);
     const [workoutName, setWorkoutName] = useState('');
 
@@ -228,6 +231,40 @@ export const HomeScreen = ({ navigation }: any) => {
                                 style={{ flex: 1.5 }}
                             />
                         </View>
+
+                        {/* AI Generate Button */}
+                        <TouchableOpacity
+                            style={[
+                                styles.aiGenerateBtn,
+                                !(isAISubscriber && isSignedIn) && styles.aiGenerateBtnDisabled,
+                            ]}
+                            onPress={() => {
+                                if (isAISubscriber && isSignedIn) {
+                                    setNameModalVisible(false);
+                                    setWorkoutName('');
+                                    navigation.navigate('Main', { screen: 'AI' });
+                                }
+                            }}
+                            activeOpacity={isAISubscriber && isSignedIn ? 0.7 : 1}
+                            disabled={!(isAISubscriber && isSignedIn)}
+                        >
+                            <View style={styles.aiGenerateBtnContent}>
+                                <Sparkles color={isAISubscriber && isSignedIn ? '#8B5CF6' : colors.textMuted} size={16} />
+                                <Typography
+                                    variant="body"
+                                    color={isAISubscriber && isSignedIn ? '#8B5CF6' : colors.textMuted}
+                                    bold
+                                    style={{ marginLeft: 8 }}
+                                >
+                                    {t('home.generateWithAI')}
+                                </Typography>
+                            </View>
+                            {!(isAISubscriber && isSignedIn) && (
+                                <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 10, marginTop: 2 }}>
+                                    {t('home.aiSubscriptionOnly')}
+                                </Typography>
+                            )}
+                        </TouchableOpacity>
                     </Card>
                 </View>
             </Modal>
@@ -302,5 +339,24 @@ const createStyles = (colors: any) => StyleSheet.create({
     modalButtons: {
         flexDirection: 'row',
         marginTop: 20,
+    },
+    aiGenerateBtn: {
+        marginTop: 16,
+        paddingVertical: 14,
+        alignItems: 'center',
+        borderRadius: borderRadius.m,
+        backgroundColor: '#8B5CF6' + '12',
+        borderWidth: 1,
+        borderColor: '#8B5CF6' + '30',
+    },
+    aiGenerateBtnDisabled: {
+        backgroundColor: colors.surfaceLight,
+        borderColor: colors.border,
+        opacity: 0.6,
+    },
+    aiGenerateBtnContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
 });

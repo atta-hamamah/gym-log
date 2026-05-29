@@ -151,7 +151,7 @@ export type RootStackParamList = {
   ExerciseList: undefined;
   WorkoutDetails: { workoutId: string };
   ProgramDetail: { programId: string };
-  AIWorkoutPreview: { workout: AIGeneratedWorkout };
+  AIWorkoutPreview: { workout: AIGeneratedWorkout; userComment?: string };
   Paywall: undefined;
   AIOnboarding: { mode?: 'signin' | 'signup' } | undefined;
   WorkoutAura: {

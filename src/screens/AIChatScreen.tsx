@@ -9,6 +9,7 @@ import {
   Platform,
   ActivityIndicator,
   Animated,
+  Modal,
 } from 'react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -39,6 +40,8 @@ export const AIChatScreen = ({ navigation }: any) => {
   const chatAction = useAction(api.ai.chat);
   const generateWorkoutAction = useAction(api.aiWorkout.generateWorkout);
   const [generating, setGenerating] = useState(false);
+  const [commentModalVisible, setCommentModalVisible] = useState(false);
+  const [userComment, setUserComment] = useState('');
 
   // Get Convex user from Clerk ID
   const convexUser = useQuery(
@@ -118,15 +121,27 @@ export const AIChatScreen = ({ navigation }: any) => {
     }
   }, [input, loading, convexUser, messages, chatAction, scrollToBottom, t]);
 
+  // ── Show comment modal before generating ──
+  const handleGenerateWorkoutPress = useCallback(() => {
+    setUserComment('');
+    setCommentModalVisible(true);
+  }, []);
+
   // ── Generate workout handler ──
   const handleGenerateWorkout = useCallback(async () => {
     if (generating || !convexUser?._id) return;
+    setCommentModalVisible(false);
     setGenerating(true);
+    const comment = userComment.trim();
     try {
       const result = await generateWorkoutAction({
         userId: convexUser._id as Id<"users">,
+        ...(comment ? { userComment: comment } : {}),
       });
-      navigation.navigate('AIWorkoutPreview', { workout: result as AIGeneratedWorkout });
+      navigation.navigate('AIWorkoutPreview', {
+        workout: result as AIGeneratedWorkout,
+        ...(comment ? { userComment: comment } : {}),
+      });
     } catch (error: any) {
       const errorMessage: ChatMessage = {
         id: Date.now().toString(),
@@ -137,8 +152,9 @@ export const AIChatScreen = ({ navigation }: any) => {
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setGenerating(false);
+      setUserComment('');
     }
-  }, [generating, convexUser, generateWorkoutAction, navigation, t]);
+  }, [generating, convexUser, generateWorkoutAction, navigation, t, userComment]);
 
   // ── Render a single message bubble ──
   const renderMessage = useCallback(({ item }: { item: ChatMessage }) => {
@@ -225,7 +241,7 @@ export const AIChatScreen = ({ navigation }: any) => {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <TouchableOpacity
               style={[styles.generateButton, generating && { opacity: 0.6 }]}
-              onPress={handleGenerateWorkout}
+              onPress={handleGenerateWorkoutPress}
               disabled={generating}
               activeOpacity={0.7}
             >
@@ -310,6 +326,54 @@ export const AIChatScreen = ({ navigation }: any) => {
           </View>
         </KeyboardAvoidingView>
       </Animated.View>
+
+      {/* Comment Modal */}
+      <Modal
+        visible={commentModalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setCommentModalVisible(false)}
+      >
+        <View style={styles.commentModalOverlay}>
+          <View style={styles.commentModalCard}>
+            <Typography variant="h2" style={{ marginBottom: 4 }}>{t('aiWorkout.commentTitle')}</Typography>
+            <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 16 }}>
+              {t('aiWorkout.commentDesc')}
+            </Typography>
+
+            <TextInput
+              style={styles.commentInput}
+              placeholder={t('aiWorkout.commentPlaceholder')}
+              placeholderTextColor={colors.textMuted}
+              value={userComment}
+              onChangeText={setUserComment}
+              multiline
+              maxLength={300}
+              autoFocus
+            />
+
+            <View style={styles.commentModalButtons}>
+              <TouchableOpacity
+                style={styles.commentCancelBtn}
+                onPress={() => { setCommentModalVisible(false); setUserComment(''); }}
+                activeOpacity={0.7}
+              >
+                <Typography variant="body" color={colors.textSecondary}>{t('common.cancel')}</Typography>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.commentGenerateBtn}
+                onPress={handleGenerateWorkout}
+                activeOpacity={0.7}
+              >
+                <Sparkles color="#fff" size={16} />
+                <Typography variant="body" color="#fff" bold style={{ marginLeft: 6 }}>
+                  {t('aiWorkout.generate')}
+                </Typography>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScreenLayout>
   );
 };
@@ -488,5 +552,55 @@ const createStyles = (colors: any, bottomInset: number = 0) => StyleSheet.create
     borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 8,
+  },
+  // Comment Modal
+  commentModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  commentModalCard: {
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: borderRadius.l,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  commentInput: {
+    minHeight: 80,
+    maxHeight: 120,
+    backgroundColor: colors.surfaceLight,
+    borderRadius: borderRadius.m,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    color: colors.text,
+    fontSize: 15,
+    borderWidth: 1,
+    borderColor: colors.border,
+    textAlignVertical: 'top',
+  },
+  commentModalButtons: {
+    flexDirection: 'row',
+    marginTop: 16,
+    gap: 10,
+  },
+  commentCancelBtn: {
+    flex: 1,
+    paddingVertical: 14,
+    alignItems: 'center',
+    borderRadius: borderRadius.m,
+    backgroundColor: colors.surfaceLight,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  commentGenerateBtn: {
+    flex: 1.5,
+    flexDirection: 'row',
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: borderRadius.m,
+    backgroundColor: '#8B5CF6',
   },
 });
