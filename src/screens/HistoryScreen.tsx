@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { FlatList, TouchableOpacity, View, Alert, StyleSheet, ActivityIndicator } from 'react-native';
+import { Trash2 } from 'lucide-react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { useWorkout } from '../context/WorkoutContext';
@@ -23,7 +24,7 @@ export const HistoryScreen = ({ navigation }: any) => {
     const { colors } = useTheme();
     const styles = createStyles(colors);
     const { weightUnit, displayWeight } = useUnits();
-    const { workouts: localWorkouts, deleteWorkout } = useWorkout();
+    const { workouts: localWorkouts, deleteWorkout, clearAllWorkouts } = useWorkout();
     const { isAuthenticated } = useConvexAuth();
     const { isAISubscriber } = useSubscription();
 
@@ -77,6 +78,8 @@ export const HistoryScreen = ({ navigation }: any) => {
         onConfirm: () => { },
         onCancel: undefined as (() => void) | undefined,
         variant: 'primary' as 'primary' | 'danger' | 'success',
+        requireCheckbox: false,
+        checkboxLabel: '',
     });
 
     const showModal = (
@@ -86,7 +89,9 @@ export const HistoryScreen = ({ navigation }: any) => {
         variant: 'primary' | 'danger' | 'success' = 'primary',
         confirmText: string = t('common.ok'),
         cancelText?: string,
-        onCancel?: () => void
+        onCancel?: () => void,
+        requireCheckbox: boolean = false,
+        checkboxLabel: string = ''
     ) => {
         setModalConfig({
             title,
@@ -104,6 +109,8 @@ export const HistoryScreen = ({ navigation }: any) => {
                     setModalVisible(false);
                 }
                 : undefined,
+            requireCheckbox,
+            checkboxLabel,
         });
         setModalVisible(true);
     };
@@ -117,6 +124,23 @@ export const HistoryScreen = ({ navigation }: any) => {
             t('common.delete'),
             t('common.cancel'),
             () => { }
+        );
+    };
+
+    const handleClearAllHistory = () => {
+        showModal(
+            t('history.clearAllTitle'),
+            useCloud ? t('history.clearAllCloudMessage') : t('history.clearAllMessage'),
+            async () => {
+                await clearAllWorkouts();
+                showModal(t('history.cleared'), t('history.clearedMessage'), undefined, 'success');
+            },
+            'danger',
+            t('common.delete'),
+            t('common.cancel'),
+            () => { },
+            true,
+            t('history.clearAllConfirm')
         );
     };
 
@@ -212,11 +236,25 @@ export const HistoryScreen = ({ navigation }: any) => {
     return (
         <ScreenLayout>
             <View style={styles.headerRow}>
-                <Typography variant="h1">{t('history.title')}</Typography>
+                <View>
+                    <Typography variant="h1">{t('history.title')}</Typography>
+                    {totalCount > 0 && (
+                        <Typography variant="caption" color={colors.textMuted} style={{ marginTop: 2 }}>
+                            {t('history.workoutCount', { count: totalCount })}
+                        </Typography>
+                    )}
+                </View>
                 {totalCount > 0 && (
-                    <Typography variant="caption" color={colors.textMuted}>
-                        {t('history.workoutCount', { count: totalCount })}
-                    </Typography>
+                    <TouchableOpacity
+                        onPress={handleClearAllHistory}
+                        activeOpacity={0.7}
+                        style={styles.clearAllBtn}
+                    >
+                        <Trash2 color={colors.error} size={16} />
+                        <Typography variant="caption" color={colors.error} bold style={{ marginLeft: 6 }}>
+                            {t('history.clearAllButton')}
+                        </Typography>
+                    </TouchableOpacity>
                 )}
             </View>
 
@@ -251,6 +289,8 @@ export const HistoryScreen = ({ navigation }: any) => {
                 onConfirm={modalConfig.onConfirm}
                 onCancel={modalConfig.onCancel}
                 variant={modalConfig.variant}
+                requireCheckbox={modalConfig.requireCheckbox}
+                checkboxLabel={modalConfig.checkboxLabel}
             />
         </ScreenLayout>
     );
@@ -260,8 +300,18 @@ const createStyles = (colors: any) => StyleSheet.create({
     headerRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'baseline',
+        alignItems: 'flex-start',
         marginBottom: 16,
+    },
+    clearAllBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: borderRadius.m,
+        backgroundColor: colors.error + '12',
+        borderWidth: 1,
+        borderColor: colors.error + '30',
     },
     titleRow: {
         flexDirection: 'row',

@@ -87,7 +87,14 @@
     "deleteTitle": "Supprimer la séance ?",
     "deleteMessage": "Cette action est irréversible.",
     "noWorkoutsYet": "Pas encore de séances",
-    "noWorkoutsDescription": "Terminez une séance pour\nvoir votre historique ici."
+    "noWorkoutsDescription": "Terminez une séance pour\nvoir votre historique ici.",
+    "clearAllTitle": "⚠️ Effacer tout l'historique ?",
+    "clearAllMessage": "Cela supprimera définitivement tout l'historique d'entraînements. Cette action est irréversible.",
+    "clearAllCloudMessage": "Cela supprimera définitivement tout l'historique d'entraînements de cet appareil et du cloud. Cette action est irréversible.",
+    "clearAllConfirm": "Oui, tout effacer",
+    "clearAllButton": "Tout Effacer",
+    "cleared": "Historique effacé",
+    "clearedMessage": "Tout l'historique d'entraînements a été supprimé."
   },
   "workoutSession": {
     "noActiveWorkout": "Aucune séance active",
@@ -397,6 +404,7 @@
     "kgTotal": "kg Total",
     "dataManagement": "Gestion des données",
     "dataManagementDescription": "Exporter ou réinitialiser vos données.",
+    "resetCloudMessage": "Toutes les séances, exercices personnalisés, statistiques et données cloud seront supprimés définitivement.",
     "exportCSV": "📤 Exporter (CSV)",
     "clearAllData": "🗑 Tout supprimer",
     "noData": "Aucune donnée",

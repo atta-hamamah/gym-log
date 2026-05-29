@@ -30,7 +30,7 @@ export const SettingsScreen = ({ navigation }: any) => {
     const { colors, themeMode, setThemeMode } = useTheme();
     const styles = createStyles(colors);
     const { unitSystem, setUnitSystem, weightUnit, lengthUnit, displayWeight, displayLength, toMetricWeight, toMetricLength } = useUnits();
-    const { updateUserStats, userStats, workouts, refreshData, bodyMeasurements, addBodyMeasurement } = useWorkout();
+    const { updateUserStats, userStats, workouts, refreshData, bodyMeasurements, addBodyMeasurement, clearAllWorkouts } = useWorkout();
     const {
         tier,
         isPro,
@@ -57,6 +57,8 @@ export const SettingsScreen = ({ navigation }: any) => {
 
     // Body measurements state
     const [showMeasurements, setShowMeasurements] = useState(false);
+    const [showLanguage, setShowLanguage] = useState(false);
+    const [showBodyStats, setShowBodyStats] = useState(false);
     const [mNeck, setMNeck] = useState('');
     const [mChest, setMChest] = useState('');
     const [mWaist, setMWaist] = useState('');
@@ -181,8 +183,9 @@ export const SettingsScreen = ({ navigation }: any) => {
     const handleReset = () => {
         showModal(
             t('settings.resetTitle'),
-            t('settings.resetMessage'),
+            isAISubscriber ? t('settings.resetCloudMessage') : t('settings.resetMessage'),
             async () => {
+                await clearAllWorkouts();
                 await AsyncStorage.clear();
                 await refreshData();
                 showModal(t('settings.dataCleared'), t('settings.dataClearedMessage'), undefined, 'success');
@@ -513,32 +516,47 @@ export const SettingsScreen = ({ navigation }: any) => {
 
                 {/* Language Selector */}
                 <Card>
-                    <Typography variant="h3" style={{ marginBottom: 4 }}>{t('settings.language')}</Typography>
-                    <Typography variant="caption" style={{ marginBottom: 16 }}>
-                        {t('settings.languageDescription')}
-                    </Typography>
+                    <TouchableOpacity
+                        onPress={() => setShowLanguage(!showLanguage)}
+                        activeOpacity={0.7}
+                        style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+                    >
+                        <View>
+                            <Typography variant="h3">{t('settings.language')}</Typography>
+                            <Typography variant="caption" style={{ marginTop: 2 }}>
+                                {t('settings.languageDescription')}
+                            </Typography>
+                        </View>
+                        <Typography variant="body" color={colors.textMuted}>
+                            {showLanguage ? '▲' : '▼'}
+                        </Typography>
+                    </TouchableOpacity>
 
-                    <View style={styles.languageGrid}>
-                        {(Object.keys(LANGUAGE_LABELS) as SupportedLanguage[]).map(lang => (
-                            <TouchableOpacity
-                                key={lang}
-                                style={[
-                                    styles.languageChip,
-                                    currentLang === lang && styles.languageChipActive,
-                                ]}
-                                onPress={() => handleChangeLanguage(lang)}
-                                activeOpacity={0.7}
-                            >
-                                <Typography
-                                    variant="bodySmall"
-                                    color={currentLang === lang ? colors.black : colors.textSecondary}
-                                    bold={currentLang === lang}
-                                >
-                                    {LANGUAGE_LABELS[lang]}
-                                </Typography>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
+                    {showLanguage && (
+                        <View style={{ marginTop: 16 }}>
+                            <View style={styles.languageGrid}>
+                                {(Object.keys(LANGUAGE_LABELS) as SupportedLanguage[]).map(lang => (
+                                    <TouchableOpacity
+                                        key={lang}
+                                        style={[
+                                            styles.languageChip,
+                                            currentLang === lang && styles.languageChipActive,
+                                        ]}
+                                        onPress={() => handleChangeLanguage(lang)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <Typography
+                                            variant="bodySmall"
+                                            color={currentLang === lang ? colors.black : colors.textSecondary}
+                                            bold={currentLang === lang}
+                                        >
+                                            {LANGUAGE_LABELS[lang]}
+                                        </Typography>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </View>
+                    )}
                 </Card>
 
                 {/* Theme Selector */}
@@ -641,55 +659,73 @@ export const SettingsScreen = ({ navigation }: any) => {
 
                 {/* Body Stats */}
                 <Card>
-                    <Typography variant="h3" style={{ marginBottom: 16 }}>{t('settings.bodyStats')}</Typography>
-
-                    <View style={styles.inputContainer}>
-                        <Typography variant="label" style={styles.inputLabel}>
-                            {t('settings.weight')} ({weightUnit})
+                    <TouchableOpacity
+                        onPress={() => setShowBodyStats(!showBodyStats)}
+                        activeOpacity={0.7}
+                        style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+                    >
+                        <View>
+                            <Typography variant="h3">{t('settings.bodyStats')}</Typography>
+                            <Typography variant="caption" style={{ marginTop: 2 }}>
+                                {userStats?.weight ? `${displayWeight(userStats.weight)} ${weightUnit}` : t('settings.saveStats')}
+                            </Typography>
+                        </View>
+                        <Typography variant="body" color={colors.textMuted}>
+                            {showBodyStats ? '▲' : '▼'}
                         </Typography>
-                        <TextInput
-                            style={styles.input}
-                            placeholder={unitSystem === 'metric' ? 'e.g. 75' : 'e.g. 165'}
-                            keyboardType="numeric"
-                            placeholderTextColor={colors.textSecondary}
-                            value={weight}
-                            onChangeText={setWeight}
-                        />
-                    </View>
+                    </TouchableOpacity>
 
-                    <View style={styles.inputContainer}>
-                        <Typography variant="label" style={styles.inputLabel}>
-                            {t('settings.height')} ({lengthUnit})
-                        </Typography>
-                        <TextInput
-                            style={styles.input}
-                            placeholder={unitSystem === 'metric' ? 'e.g. 180' : 'e.g. 71'}
-                            keyboardType="numeric"
-                            placeholderTextColor={colors.textSecondary}
-                            value={height}
-                            onChangeText={setHeight}
-                        />
-                    </View>
+                    {showBodyStats && (
+                        <View style={{ marginTop: 16 }}>
+                            <View style={styles.inputContainer}>
+                                <Typography variant="label" style={styles.inputLabel}>
+                                    {t('settings.weight')} ({weightUnit})
+                                </Typography>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder={unitSystem === 'metric' ? 'e.g. 75' : 'e.g. 165'}
+                                    keyboardType="numeric"
+                                    placeholderTextColor={colors.textSecondary}
+                                    value={weight}
+                                    onChangeText={setWeight}
+                                />
+                            </View>
 
-                    <View style={styles.inputContainer}>
-                        <Typography variant="label" style={styles.inputLabel}>{t('settings.bodyFatPercent')}</Typography>
-                        <TextInput
-                            style={styles.input}
-                            placeholder="e.g. 15"
-                            keyboardType="numeric"
-                            placeholderTextColor={colors.textSecondary}
-                            value={bodyFat}
-                            onChangeText={setBodyFat}
-                        />
-                    </View>
+                            <View style={styles.inputContainer}>
+                                <Typography variant="label" style={styles.inputLabel}>
+                                    {t('settings.height')} ({lengthUnit})
+                                </Typography>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder={unitSystem === 'metric' ? 'e.g. 180' : 'e.g. 71'}
+                                    keyboardType="numeric"
+                                    placeholderTextColor={colors.textSecondary}
+                                    value={height}
+                                    onChangeText={setHeight}
+                                />
+                            </View>
 
-                    {userStats?.lastUpdated && (
-                        <Typography variant="caption" style={{ marginBottom: 12 }}>
-                            {t('settings.lastUpdated', { date: format(userStats.lastUpdated, 'MMM dd, yyyy') })}
-                        </Typography>
+                            <View style={styles.inputContainer}>
+                                <Typography variant="label" style={styles.inputLabel}>{t('settings.bodyFatPercent')}</Typography>
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="e.g. 15"
+                                    keyboardType="numeric"
+                                    placeholderTextColor={colors.textSecondary}
+                                    value={bodyFat}
+                                    onChangeText={setBodyFat}
+                                />
+                            </View>
+
+                            {userStats?.lastUpdated && (
+                                <Typography variant="caption" style={{ marginBottom: 12 }}>
+                                    {t('settings.lastUpdated', { date: format(userStats.lastUpdated, 'MMM dd, yyyy') })}
+                                </Typography>
+                            )}
+
+                            <Button title={t('settings.saveStats')} onPress={handleSaveStats} />
+                        </View>
                     )}
-
-                    <Button title={t('settings.saveStats')} onPress={handleSaveStats} />
                 </Card>
 
                 {/* Lifetime Stats */}

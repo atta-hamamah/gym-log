@@ -87,7 +87,14 @@
     "deleteTitle": "Delete Workout?",
     "deleteMessage": "This action cannot be undone.",
     "noWorkoutsYet": "No workouts yet",
-    "noWorkoutsDescription": "Complete a session to see\nyour history here."
+    "noWorkoutsDescription": "Complete a session to see\nyour history here.",
+    "clearAllTitle": "⚠️ Clear All History?",
+    "clearAllMessage": "This will permanently delete all workout history. This cannot be undone.",
+    "clearAllCloudMessage": "This will permanently delete all workout history from this device and from the cloud. This cannot be undone.",
+    "clearAllConfirm": "Yes, clear all history",
+    "clearAllButton": "Clear All History",
+    "cleared": "History Cleared",
+    "clearedMessage": "All workout history has been removed."
   },
   "workoutSession": {
     "noActiveWorkout": "No active workout",
@@ -396,7 +403,8 @@
     "lifetimeStats": "Lifetime Stats",
     "kgTotal": "kg Total",
     "dataManagement": "Data Management",
-    "dataManagementDescription": "Export or reset your local data.",
+    "dataManagementDescription": "Export or reset your data.",
+    "resetCloudMessage": "This will permanently delete all workouts, custom exercises, stats, and cloud data. This cannot be undone.",
     "exportCSV": "📤 Export Data (CSV)",
     "clearAllData": "🗑 Clear All Data",
     "noData": "No Data",

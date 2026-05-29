@@ -87,7 +87,14 @@
     "deleteTitle": "¿Eliminar entrenamiento?",
     "deleteMessage": "Esta acción no se puede deshacer.",
     "noWorkoutsYet": "Sin entrenamientos aún",
-    "noWorkoutsDescription": "Completa una sesión para\nver tu historial aquí."
+    "noWorkoutsDescription": "Completa una sesión para\nver tu historial aquí.",
+    "clearAllTitle": "⚠️ ¿Borrar todo el historial?",
+    "clearAllMessage": "Esto eliminará permanentemente todo el historial de entrenamientos. No se puede deshacer.",
+    "clearAllCloudMessage": "Esto eliminará permanentemente todo el historial de entrenamientos de este dispositivo y de la nube. No se puede deshacer.",
+    "clearAllConfirm": "Sí, borrar todo el historial",
+    "clearAllButton": "Borrar Todo",
+    "cleared": "Historial borrado",
+    "clearedMessage": "Todo el historial de entrenamientos ha sido eliminado."
   },
   "workoutSession": {
     "noActiveWorkout": "Sin entrenamiento activo",
@@ -396,7 +403,8 @@
     "lifetimeStats": "Estadísticas globales",
     "kgTotal": "kg Total",
     "dataManagement": "Gestión de datos",
-    "dataManagementDescription": "Exportar o restablecer tus datos locales.",
+    "dataManagementDescription": "Exportar o restablecer tus datos.",
+    "resetCloudMessage": "Todos los entrenamientos, ejercicios personalizados, estadísticas y datos en la nube serán eliminados permanentemente.",
     "exportCSV": "📤 Exportar datos (CSV)",
     "clearAllData": "🗑 Eliminar todos los datos",
     "noData": "Sin datos",

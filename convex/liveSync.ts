@@ -231,3 +231,56 @@ export const deleteBodyMeasurement = mutation({
     }
   },
 });
+
+// ── Delete ALL workout data for a user ──────────────────
+export const deleteAllWorkoutData = mutation({
+  args: {},
+  handler: async (ctx) => {
+    const userId = await getUserId(ctx);
+
+    // Delete all sets for this user
+    const allSets = await ctx.db
+      .query("sets")
+      .filter((q: any) => q.eq(q.field("userId"), userId))
+      .collect();
+    for (const set of allSets) {
+      await ctx.db.delete(set._id);
+    }
+
+    // Delete all exercise logs for this user
+    const allLogs = await ctx.db
+      .query("exerciseLogs")
+      .filter((q: any) => q.eq(q.field("userId"), userId))
+      .collect();
+    for (const log of allLogs) {
+      await ctx.db.delete(log._id);
+    }
+
+    // Delete all workouts for this user
+    const allWorkouts = await ctx.db
+      .query("workouts")
+      .withIndex("by_userId", (q: any) => q.eq("userId", userId))
+      .collect();
+    for (const workout of allWorkouts) {
+      await ctx.db.delete(workout._id);
+    }
+
+    // Delete all personal records for this user
+    const allPRs = await ctx.db
+      .query("personalRecords")
+      .withIndex("by_userId", (q: any) => q.eq("userId", userId))
+      .collect();
+    for (const pr of allPRs) {
+      await ctx.db.delete(pr._id);
+    }
+
+    // Delete all body measurements for this user
+    const allMeasurements = await ctx.db
+      .query("bodyMeasurements")
+      .withIndex("by_userId", (q: any) => q.eq("userId", userId))
+      .collect();
+    for (const m of allMeasurements) {
+      await ctx.db.delete(m._id);
+    }
+  },
+});

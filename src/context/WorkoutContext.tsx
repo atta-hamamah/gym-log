@@ -43,6 +43,7 @@ interface WorkoutContextType {
     refreshData: () => Promise<void>;
     updateUserStats: (stats: Partial<UserStats>) => Promise<void>;
     deleteWorkout: (id: string) => Promise<void>;
+    clearAllWorkouts: () => Promise<void>;
     clearDetectedPRs: () => void;
 }
 
@@ -73,6 +74,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const cloudSavePRs = useMutation(api.liveSync.savePersonalRecords);
     const cloudSaveBodyMeasurement = useMutation(api.liveSync.saveBodyMeasurement);
     const cloudDeleteBodyMeasurement = useMutation(api.liveSync.deleteBodyMeasurement);
+    const cloudDeleteAllData = useMutation(api.liveSync.deleteAllWorkoutData);
 
     const refreshData = useCallback(async () => {
         setLoading(true);
@@ -380,6 +382,25 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setLastDetectedPRs([]);
     }, []);
 
+    const clearAllWorkouts = useCallback(async () => {
+        // Clear local storage
+        await StorageService.setAllWorkouts([]);
+        await StorageService.savePersonalRecords([]);
+        await StorageService.saveCurrentWorkout(null);
+        setWorkouts([]);
+        setPersonalRecords([]);
+        setCurrentWorkout(null);
+
+        // Cloud sync delete all
+        if (shouldSyncToCloud) {
+            try {
+                await cloudDeleteAllData({});
+            } catch (e) {
+                console.warn('[WorkoutContext] Cloud delete all failed:', e);
+            }
+        }
+    }, [shouldSyncToCloud, cloudDeleteAllData]);
+
     // ── Exercise notes ───────────────────────────────────
     const updateExerciseNotes = useCallback((exerciseLogId: string, notes: string) => {
         setCurrentWorkout(prev => {
@@ -473,6 +494,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 refreshData,
                 updateUserStats,
                 deleteWorkout,
+                clearAllWorkouts,
                 clearDetectedPRs,
             }}
         >

@@ -232,7 +232,7 @@ export const HomeScreen = ({ navigation }: any) => {
                             />
                         </View>
 
-                        {/* AI Generate Button */}
+                        {/* AI Generate Button — Premium */}
                         <TouchableOpacity
                             style={[
                                 styles.aiGenerateBtn,
@@ -248,22 +248,28 @@ export const HomeScreen = ({ navigation }: any) => {
                             activeOpacity={isAISubscriber && isSignedIn ? 0.7 : 1}
                             disabled={!(isAISubscriber && isSignedIn)}
                         >
-                            <View style={styles.aiGenerateBtnContent}>
-                                <Sparkles color={isAISubscriber && isSignedIn ? '#8B5CF6' : colors.textMuted} size={16} />
-                                <Typography
-                                    variant="body"
-                                    color={isAISubscriber && isSignedIn ? '#8B5CF6' : colors.textMuted}
-                                    bold
-                                    style={{ marginLeft: 8 }}
-                                >
-                                    {t('home.generateWithAI')}
-                                </Typography>
+                            <View style={styles.aiGenerateBtnInner}>
+                                <View style={styles.aiGenerateIconWrap}>
+                                    <Sparkles color={isAISubscriber && isSignedIn ? '#FFFFFF' : colors.textMuted} size={18} />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Typography
+                                        variant="body"
+                                        color={isAISubscriber && isSignedIn ? '#FFFFFF' : colors.textMuted}
+                                        bold
+                                    >
+                                        {t('home.generateWithAI')}
+                                    </Typography>
+                                    {!(isAISubscriber && isSignedIn) && (
+                                        <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 10, marginTop: 2 }}>
+                                            {t('home.aiSubscriptionOnly')}
+                                        </Typography>
+                                    )}
+                                </View>
+                                {isAISubscriber && isSignedIn && (
+                                    <Typography variant="body" color="#FFFFFF" style={{ fontSize: 18, opacity: 0.6 }}>›</Typography>
+                                )}
                             </View>
-                            {!(isAISubscriber && isSignedIn) && (
-                                <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 10, marginTop: 2 }}>
-                                    {t('home.aiSubscriptionOnly')}
-                                </Typography>
-                            )}
                         </TouchableOpacity>
                     </Card>
                 </View>
@@ -342,21 +348,36 @@ const createStyles = (colors: any) => StyleSheet.create({
     },
     aiGenerateBtn: {
         marginTop: 16,
-        paddingVertical: 14,
-        alignItems: 'center',
+        paddingVertical: 16,
+        paddingHorizontal: 16,
         borderRadius: borderRadius.m,
-        backgroundColor: '#8B5CF6' + '12',
+        backgroundColor: '#7C3AED',
         borderWidth: 1,
-        borderColor: '#8B5CF6' + '30',
+        borderColor: '#8B5CF6' + '60',
+        shadowColor: '#7C3AED',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.35,
+        shadowRadius: 12,
+        elevation: 6,
     },
     aiGenerateBtnDisabled: {
         backgroundColor: colors.surfaceLight,
         borderColor: colors.border,
         opacity: 0.6,
+        shadowOpacity: 0,
+        elevation: 0,
     },
-    aiGenerateBtnContent: {
+    aiGenerateBtnInner: {
         flexDirection: 'row',
         alignItems: 'center',
+    },
+    aiGenerateIconWrap: {
+        width: 36,
+        height: 36,
+        borderRadius: 10,
+        backgroundColor: 'rgba(255,255,255,0.15)',
         justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
     },
 });

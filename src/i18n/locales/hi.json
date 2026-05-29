@@ -87,7 +87,14 @@
     "deleteTitle": "वर्कआउट हटाएं?",
     "deleteMessage": "यह क्रिया पूर्ववत नहीं की जा सकती।",
     "noWorkoutsYet": "अभी तक कोई वर्कआउट नहीं",
-    "noWorkoutsDescription": "अपना इतिहास देखने के लिए\nएक सत्र पूरा करें।"
+    "noWorkoutsDescription": "अपना इतिहास देखने के लिए\nएक सत्र पूरा करें.",
+    "clearAllTitle": "⚠️ सारा इतिहास हटाएं?",
+    "clearAllMessage": "यह सभी वर्कआउट इतिहास को स्थायी रूप से हटा देगा। यह पूर्ववत नहीं किया जा सकता।",
+    "clearAllCloudMessage": "यह इस डिवाइस और क्लाउड से सभी वर्कआउट इतिहास को स्थायी रूप से हटा देगा। यह पूर्ववत नहीं किया जा सकता।",
+    "clearAllConfirm": "हाँ, सारा इतिहास हटाएं",
+    "clearAllButton": "सब हटाएं",
+    "cleared": "इतिहास हटाया गया",
+    "clearedMessage": "सारा वर्कआउट इतिहास हटा दिया गया है।"
   },
   "workoutSession": {
     "noActiveWorkout": "कोई सक्रिय वर्कआउट नहीं",
@@ -396,7 +403,8 @@
     "lifetimeStats": "कुल आँकड़े",
     "kgTotal": "kg कुल",
     "dataManagement": "डेटा प्रबंधन",
-    "dataManagementDescription": "अपना डेटा निर्यात या रीसेट करें।",
+    "dataManagementDescription": "अपना डेटा निर्यात या रीसेट करें.",
+    "resetCloudMessage": "सभी वर्कआउट, कस्टम अभ्यास, आँकड़े और क्लाउड डेटा स्थायी रूप से हटा दिए जाएंगे।",
     "exportCSV": "📤 डेटा निर्यात (CSV)",
     "clearAllData": "🗑 सारा डेटा हटाएं",
     "noData": "कोई डेटा नहीं",

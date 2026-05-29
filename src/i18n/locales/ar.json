@@ -87,7 +87,14 @@
     "deleteTitle": "حذف التمرين؟",
     "deleteMessage": "لا يمكن التراجع عن هذا الإجراء.",
     "noWorkoutsYet": "لا توجد تمارين بعد",
-    "noWorkoutsDescription": "أكمل جلسة لرؤية\nسجلك هنا."
+    "noWorkoutsDescription": "أكمل جلسة لرؤية\nسجلك هنا.",
+    "clearAllTitle": "⚠️ مسح كل السجل؟",
+    "clearAllMessage": "سيتم حذف جميع سجل التمارين نهائياً. لا يمكن التراجع عن هذا الإجراء.",
+    "clearAllCloudMessage": "سيتم حذف جميع سجل التمارين من هذا الجهاز ومن السحابة نهائياً. لا يمكن التراجع عن هذا الإجراء.",
+    "clearAllConfirm": "نعم، امسح كل السجل",
+    "clearAllButton": "مسح كل السجل",
+    "cleared": "تم مسح السجل",
+    "clearedMessage": "تم حذف جميع سجل التمارين."
   },
   "workoutSession": {
     "noActiveWorkout": "لا يوجد تمرين نشط",
@@ -396,7 +403,8 @@
     "lifetimeStats": "الإحصائيات الكلية",
     "kgTotal": "كغ إجمالي",
     "dataManagement": "إدارة البيانات",
-    "dataManagementDescription": "تصدير أو إعادة تعيين بياناتك المحلية.",
+    "dataManagementDescription": "تصدير أو إعادة تعيين بياناتك.",
+    "resetCloudMessage": "سيتم حذف جميع التمارين والتمارين المخصصة والإحصائيات وبيانات السحابة نهائياً. لا يمكن التراجع.",
     "exportCSV": "📤 تصدير البيانات (CSV)",
     "clearAllData": "🗑 مسح جميع البيانات",
     "noData": "لا توجد بيانات",
