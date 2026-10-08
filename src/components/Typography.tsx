@@ -20,9 +20,11 @@ export const Typography: React.FC<TypographyProps> = ({
 }) => {
     const { colors } = useTheme();
     const variantStyle = styles[variant];
-    const defaultColor = variant === 'caption' || variant === 'label'
+    const defaultColor = variant === 'caption'
         ? colors.textSecondary
-        : colors.text;
+        : variant === 'label'
+            ? colors.textMuted
+            : colors.text;
 
     return (
         <Text
@@ -42,21 +44,21 @@ export const Typography: React.FC<TypographyProps> = ({
 
 const styles = StyleSheet.create({
     h1: {
-        fontSize: 30,
-        fontWeight: '800',
-        lineHeight: 38,
-        letterSpacing: -0.8,
+        fontSize: 28,
+        fontWeight: '700',
+        lineHeight: 34,
+        letterSpacing: -0.6,
     },
     h2: {
-        fontSize: 22,
+        fontSize: 21,
         fontWeight: '700',
-        lineHeight: 30,
+        lineHeight: 28,
         letterSpacing: -0.4,
     },
     h3: {
-        fontSize: 18,
+        fontSize: 17,
         fontWeight: '600',
-        lineHeight: 26,
+        lineHeight: 24,
         letterSpacing: -0.2,
     },
     body: {
@@ -79,12 +81,13 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         lineHeight: 14,
         textTransform: 'uppercase',
-        letterSpacing: 0.8,
+        letterSpacing: 0.7,
     },
     number: {
         fontSize: 28,
-        fontWeight: '800',
+        fontWeight: '700',
         lineHeight: 34,
         letterSpacing: -0.5,
+        fontVariant: ['tabular-nums'],
     },
 });

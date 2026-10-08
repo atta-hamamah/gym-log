@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { ScrollView, View, StyleSheet, TextInput, Alert, TouchableOpacity, Image, Animated } from 'react-native';
+import { ScrollView, View, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { useWorkout } from '../context/WorkoutContext';
@@ -9,15 +9,15 @@ import { PlateCalculator } from '../components/PlateCalculator';
 import { RestTimer } from '../components/RestTimer';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { PRCelebration } from '../components/PRCelebration';
-import { borderRadius, spacing } from '../theme/colors';
+import { borderRadius, spacing, ThemeColors } from '../theme/colors';
 import { Exercise, ExerciseLog, Set as WorkoutSet, TrackingType, WorkoutSession } from '../types';
 import { ExerciseInfoModal } from '../components/ExerciseInfoModal';
-import { PlayCircle } from 'lucide-react-native';
+import { PlayCircle, Timer, Check, X, Trash2, Target, Lightbulb, History, Link2, Lock, Plus, Calculator, NotebookPen, Unlink } from 'lucide-react-native';
+import { IconButton } from '../components/IconButton';
 import { useTranslation } from 'react-i18next';
 import {
     getSupersetType,
     getSupersetColor,
-    getSupersetEmoji,
     getSupersetPositionLabel,
     getExerciseGroups,
 } from '../utils/supersetUtils';
@@ -322,15 +322,16 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
             {/* Header */}
             <View style={styles.header}>
                 <View style={{ flex: 1 }}>
-                    <Typography variant="h2">{currentWorkout.name}</Typography>
+                    <Typography variant="h2" numberOfLines={1}>{currentWorkout.name}</Typography>
                     <View style={styles.headerStats}>
                         <View style={styles.timerBadge}>
-                            <Typography variant="bodySmall" color={colors.primary} bold>
-                                ⏱ {formatTime(elapsed)}
+                            <View style={styles.liveDot} />
+                            <Typography variant="bodySmall" color={colors.text} bold style={styles.tabular}>
+                                {formatTime(elapsed)}
                             </Typography>
                         </View>
-                        <Typography variant="caption" style={{ marginLeft: 12 }}>
-                            {totalSets} {t('common.sets')} • {totalVolume > 0 ? `${Math.round(displayWeight(totalVolume)).toLocaleString()} ${weightUnit}` : '—'}
+                        <Typography variant="caption" color={colors.textSecondary} numberOfLines={1} style={{ marginLeft: 10, flexShrink: 1 }}>
+                            {totalSets} {t('common.sets')} · {totalVolume > 0 ? `${Math.round(displayWeight(totalVolume)).toLocaleString()} ${weightUnit}` : '—'}
                         </Typography>
                     </View>
                 </View>
@@ -354,39 +355,43 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
                     }}
                     activeOpacity={0.7}
                 >
-                    <Typography
-                        variant="bodySmall"
-                        color={
-                            restCountdown === null
-                                ? colors.textSecondary
-                                : restCountdown <= 0
-                                    ? colors.success
-                                    : colors.primary
-                        }
-                        bold
-                        style={{ fontSize: 14 }}
-                    >
-                        {restCountdown === null
-                            ? '💤'
+                    {(() => {
+                        const restColor = restCountdown === null
+                            ? colors.textSecondary
                             : restCountdown <= 0
-                                ? `✓ ${formatRestTime(restCountdown)}`
-                                : `💤 ${formatRestTime(restCountdown)}`
-                        }
-                    </Typography>
+                                ? colors.success
+                                : colors.primary;
+                        return (
+                            <>
+                                {restCountdown !== null && restCountdown <= 0
+                                    ? <Check color={restColor} size={16} strokeWidth={2.4} />
+                                    : <Timer color={restColor} size={17} />}
+                                {restCountdown !== null && (
+                                    <Typography variant="bodySmall" color={restColor} bold style={styles.tabular}>
+                                        {formatRestTime(restCountdown)}
+                                    </Typography>
+                                )}
+                            </>
+                        );
+                    })()}
                 </TouchableOpacity>
 
                 <Button
                     title={t('workoutSession.finish')}
                     size="small"
                     onPress={handleFinish}
+                    icon={c => <Check color={c} size={16} strokeWidth={2.4} />}
                     style={{ marginLeft: 8 }}
                 />
             </View>
 
             <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 160 }} showsVerticalScrollIndicator={false}>
                 {currentWorkout.exercises.length === 0 ? (
-                    <Card variant="outlined" style={{ marginTop: 20, paddingVertical: 40 }}>
-                        <Typography variant="body" color={colors.textMuted} align="center">
+                    <Card variant="outlined" style={styles.emptyCard}>
+                        <View style={styles.emptyIcon}>
+                            <Plus color={colors.primary} size={22} />
+                        </View>
+                        <Typography variant="body" color={colors.textSecondary} align="center">
                             {t('workoutSession.noExercises')}
                         </Typography>
                     </Card>
@@ -396,36 +401,31 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
                         {isLinkMode && (
                             <View style={styles.linkBanner}>
                                 <View style={styles.linkBannerContent}>
-                                    <Typography variant="bodySmall" color={colors.secondary} bold>
-                                        🔗 {t('superset.selectExercises')}
-                                    </Typography>
+                                    <View style={styles.inlineRow}>
+                                        <Link2 color={colors.secondary} size={15} />
+                                        <Typography variant="bodySmall" color={colors.secondary} bold>
+                                            {t('superset.selectExercises')}
+                                        </Typography>
+                                    </View>
                                     <Typography variant="caption" color={colors.textSecondary} style={{ marginTop: 2 }}>
                                         {t('superset.selectHint')}
                                     </Typography>
                                 </View>
                                 <View style={styles.linkBannerActions}>
-                                    <TouchableOpacity
+                                    <Button
+                                        title={t('common.cancel')}
+                                        variant="ghost"
+                                        size="small"
                                         onPress={() => { setIsLinkMode(false); setSelectedForLink([]); }}
-                                        style={styles.linkCancelBtn}
-                                        activeOpacity={0.7}
-                                    >
-                                        <Typography variant="bodySmall" color={colors.textSecondary}>
-                                            {t('common.cancel')}
-                                        </Typography>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity
+                                    />
+                                    <Button
+                                        title={`${t('superset.link')} (${selectedForLink.length})`}
+                                        variant="ai"
+                                        size="small"
+                                        icon={c => <Link2 color={c} size={15} />}
                                         onPress={handleConfirmLink}
-                                        style={[
-                                            styles.linkConfirmBtn,
-                                            selectedForLink.length < 2 && { opacity: 0.4 },
-                                        ]}
-                                        activeOpacity={0.7}
                                         disabled={selectedForLink.length < 2}
-                                    >
-                                        <Typography variant="bodySmall" color={colors.black} bold>
-                                            {t('superset.link')} ({selectedForLink.length})
-                                        </Typography>
-                                    </TouchableOpacity>
+                                    />
                                 </View>
                             </View>
                         )}
@@ -446,9 +446,7 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
                                                 onPress={() => handleSelectForLink(log.id)}
                                                 activeOpacity={0.7}
                                             >
-                                                <Typography variant="bodySmall" color={selectedForLink.includes(log.id) ? colors.black : colors.textMuted}>
-                                                    {selectedForLink.includes(log.id) ? '✓' : '○'}
-                                                </Typography>
+                                                {selectedForLink.includes(log.id) && <Check color={colors.onSecondary} size={15} strokeWidth={3} />}
                                             </TouchableOpacity>
                                         )}
                                         <ExerciseCard
@@ -471,7 +469,6 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
                                 const groupSize = groupExercises.length;
                                 const ssType = getSupersetType(groupSize);
                                 const ssColor = getSupersetColor(ssType);
-                                const ssEmoji = getSupersetEmoji(ssType);
                                 const ssLabel = groupSize === 2
                                     ? t('superset.superset')
                                     : groupSize >= 3
@@ -482,9 +479,9 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
                                     <View key={item.groupId} style={styles.supersetContainer}>
                                         {/* Superset group header */}
                                         <View style={[styles.supersetHeader, { borderColor: ssColor + '50' }]}>
-                                            <View style={[styles.supersetHeaderDot, { backgroundColor: ssColor }]} />
-                                            <Typography variant="caption" color={ssColor} bold style={{ fontSize: 11 }}>
-                                                {ssEmoji} {ssLabel.toUpperCase()} • {groupSize} {t('common.exercises')}
+                                            <Link2 color={ssColor} size={14} />
+                                            <Typography variant="label" color={ssColor}>
+                                                {ssLabel} · {groupSize} {t('common.exercises')}
                                             </Typography>
                                         </View>
 
@@ -507,9 +504,7 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
                                                                     onPress={() => handleSelectForLink(log.id)}
                                                                     activeOpacity={0.7}
                                                                 >
-                                                                    <Typography variant="bodySmall" color={selectedForLink.includes(log.id) ? colors.black : colors.textMuted}>
-                                                                        {selectedForLink.includes(log.id) ? '✓' : '○'}
-                                                                    </Typography>
+                                                                    {selectedForLink.includes(log.id) && <Check color={colors.onSecondary} size={15} strokeWidth={3} />}
                                                                 </TouchableOpacity>
                                                             )}
                                                             <ExerciseCard
@@ -542,11 +537,15 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
                     <Button
                         title={t('workoutSession.addExercise')}
                         variant="secondary"
+                        icon={c => <Plus color={c} size={18} />}
                         onPress={() => navigation.navigate('ExerciseList')}
                         style={{ flex: 1 }}
                     />
                     {currentWorkout.exercises.length >= 2 && !isLinkMode && (
-                        <TouchableOpacity
+                        <Button
+                            title={t('superset.linkExercises')}
+                            variant="outline"
+                            icon={c => (canAccessSupersets ? <Link2 color={c} size={16} /> : <Lock color={c} size={15} />)}
                             onPress={() => {
                                 if (!canAccessSupersets) {
                                     navigation.navigate('Paywall');
@@ -554,13 +553,7 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
                                 }
                                 handleToggleLinkMode();
                             }}
-                            style={styles.linkModeBtn}
-                            activeOpacity={0.7}
-                        >
-                            <Typography variant="bodySmall" color={colors.secondary} bold>
-                                {!canAccessSupersets ? '🔒 ' : '🔗 '}{t('superset.linkExercises')}
-                            </Typography>
-                        </TouchableOpacity>
+                        />
                     )}
                 </View>
 
@@ -585,11 +578,9 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
                                 activeOpacity={0.7}
                             >
                                 <Typography variant="body" style={{ fontSize: 20 }}>{opt.emoji}</Typography>
-                                {mood === opt.value && (
-                                    <Typography variant="caption" color={colors.primary} bold style={{ fontSize: 9, marginTop: 2 }}>
-                                        {opt.label}
-                                    </Typography>
-                                )}
+                                <Typography variant="caption" color={mood === opt.value ? colors.primary : colors.textMuted} bold={mood === opt.value} style={{ fontSize: 10.5, marginTop: 2 }}>
+                                    {opt.label}
+                                </Typography>
                             </TouchableOpacity>
                         ))}
                     </View>
@@ -609,7 +600,8 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
                     variant="ghost"
                     onPress={handleCancel}
                     size="small"
-                    style={{ marginTop: 12, alignSelf: 'center' }}
+                    icon={c => <X color={c} size={15} />}
+                    style={{ marginTop: 16, alignSelf: 'center' }}
                 />
             </ScrollView>
 
@@ -696,7 +688,7 @@ function formatClock(totalSeconds: number): string {
 const getRpeColor = (rpe: number, colors: any): string => {
     if (rpe <= 5) return colors.success;
     if (rpe <= 7) return colors.warning;
-    if (rpe <= 8) return '#FF9800';
+    if (rpe <= 8) return colors.accent;
     return colors.error;
 };
 
@@ -834,8 +826,8 @@ const ExerciseCard = ({
             <View style={styles.cardHeader}>
                 <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
                     {positionLabel && (
-                        <View style={[styles.positionBadge, { backgroundColor: supersetColor + '25', borderColor: supersetColor + '50' }]}>
-                            <Typography variant="caption" color={supersetColor} bold style={{ fontSize: 11 }}>
+                        <View style={[styles.positionBadge, { backgroundColor: supersetColor + '22' }]}>
+                            <Typography variant="caption" color={supersetColor} bold style={{ fontSize: 12 }}>
                                 {positionLabel}
                             </Typography>
                         </View>
@@ -843,39 +835,40 @@ const ExerciseCard = ({
                     <View style={{ flex: 1 }}>
                         <Typography variant="h3">{getExerciseName(log.exerciseId, t, log.exerciseName)}</Typography>
                         {log.sets.length > 0 && (
-                            <Typography variant="caption" style={{ marginTop: 2 }}>
+                            <Typography variant="caption" color={colors.textSecondary} style={{ marginTop: 2 }}>
                                 {log.sets.length}{target ? `/${target.sets}` : ''} {t('common.sets')}
-                                {exerciseVolume > 0 ? ` • ${Math.round(displayWeight(exerciseVolume))} ${weightUnit}` : ''}
+                                {exerciseVolume > 0 ? ` · ${Math.round(displayWeight(exerciseVolume))} ${weightUnit}` : ''}
                             </Typography>
                         )}
                     </View>
                 </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <TouchableOpacity
+                <View style={styles.cardActions}>
+                    <IconButton
+                        icon={c => <PlayCircle color={c} size={18} />}
+                        variant="tonal"
+                        tone="primary"
+                        size={34}
                         onPress={() => setShowInfo(true)}
-                        style={styles.infoBtn}
-                        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                    >
-                        <PlayCircle color={colors.primary} size={18} />
-                    </TouchableOpacity>
+                        accessibilityLabel={t('common.animationNotAvailable', 'Exercise info')}
+                    />
                     {onUnlink && (
-                        <TouchableOpacity
+                        <IconButton
+                            icon={c => <Unlink color={c} size={16} />}
+                            variant="tonal"
+                            tone="secondary"
+                            size={34}
                             onPress={onUnlink}
-                            style={styles.unlinkBtn}
-                        >
-                            <Typography variant="caption" color={colors.secondary} style={{ fontSize: 10 }}>
-                                {t('superset.unlink')}
-                            </Typography>
-                        </TouchableOpacity>
+                            accessibilityLabel={t('superset.unlink')}
+                        />
                     )}
-                    <TouchableOpacity
+                    <IconButton
+                        icon={c => <Trash2 color={c} size={16} />}
+                        variant="ghost"
+                        tone="neutral"
+                        size={34}
                         onPress={() => removeExerciseFromWorkout(log.id)}
-                        style={styles.removeBtn}
-                    >
-                        <Typography variant="caption" color={colors.error} style={{ fontSize: 11 }}>
-                            {t('workoutSession.remove')}
-                        </Typography>
-                    </TouchableOpacity>
+                        accessibilityLabel={t('workoutSession.remove')}
+                    />
                 </View>
             </View>
 
@@ -883,19 +876,28 @@ const ExerciseCard = ({
             {(planText || lastText) && (
                 <View style={styles.planBox}>
                     {planText && (
-                        <Typography variant="caption" color={colors.primary} bold style={{ fontSize: 12 }}>
-                            🎯 {t('workoutSession.plan')}: {planText}
-                        </Typography>
+                        <View style={styles.planLine}>
+                            <Target color={colors.primary} size={13} />
+                            <Typography variant="caption" color={colors.primary} bold style={styles.planText}>
+                                {t('workoutSession.plan')}: {planText}
+                            </Typography>
+                        </View>
                     )}
                     {target?.notes ? (
-                        <Typography variant="caption" color={colors.textSecondary} style={{ fontSize: 11, marginTop: 2 }}>
-                            💡 {target.notes}
-                        </Typography>
+                        <View style={styles.planLine}>
+                            <Lightbulb color={colors.textSecondary} size={13} />
+                            <Typography variant="caption" color={colors.textSecondary} style={styles.planText}>
+                                {target.notes}
+                            </Typography>
+                        </View>
                     ) : null}
                     {lastText && (
-                        <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 11, marginTop: 2 }}>
-                            🕘 {t('workoutSession.lastTime')}: {lastText}
-                        </Typography>
+                        <View style={styles.planLine}>
+                            <History color={colors.textMuted} size={13} />
+                            <Typography variant="caption" color={colors.textMuted} style={styles.planText}>
+                                {t('workoutSession.lastTime')}: {lastText}
+                            </Typography>
+                        </View>
                     )}
                 </View>
             )}
@@ -927,7 +929,7 @@ const ExerciseCard = ({
             {log.sets.map((set: WorkoutSet, i: number) => (
                 <View key={set.id} style={[styles.row, i % 2 === 0 && styles.rowAlt]}>
                     <View style={[styles.colSet, styles.setBadge]}>
-                        <Typography variant="bodySmall" color={colors.text} bold align="center">
+                        <Typography variant="bodySmall" color={colors.primary} bold align="center">
                             {i + 1}
                         </Typography>
                     </View>
@@ -955,7 +957,7 @@ const ExerciseCard = ({
                         style={styles.deleteBtn}
                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                     >
-                        <Typography variant="body" color={colors.error}>✕</Typography>
+                        <X color={colors.textMuted} size={16} />
                     </TouchableOpacity>
                 </View>
             ))}
@@ -1053,10 +1055,8 @@ const ExerciseCard = ({
                     </Typography>
                 </TouchableOpacity>
                 ) : (
-                <View style={[styles.rpeInputBtn, { opacity: 0.4 }]}>
-                    <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 11 }}>
-                        🔒
-                    </Typography>
+                <View style={[styles.rpeInputBtn, { opacity: 0.5 }]}>
+                    <Lock color={colors.textMuted} size={14} />
                 </View>
                 )}
 
@@ -1065,7 +1065,7 @@ const ExerciseCard = ({
                     style={styles.addSetBtn}
                     activeOpacity={0.7}
                 >
-                    <Typography variant="body" color={colors.black} bold>✓</Typography>
+                    <Check color={colors.onPrimary} size={20} strokeWidth={2.6} />
                 </TouchableOpacity>
             </View>
 
@@ -1092,7 +1092,7 @@ const ExerciseCard = ({
                         >
                             <Typography
                                 variant="caption"
-                                color={rpe === val ? '#FFF' : colors.textSecondary}
+                                color={rpe === val ? colors.white : colors.textSecondary}
                                 bold={rpe === val}
                                 style={{ fontSize: 11 }}
                             >
@@ -1103,35 +1103,23 @@ const ExerciseCard = ({
                 </View>
             )}
 
-            {/* Plate Calculator — full width */}
-            {tracking === 'weight_reps' && (
-            <TouchableOpacity
-                onPress={() => setShowPlateCalc(true)}
-                style={styles.plateCalcRow}
-                activeOpacity={0.7}
-            >
-                <Image source={require('../../assets/plate_calc.jpg')} style={{ width: 22, height: 22, borderRadius: 3 }} />
-                <Typography variant="caption" color={colors.textSecondary} style={{ marginLeft: 8, fontSize: 12 }}>
-                    {t('plateCalculator.title')}
-                </Typography>
-            </TouchableOpacity>
-            )}
-
-            {/* Per-Exercise Notes */}
-            <TouchableOpacity
-                onPress={() => setShowNotes(!showNotes)}
-                style={styles.notesToggle}
-                activeOpacity={0.7}
-            >
-                <Typography variant="caption" color={colors.textSecondary} style={{ fontSize: 11 }}>
-                    {showNotes ? '📝 ' + t('workoutSession.hideNotes') : '📝 ' + t('workoutSession.addNote')}
-                </Typography>
-                {log.notes && !showNotes && (
-                    <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 10, marginLeft: 6 }} numberOfLines={1}>
-                        {log.notes}
-                    </Typography>
+            {/* Tools: plate calculator and per-exercise notes */}
+            <View style={styles.toolRow}>
+                {tracking === 'weight_reps' && (
+                    <TouchableOpacity onPress={() => setShowPlateCalc(true)} style={styles.toolBtn} activeOpacity={0.7}>
+                        <Calculator color={colors.textSecondary} size={15} />
+                        <Typography variant="caption" color={colors.textSecondary}>
+                            {t('plateCalculator.title')}
+                        </Typography>
+                    </TouchableOpacity>
                 )}
-            </TouchableOpacity>
+                <TouchableOpacity onPress={() => setShowNotes(!showNotes)} style={[styles.toolBtn, { flexShrink: 1 }]} activeOpacity={0.7}>
+                    <NotebookPen color={colors.textSecondary} size={15} />
+                    <Typography variant="caption" color={colors.textSecondary} numberOfLines={1} style={{ flexShrink: 1 }}>
+                        {showNotes ? t('workoutSession.hideNotes') : (log.notes || t('workoutSession.addNote'))}
+                    </Typography>
+                </TouchableOpacity>
+            </View>
             {showNotes && (
                 <TextInput
                     style={styles.exerciseNotesInput}
@@ -1173,12 +1161,13 @@ const MOOD_OPTIONS = [
     { value: 5, emoji: '🔥', label: 'Great' },
 ];
 
-const createStyles = (colors: any) => StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: 16,
+        paddingTop: 8,
+        paddingBottom: 14,
     },
     headerStats: {
         flexDirection: 'row',
@@ -1186,29 +1175,60 @@ const createStyles = (colors: any) => StyleSheet.create({
         marginTop: 6,
     },
     timerBadge: {
-        backgroundColor: colors.primary + '18',
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        backgroundColor: colors.surfaceLight,
         paddingHorizontal: 10,
         paddingVertical: 3,
-        borderRadius: borderRadius.s,
-        borderWidth: 1,
-        borderColor: colors.primary + '30',
+        borderRadius: borderRadius.full,
+    },
+    liveDot: {
+        width: 7,
+        height: 7,
+        borderRadius: 4,
+        backgroundColor: colors.success,
+    },
+    tabular: {
+        fontVariant: ['tabular-nums'],
+    },
+    inlineRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
     },
     restBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        height: 36,
+        minWidth: 36,
+        paddingHorizontal: 10,
+        borderRadius: borderRadius.full,
         backgroundColor: colors.surfaceLight,
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: borderRadius.m,
-        borderWidth: 1,
-        borderColor: colors.border,
         marginLeft: 8,
     },
     restBadgeActive: {
-        backgroundColor: colors.primary + '15',
-        borderColor: colors.primary + '40',
+        backgroundColor: colors.primarySoft,
     },
     restBadgeComplete: {
-        backgroundColor: colors.success + '15',
-        borderColor: colors.success + '40',
+        backgroundColor: colors.successSoft,
+    },
+    emptyCard: {
+        marginTop: 20,
+        paddingVertical: 36,
+        alignItems: 'center',
+        gap: 12,
+        borderStyle: 'dashed',
+    },
+    emptyIcon: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        backgroundColor: colors.primarySoft,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     exerciseCard: {
         padding: spacing.m,
@@ -1217,55 +1237,48 @@ const createStyles = (colors: any) => StyleSheet.create({
     cardHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 14,
-    },
-    infoBtn: {
-        width: 30,
-        height: 30,
-        borderRadius: 15,
         alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: colors.primary + '12',
+        marginBottom: 12,
+    },
+    cardActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginLeft: 8,
     },
     planBox: {
         marginBottom: 10,
-        paddingVertical: 8,
-        paddingHorizontal: 10,
-        borderRadius: borderRadius.s,
-        backgroundColor: colors.primary + '0D',
-        borderWidth: 1,
-        borderColor: colors.primary + '25',
+        paddingVertical: 9,
+        paddingHorizontal: 11,
+        borderRadius: borderRadius.m,
+        backgroundColor: colors.surfaceLight,
+        gap: 4,
     },
-    removeBtn: {
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: borderRadius.xs,
-        borderWidth: 1,
-        borderColor: colors.error + '40',
+    planLine: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 6,
     },
-    unlinkBtn: {
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: borderRadius.xs,
-        borderWidth: 1,
-        borderColor: colors.secondary + '40',
+    planText: {
+        flex: 1,
+        fontSize: 12.5,
+        lineHeight: 17,
     },
     row: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 6,
+        paddingVertical: 5,
         paddingHorizontal: 4,
-        borderRadius: borderRadius.xs,
+        borderRadius: borderRadius.s,
     },
     rowAlt: {
-        backgroundColor: colors.surfaceLight + '40',
+        backgroundColor: colors.surfaceLight + '80',
     },
     tableHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingBottom: 8,
-        borderBottomWidth: 1,
+        borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: colors.border,
         marginBottom: 4,
     },
@@ -1278,6 +1291,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     colVal: {
         flex: 1,
         textAlign: 'center',
+        fontVariant: ['tabular-nums'],
     },
     colRpe: {
         width: 44,
@@ -1287,94 +1301,79 @@ const createStyles = (colors: any) => StyleSheet.create({
     },
     // Badges
     setBadge: {
-        width: 28,
-        height: 28,
-        borderRadius: 14,
-        backgroundColor: colors.surfaceLight,
+        width: 26,
+        height: 26,
+        borderRadius: 13,
+        backgroundColor: colors.primarySoft,
         alignItems: 'center',
         justifyContent: 'center',
     },
     nextBadge: {
-        width: 28,
-        height: 28,
-        borderRadius: 14,
-        backgroundColor: colors.border + '60',
+        width: 26,
+        height: 26,
+        borderRadius: 13,
+        borderWidth: 1,
+        borderStyle: 'dashed',
+        borderColor: colors.textMuted,
         alignItems: 'center',
         justifyContent: 'center',
     },
     rpeBadge: {
-        paddingHorizontal: 6,
+        paddingHorizontal: 7,
         paddingVertical: 2,
-        borderRadius: borderRadius.xs,
+        borderRadius: borderRadius.s,
         borderWidth: 1,
     },
 
-    // Input Row Container
+    // Input row
     inputRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 12,
+        marginTop: 10,
         paddingTop: 12,
-        borderTopWidth: 1,
+        borderTopWidth: StyleSheet.hairlineWidth,
         borderTopColor: colors.border,
-        gap: 8, // Use gap for consistent spacing
+        gap: 8,
     },
-    // Inputs expand to fill space
     input: {
         flex: 1,
+        minWidth: 0,
         backgroundColor: colors.surfaceLight,
         color: colors.text,
-        height: 44, // Taller touch target
-        borderRadius: borderRadius.s,
+        height: 44,
+        borderRadius: borderRadius.m,
         paddingHorizontal: 6,
         textAlign: 'center',
         fontSize: 16,
-        borderWidth: 1,
-        borderColor: colors.border,
+        fontWeight: '600',
     },
-    // RPE Button
     rpeInputBtn: {
-        height: 44, // Match input height
+        height: 44,
         width: 44,
-        borderRadius: borderRadius.s,
+        borderRadius: borderRadius.m,
         backgroundColor: colors.surfaceLight,
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: colors.border,
+        borderColor: 'transparent',
     },
-    // Add Button
     addSetBtn: {
         height: 44,
         width: 44,
-        borderRadius: borderRadius.s,
+        borderRadius: borderRadius.m,
         backgroundColor: colors.primary,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    plateCalcRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: 12,
-        paddingVertical: 10,
-        paddingHorizontal: 14,
-        borderRadius: borderRadius.s,
-        backgroundColor: colors.surfaceLight,
-        borderWidth: 1,
-        borderColor: colors.border,
-    },
 
-    // RPE Selector
+    // RPE selector
     rpeRow: {
         flexDirection: 'row',
         alignItems: 'center',
         marginTop: 12,
-        paddingTop: 12,
-        borderTopWidth: 1,
-        borderTopColor: colors.border + '40',
         flexWrap: 'wrap',
         gap: 6,
-        justifyContent: 'center'
+        justifyContent: 'center',
     },
     rpeChip: {
         width: 32,
@@ -1384,26 +1383,44 @@ const createStyles = (colors: any) => StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: colors.border,
+        borderColor: 'transparent',
+    },
+
+    // Tools row (plate calculator, notes)
+    toolRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: 8,
+        marginTop: 12,
+    },
+    toolBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        height: 32,
+        paddingHorizontal: 12,
+        borderRadius: borderRadius.full,
+        backgroundColor: colors.surfaceLight,
     },
 
     notesInput: {
-        backgroundColor: colors.surfaceLight,
+        backgroundColor: colors.surface,
         color: colors.text,
         width: '100%',
-        minHeight: 80,
-        borderRadius: borderRadius.m,
+        minHeight: 84,
+        borderRadius: borderRadius.l,
         paddingHorizontal: 16,
         paddingTop: 14,
-        marginTop: 20,
+        marginTop: 16,
         textAlignVertical: 'top',
         fontSize: 15,
         borderWidth: 1,
         borderColor: colors.border,
     },
     deleteBtn: {
-        width: 40,
-        height: 40,
+        width: 36,
+        height: 36,
         alignItems: 'center',
         justifyContent: 'center',
         marginLeft: 4,
@@ -1416,26 +1433,17 @@ const createStyles = (colors: any) => StyleSheet.create({
     supersetHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderWidth: 1,
-        borderBottomWidth: 0,
-        borderTopLeftRadius: borderRadius.m,
-        borderTopRightRadius: borderRadius.m,
-        backgroundColor: colors.surfaceLight + '60',
-    },
-    supersetHeaderDot: {
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-        marginRight: 8,
+        gap: 6,
+        paddingHorizontal: 4,
+        paddingBottom: 8,
     },
     supersetBody: {
         flexDirection: 'row',
+        gap: 8,
     },
     supersetSidebar: {
         width: 3,
-        borderBottomLeftRadius: 3,
+        borderRadius: 2,
         marginBottom: 12,
     },
     supersetExercises: {
@@ -1444,53 +1452,36 @@ const createStyles = (colors: any) => StyleSheet.create({
     positionBadge: {
         paddingHorizontal: 8,
         paddingVertical: 3,
-        borderRadius: borderRadius.xs,
-        borderWidth: 1,
+        borderRadius: borderRadius.s,
         marginRight: 10,
     },
 
     // ── Link mode styles ──────────────────────────────────
     linkBanner: {
-        backgroundColor: colors.secondary + '12',
-        borderWidth: 1,
-        borderColor: colors.secondary + '30',
-        borderRadius: borderRadius.m,
+        backgroundColor: colors.secondarySoft,
+        borderRadius: borderRadius.l,
         padding: 14,
-        marginBottom: 16,
+        marginBottom: 14,
     },
     linkBannerContent: {
-        marginBottom: 10,
+        marginBottom: 8,
     },
     linkBannerActions: {
         flexDirection: 'row',
         justifyContent: 'flex-end',
         gap: 8,
     },
-    linkCancelBtn: {
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: borderRadius.s,
-        backgroundColor: colors.surfaceLight,
-        borderWidth: 1,
-        borderColor: colors.border,
-    },
-    linkConfirmBtn: {
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: borderRadius.s,
-        backgroundColor: colors.secondary,
-    },
     linkCheckbox: {
         position: 'absolute',
-        top: 10,
-        left: -4,
+        top: 16,
+        left: -6,
         zIndex: 10,
-        width: 28,
-        height: 28,
-        borderRadius: 14,
-        backgroundColor: colors.surfaceLight,
-        borderWidth: 2,
-        borderColor: colors.border,
+        width: 26,
+        height: 26,
+        borderRadius: 13,
+        backgroundColor: colors.surface,
+        borderWidth: 1.5,
+        borderColor: colors.textMuted,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -1498,24 +1489,16 @@ const createStyles = (colors: any) => StyleSheet.create({
         backgroundColor: colors.secondary,
         borderColor: colors.secondary,
     },
-    linkModeBtn: {
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-        borderRadius: borderRadius.s,
-        backgroundColor: colors.secondary + '15',
-        borderWidth: 1,
-        borderColor: colors.secondary + '30',
-        marginLeft: 8,
-    },
     actionRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 20,
+        gap: 10,
+        marginTop: 8,
     },
 
     // ── Mood styles ──────────────────────────────────────
     moodSection: {
-        marginTop: 20,
+        marginTop: 22,
         marginBottom: 4,
     },
     moodRow: {
@@ -1528,36 +1511,26 @@ const createStyles = (colors: any) => StyleSheet.create({
         justifyContent: 'center',
         paddingVertical: 10,
         borderRadius: borderRadius.m,
-        backgroundColor: colors.surfaceLight,
+        backgroundColor: colors.surface,
         borderWidth: 1,
         borderColor: colors.border,
     },
     moodChipActive: {
-        backgroundColor: colors.primary + '18',
-        borderColor: colors.primary + '50',
+        backgroundColor: colors.primarySoft,
+        borderColor: colors.primary,
     },
 
     // ── Exercise notes styles ────────────────────────────
-    notesToggle: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: 10,
-        paddingTop: 10,
-        borderTopWidth: 1,
-        borderTopColor: colors.border + '40',
-    },
     exerciseNotesInput: {
         backgroundColor: colors.surfaceLight,
         color: colors.text,
         width: '100%',
         minHeight: 48,
-        borderRadius: borderRadius.s,
+        borderRadius: borderRadius.m,
         paddingHorizontal: 12,
         paddingTop: 10,
         marginTop: 8,
         textAlignVertical: 'top',
-        fontSize: 13,
-        borderWidth: 1,
-        borderColor: colors.border,
+        fontSize: 13.5,
     },
 });

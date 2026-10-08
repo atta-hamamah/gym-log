@@ -42,7 +42,7 @@ export const ProFeatureGate: React.FC<ProFeatureGateProps> = ({
     // Inline mode: replace the children with a small lock button
     return (
       <TouchableOpacity
-        style={[styles.inlineLock, { backgroundColor: colors.primary + '12', borderColor: colors.primary + '30' }]}
+        style={[styles.inlineLock, { backgroundColor: colors.primarySoft, borderColor: 'transparent' }]}
         onPress={() => navigation.navigate('Paywall')}
         activeOpacity={0.7}
       >
@@ -68,7 +68,7 @@ export const ProFeatureGate: React.FC<ProFeatureGateProps> = ({
         onPress={() => navigation.navigate('Paywall')}
         activeOpacity={0.9}
       >
-        <View style={[styles.lockBadge, { backgroundColor: colors.primary + '15', borderColor: colors.primary + '30' }]}>
+        <View style={[styles.lockBadge, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Crown color={colors.primary} size={22} />
           <Typography variant="body" bold color={colors.text} style={{ marginTop: 8 }}>
             {t('proGate.proFeature', 'Pro Feature')}
@@ -82,7 +82,7 @@ export const ProFeatureGate: React.FC<ProFeatureGateProps> = ({
             {message || t('proGate.upgradeMessage', 'Upgrade to Pro to unlock this feature — one-time payment')}
           </Typography>
           <View style={[styles.upgradeBtn, { backgroundColor: colors.primary }]}>
-            <Typography variant="bodySmall" color={colors.black} bold>
+            <Typography variant="bodySmall" color={colors.onPrimary} bold>
               {t('proGate.upgrade', 'Upgrade to Pro')}
             </Typography>
           </View>

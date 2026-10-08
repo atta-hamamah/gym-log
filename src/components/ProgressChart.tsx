@@ -38,7 +38,11 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
     const { colors } = useTheme();
     const styles = createStyles(colors);
     const lineColor = color ?? colors.primary;
-    const gradientColor = gradientTo ?? colors.secondary;
+    const gradientColor = gradientTo ?? lineColor;
+    // Gradient ids must be unique per chart (several charts can share a screen).
+    const uid = React.useId().replace(/[^a-zA-Z0-9]/g, '');
+    const areaId = `areaFill${uid}`;
+    const lineId = `lineGradient${uid}`;
 
     if (data.length === 0) {
         return (
@@ -104,12 +108,12 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
         <View style={[styles.container, { width, height }]}>
             <Svg width={width} height={height}>
                 <Defs>
-                    <LinearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
-                        <Stop offset="0" stopColor={lineColor} stopOpacity="0.25" />
-                        <Stop offset="0.7" stopColor={lineColor} stopOpacity="0.05" />
+                    <LinearGradient id={areaId} x1="0" y1="0" x2="0" y2="1">
+                        <Stop offset="0" stopColor={lineColor} stopOpacity="0.22" />
+                        <Stop offset="0.7" stopColor={lineColor} stopOpacity="0.04" />
                         <Stop offset="1" stopColor={lineColor} stopOpacity="0" />
                     </LinearGradient>
-                    <LinearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
+                    <LinearGradient id={lineId} x1="0" y1="0" x2="1" y2="0">
                         <Stop offset="0" stopColor={lineColor} stopOpacity="1" />
                         <Stop offset="1" stopColor={gradientColor} stopOpacity="1" />
                     </LinearGradient>
@@ -124,8 +128,9 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
                             x2={width - paddingRight}
                             y2={line.y}
                             stroke={colors.border}
-                            strokeWidth={0.5}
-                            opacity={0.5}
+                            strokeWidth={1}
+                            strokeDasharray="3 4"
+                            opacity={0.8}
                         />
                         <SvgText
                             x={paddingLeft - 10}
@@ -141,32 +146,35 @@ export const ProgressChart: React.FC<ProgressChartProps> = ({
                 ))}
 
                 {/* Area fill */}
-                <Path d={areaPath} fill="url(#areaFill)" />
+                <Path d={areaPath} fill={`url(#${areaId})`} />
 
                 {/* Line */}
                 <Path
                     d={linePath}
-                    stroke="url(#lineGradient)"
-                    strokeWidth={3}
+                    stroke={`url(#${lineId})`}
+                    strokeWidth={2.5}
                     fill="none"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                 />
 
-                {/* Dots with glow */}
-                {points.map((p, i) => (
-                    <React.Fragment key={`dot-${i}`}>
-                        <Circle cx={p.x} cy={p.y} r={8} fill={lineColor} opacity={0.15} />
-                        <Circle
-                            cx={p.x}
-                            cy={p.y}
-                            r={4.5}
-                            fill={colors.surface}
-                            stroke={lineColor}
-                            strokeWidth={2.5}
-                        />
-                    </React.Fragment>
-                ))}
+                {/* Dots; the latest point is highlighted */}
+                {points.map((p, i) => {
+                    const last = i === points.length - 1;
+                    return (
+                        <React.Fragment key={`dot-${i}`}>
+                            {last && <Circle cx={p.x} cy={p.y} r={9} fill={gradientColor} opacity={0.18} />}
+                            <Circle
+                                cx={p.x}
+                                cy={p.y}
+                                r={last ? 4.5 : 3.2}
+                                fill={last ? gradientColor : colors.surface}
+                                stroke={i === points.length - 1 ? gradientColor : lineColor}
+                                strokeWidth={2}
+                            />
+                        </React.Fragment>
+                    );
+                })}
 
                 {/* X-axis labels */}
                 {data.map((d, i) => {

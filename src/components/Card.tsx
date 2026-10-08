@@ -15,8 +15,8 @@ export const Card: React.FC<CardProps> = ({
     style,
     ...props
 }) => {
-    const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { colors, isDark } = useTheme();
+    const styles = createStyles(colors, isDark);
     const variantStyles = {
         default: styles.default,
         elevated: styles.elevated,
@@ -42,23 +42,26 @@ export const Card: React.FC<CardProps> = ({
 const createStyles = (colors: {
     surface: string;
     border: string;
+    borderLight: string;
     surfaceElevated: string;
-}) => StyleSheet.create({
+}, isDark: boolean) => StyleSheet.create({
     container: {
         borderRadius: borderRadius.l,
         padding: spacing.m,
         marginBottom: spacing.m,
     },
+    // Dark surfaces separate with hairline borders; the light theme adds a soft shadow.
     default: {
         backgroundColor: colors.surface,
         borderWidth: 1,
         borderColor: colors.border,
-        ...shadows.small,
+        ...(isDark ? {} : shadows.small),
     },
     elevated: {
         backgroundColor: colors.surfaceElevated,
-        borderWidth: 0,
-        ...shadows.medium,
+        borderWidth: 1,
+        borderColor: isDark ? colors.border : colors.borderLight,
+        ...(isDark ? {} : shadows.medium),
     },
     outlined: {
         backgroundColor: 'transparent',

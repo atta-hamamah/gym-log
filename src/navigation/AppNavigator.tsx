@@ -47,18 +47,24 @@ const TabNavigator = () => {
                 tabBarStyle: {
                     backgroundColor: colors.surface,
                     borderTopColor: colors.border,
-                    borderTopWidth: 1,
-                    height: Platform.OS === 'ios' ? 88 + insets.bottom : 80,
-                    paddingBottom: Platform.OS === 'ios' ? insets.bottom + 12 : 24,
-                    paddingTop: 12,
+                    borderTopWidth: StyleSheet.hairlineWidth,
+                    height: 64 + Math.max(insets.bottom, Platform.OS === 'ios' ? 0 : 10),
+                    paddingBottom: Math.max(insets.bottom, Platform.OS === 'ios' ? 0 : 10),
+                    paddingTop: 6,
                     elevation: 0,
+                },
+                tabBarItemStyle: {
+                    paddingVertical: 0,
+                    paddingHorizontal: 0,
                 },
                 tabBarActiveTintColor: colors.primary,
                 tabBarInactiveTintColor: colors.textMuted,
                 tabBarLabelStyle: {
-                    fontSize: 11,
+                    fontSize: 10,
+                    lineHeight: 14,
                     fontWeight: '600',
-                    letterSpacing: 0.3,
+                    letterSpacing: 0,
+                    marginTop: 2,
                 },
             }}
         >
@@ -66,7 +72,7 @@ const TabNavigator = () => {
                 name="Home"
                 component={HomeScreen}
                 options={{
-                    tabBarIcon: ({ color, size }) => <Home color={color} size={size - 2} />,
+                    tabBarIcon: ({ color, focused }) => <Home color={color} size={22} strokeWidth={focused ? 2.2 : 1.8} />,
                     tabBarLabel: t('tabs.dashboard'),
                 }}
             />
@@ -74,7 +80,7 @@ const TabNavigator = () => {
                 name="Programs"
                 component={ProgramsScreen}
                 options={{
-                    tabBarIcon: ({ color, size }) => <BookOpen color={color} size={size - 2} />,
+                    tabBarIcon: ({ color, focused }) => <BookOpen color={color} size={22} strokeWidth={focused ? 2.2 : 1.8} />,
                     tabBarLabel: t('tabs.programs'),
                 }}
             />
@@ -82,7 +88,7 @@ const TabNavigator = () => {
                 name="History"
                 component={HistoryScreen}
                 options={{
-                    tabBarIcon: ({ color, size }) => <History color={color} size={size - 2} />,
+                    tabBarIcon: ({ color, focused }) => <History color={color} size={22} strokeWidth={focused ? 2.2 : 1.8} />,
                     tabBarLabel: t('tabs.history'),
                 }}
             />
@@ -90,7 +96,7 @@ const TabNavigator = () => {
                 name="Progress"
                 component={ProgressScreen}
                 options={{
-                    tabBarIcon: ({ color, size }) => <TrendingUp color={color} size={size - 2} />,
+                    tabBarIcon: ({ color, focused }) => <TrendingUp color={color} size={22} strokeWidth={focused ? 2.2 : 1.8} />,
                     tabBarLabel: t('tabs.progress'),
                 }}
             />
@@ -98,7 +104,7 @@ const TabNavigator = () => {
                 name="AI"
                 component={AITabScreen}
                 options={{
-                    tabBarIcon: ({ color, size }) => <Sparkles color={color} size={size - 2} />,
+                    tabBarIcon: ({ color, focused }) => <Sparkles color={color} size={22} strokeWidth={focused ? 2.2 : 1.8} />,
                     tabBarLabel: t('tabs.ai'),
                 }}
             />
@@ -106,7 +112,7 @@ const TabNavigator = () => {
                 name="Settings"
                 component={SettingsScreen}
                 options={{
-                    tabBarIcon: ({ color, size }) => <Settings color={color} size={size - 2} />,
+                    tabBarIcon: ({ color, focused }) => <Settings color={color} size={22} strokeWidth={focused ? 2.2 : 1.8} />,
                     tabBarLabel: t('tabs.settings'),
                 }}
             />
@@ -195,9 +201,10 @@ export const AppNavigator = () => {
                         presentation: 'modal',
                         headerShown: true,
                         headerTitle: t('exerciseList.selectExercise'),
-                        headerStyle: { backgroundColor: colors.surface },
+                        headerStyle: { backgroundColor: colors.background },
+                        headerShadowVisible: false,
                         headerTintColor: colors.text,
-                        headerTitleStyle: { fontWeight: '600' },
+                        headerTitleStyle: { fontWeight: '600', fontSize: 17 },
                         animation: 'slide_from_bottom',
                     }}
                 />
@@ -208,9 +215,10 @@ export const AppNavigator = () => {
                         presentation: 'card',
                         headerShown: true,
                         headerTitle: t('workoutDetails.exercises'),
-                        headerStyle: { backgroundColor: colors.surface },
+                        headerStyle: { backgroundColor: colors.background },
+                        headerShadowVisible: false,
                         headerTintColor: colors.text,
-                        headerTitleStyle: { fontWeight: '600' },
+                        headerTitleStyle: { fontWeight: '600', fontSize: 17 },
                     }}
                 />
                 <Stack.Screen

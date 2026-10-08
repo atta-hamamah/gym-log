@@ -78,7 +78,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                                 activeOpacity={0.7}
                             >
                                 <View style={[styles.checkbox, isChecked && styles.checkboxChecked]}>
-                                    {isChecked && <Check size={16} color="#FFF" strokeWidth={3} />}
+                                    {isChecked && <Check size={16} color={colors.onPrimary} strokeWidth={3} />}
                                 </View>
                                 <Typography variant="body" style={styles.checkboxLabel} color={colors.text}>
                                     {checkboxLabel}
@@ -91,7 +91,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                                 <Button
                                     title={cancelText}
                                     onPress={onCancel}
-                                    variant="ghost"
+                                    variant="outline"
                                     style={styles.button}
                                     disabled={loading}
                                 />
@@ -121,12 +121,12 @@ const createStyles = (colors: any) => StyleSheet.create({
     },
     backdrop: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        backgroundColor: colors.overlay,
     },
     modalContainer: {
-        width: '85%',
+        width: '86%',
         maxWidth: 400,
-        backgroundColor: colors.surfaceElevated,
+        backgroundColor: colors.surface,
         borderRadius: borderRadius.xl,
         borderWidth: 1,
         borderColor: colors.border,
@@ -142,22 +142,22 @@ const createStyles = (colors: any) => StyleSheet.create({
     },
     message: {
         textAlign: 'center',
-        marginBottom: spacing.xl,
+        marginBottom: spacing.l,
         lineHeight: 22,
     },
     // Checkbox styles
     checkboxRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: spacing.xl,
-        paddingHorizontal: spacing.s,
+        marginBottom: spacing.l,
+        paddingHorizontal: spacing.xs,
     },
     checkbox: {
         width: 24,
         height: 24,
         borderRadius: borderRadius.s,
-        borderWidth: 2,
-        borderColor: colors.textSecondary,
+        borderWidth: 1.5,
+        borderColor: colors.textMuted,
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: spacing.m,
@@ -173,7 +173,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     actions: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        gap: spacing.m,
+        gap: spacing.s + 4,
     },
     button: {
         flex: 1,

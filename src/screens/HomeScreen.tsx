@@ -1,6 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { View, ScrollView, TouchableOpacity, StyleSheet, TextInput, Modal, Image } from 'react-native';
-import { Sparkles } from 'lucide-react-native';
+import { Sparkles, Dumbbell, Layers, Clock, Weight, ChevronRight, Play, Plus } from 'lucide-react-native';
+import { ScreenHeader } from '../components/ScreenHeader';
+import { StatTile } from '../components/StatTile';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { TrialBanner } from '../components/TrialBanner';
@@ -9,9 +11,8 @@ import { useSubscription } from '../context/SubscriptionContext';
 import { useAuth } from '@clerk/clerk-expo';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
-import { StatBadge } from '../components/StatBadge';
 import { format, isThisWeek } from 'date-fns';
-import { borderRadius } from '../theme/colors';
+import { borderRadius, ThemeColors } from '../theme/colors';
 import { WorkoutSession } from '../types';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
@@ -76,18 +77,16 @@ export const HomeScreen = ({ navigation }: any) => {
         navigation.navigate('WorkoutSession');
     };
 
+    const aiAvailable = isAISubscriber && isSignedIn;
+    const formatVolume = (kg: number) => {
+        const v = displayWeight(kg);
+        return v > 999 ? `${(v / 1000).toFixed(1)}k` : `${Math.round(v)}`;
+    };
+
     return (
         <ScreenLayout>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
-                {/* Header */}
-                <View style={styles.headerRow}>
-                    <View>
-                        <Typography variant="h1">{t('home.title')}</Typography>
-                        <Typography variant="caption" style={{ marginTop: 2 }}>
-                            {t('home.subtitle')}
-                        </Typography>
-                    </View>
-                </View>
+                <ScreenHeader title={t('home.title')} subtitle={t('home.subtitle')} />
 
                 {/* Trial / Upgrade Banner */}
                 {(tier === 'pro_trial' || tier === 'free') && (
@@ -95,26 +94,30 @@ export const HomeScreen = ({ navigation }: any) => {
                 )}
 
                 {/* Hero Card */}
-                <Card
-                    variant={currentWorkout ? 'glass' : 'default'}
-                    glowColor={currentWorkout ? colors.primary : undefined}
-                    style={styles.heroCard}
-                >
+                <Card style={styles.heroCard}>
                     <View style={styles.heroContent}>
                         <View style={{ flex: 1 }}>
-                            <Typography variant="h2" style={{ marginBottom: 6 }}>
-                                {currentWorkout ? t('home.workoutActive') : t('home.readyToLift')}
+                            {currentWorkout && (
+                                <View style={styles.liveChip}>
+                                    <View style={styles.liveDot} />
+                                    <Typography variant="caption" color={colors.success} bold>
+                                        {t('home.workoutActive')}
+                                    </Typography>
+                                </View>
+                            )}
+                            <Typography variant="h2" numberOfLines={2} style={{ marginBottom: 4 }}>
+                                {currentWorkout ? currentWorkout.name : t('home.readyToLift')}
                             </Typography>
                             <Typography variant="bodySmall" color={colors.textSecondary}>
                                 {currentWorkout
-                                    ? t('home.activeDescription', { name: currentWorkout.name, count: currentWorkout.exercises.length })
+                                    ? `${currentWorkout.exercises.length} ${t('common.exercises')} · ${currentWorkout.exercises.reduce((n, e) => n + e.sets.length, 0)} ${t('common.sets')}`
                                     : t('home.inactiveDescription')
                                 }
                             </Typography>
                         </View>
                         <Image
                             source={currentWorkout ? require('../../assets/resume.jpg') : require('../../assets/ready_to_lift_icon.jpg')}
-                            style={{ width: 60, height: 60, borderRadius: 8 }}
+                            style={styles.heroImage}
                         />
                     </View>
                     <Button
@@ -122,72 +125,72 @@ export const HomeScreen = ({ navigation }: any) => {
                         onPress={handleStartWorkout}
                         size="large"
                         fullWidth
-                        style={{ marginTop: 16 }}
+                        icon={c => (currentWorkout ? <Play color={c} size={18} fill={c} /> : <Plus color={c} size={20} />)}
+                        style={{ marginTop: 18 }}
                     />
                 </Card>
 
                 {/* Weekly Stats */}
                 <Typography variant="h3" style={styles.sectionTitle}>{t('home.thisWeek')}</Typography>
                 <View style={styles.statsGrid}>
-                    <Card style={styles.statCell}>
-                        <StatBadge value={weeklyStats.sessions} label={t('home.workouts')} color={colors.primary} />
-                    </Card>
-                    <Card style={styles.statCell}>
-                        <StatBadge value={weeklyStats.sets} label={t('common.sets')} color={colors.secondary} />
-                    </Card>
-                    <Card style={styles.statCell}>
-                        <StatBadge value={weeklyStats.minutes} label={t('home.minutes')} color={colors.warning} />
-                    </Card>
-                    <Card style={styles.statCell}>
-                        <StatBadge
-                            value={displayWeight(weeklyStats.volume) > 999 ? `${(displayWeight(weeklyStats.volume) / 1000).toFixed(1)}k` : Math.round(displayWeight(weeklyStats.volume))}
-                            label={`${weightUnit} ${t('home.volume')}`}
-                            color={colors.accent}
-                        />
-                    </Card>
+                    <View style={styles.statsRow}>
+                        <StatTile value={weeklyStats.sessions} label={t('home.workouts')} icon={c => <Dumbbell color={c} size={16} />} tone="primary" />
+                        <StatTile value={weeklyStats.sets} label={t('common.sets')} icon={c => <Layers color={c} size={16} />} tone="secondary" />
+                    </View>
+                    <View style={styles.statsRow}>
+                        <StatTile value={weeklyStats.minutes} label={t('home.minutes')} icon={c => <Clock color={c} size={16} />} tone="accent" />
+                        <StatTile value={formatVolume(weeklyStats.volume)} label={`${weightUnit} ${t('home.volume')}`} icon={c => <Weight color={c} size={16} />} tone="success" />
+                    </View>
                 </View>
 
                 {/* Recent Activity */}
                 <Typography variant="h3" style={styles.sectionTitle}>{t('home.recentActivity')}</Typography>
                 {recentWorkouts.length === 0 ? (
-                    <Card variant="outlined">
-                        <Typography variant="body" color={colors.textMuted} align="center" style={{ paddingVertical: 20 }}>
+                    <Card variant="outlined" style={styles.emptyCard}>
+                        <Dumbbell color={colors.textMuted} size={22} />
+                        <Typography variant="body" color={colors.textMuted} align="center">
                             {t('home.noWorkoutsYet')}
                         </Typography>
                     </Card>
                 ) : (
-                    recentWorkouts.map((workout: WorkoutSession) => {
-                        const duration = workout.endTime
-                            ? Math.round((workout.endTime - workout.startTime) / 60000)
-                            : 0;
-                        const volume = workout.exercises.reduce(
-                            (a, e) => a + e.sets.reduce((s, set) => s + set.weight * set.reps, 0),
-                            0
-                        );
-                        return (
-                            <TouchableOpacity
-                                key={workout.id}
-                                onPress={() => navigation.navigate('WorkoutDetails', { workoutId: workout.id })}
-                                activeOpacity={0.7}
-                            >
-                                <Card style={{ marginBottom: 8 }}>
-                                    <View style={styles.recentRow}>
-                                        <View style={styles.recentDot} />
-                                        <View style={{ flex: 1 }}>
-                                            <Typography variant="body" bold>
-                                                {workout.name}
-                                            </Typography>
-                                            <Typography variant="caption" style={{ marginTop: 2 }}>
-                                                {format(workout.startTime, 'EEE, MMM dd')} • {workout.exercises.length} {t('common.exercises')} • {duration} {t('common.min')}
-                                                {volume > 0 ? ` • ${displayWeight(volume) > 999 ? `${(displayWeight(volume) / 1000).toFixed(1)}k` : Math.round(displayWeight(volume))} ${weightUnit}` : ''}
-                                            </Typography>
-                                        </View>
-                                        <Typography variant="body" color={colors.primary} style={{ fontSize: 18 }}>›</Typography>
+                    <View style={styles.recentList}>
+                        {recentWorkouts.map((workout: WorkoutSession, i: number) => {
+                            const duration = workout.endTime
+                                ? Math.round((workout.endTime - workout.startTime) / 60000)
+                                : 0;
+                            const volume = workout.exercises.reduce(
+                                (a, e) => a + e.sets.reduce((s, set) => s + set.weight * set.reps, 0),
+                                0
+                            );
+                            return (
+                                <TouchableOpacity
+                                    key={workout.id}
+                                    style={[styles.recentRow, i > 0 && styles.recentRowBorder]}
+                                    onPress={() => navigation.navigate('WorkoutDetails', { workoutId: workout.id })}
+                                    activeOpacity={0.6}
+                                >
+                                    <View style={styles.dateTile}>
+                                        <Typography variant="caption" color={colors.primary} bold style={styles.dateDay}>
+                                            {format(workout.startTime, 'EEE')}
+                                        </Typography>
+                                        <Typography variant="body" bold style={styles.dateNum}>
+                                            {format(workout.startTime, 'dd')}
+                                        </Typography>
                                     </View>
-                                </Card>
-                            </TouchableOpacity>
-                        );
-                    })
+                                    <View style={{ flex: 1 }}>
+                                        <Typography variant="body" bold numberOfLines={1}>
+                                            {workout.name}
+                                        </Typography>
+                                        <Typography variant="caption" color={colors.textSecondary} style={{ marginTop: 2 }} numberOfLines={1}>
+                                            {workout.exercises.length} {t('common.exercises')} · {duration} {t('common.min')}
+                                            {volume > 0 ? ` · ${formatVolume(volume)} ${weightUnit}` : ''}
+                                        </Typography>
+                                    </View>
+                                    <ChevronRight color={colors.textMuted} size={18} />
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </View>
                 )}
             </ScrollView>
 
@@ -199,9 +202,9 @@ export const HomeScreen = ({ navigation }: any) => {
                 onRequestClose={() => setNameModalVisible(false)}
             >
                 <View style={styles.modalOverlay}>
-                    <Card variant="elevated" style={styles.modalCard}>
+                    <View style={styles.modalCard}>
                         <Typography variant="h2" style={{ marginBottom: 4 }}>{t('home.newWorkout')}</Typography>
-                        <Typography variant="caption" style={{ marginBottom: 20 }}>
+                        <Typography variant="bodySmall" color={colors.textSecondary} style={{ marginBottom: 18 }}>
                             {t('home.giveSessionName')}
                         </Typography>
 
@@ -219,118 +222,147 @@ export const HomeScreen = ({ navigation }: any) => {
                         <View style={styles.modalButtons}>
                             <Button
                                 title={t('common.cancel')}
-                                variant="ghost"
-                                size="medium"
+                                variant="outline"
                                 onPress={() => { setNameModalVisible(false); setWorkoutName(''); }}
-                                style={{ flex: 1, marginRight: 8 }}
+                                style={{ flex: 1 }}
                             />
                             <Button
                                 title={t('home.letsGo')}
                                 onPress={handleConfirmStart}
-                                size="medium"
                                 style={{ flex: 1.5 }}
                             />
                         </View>
 
-                        {/* AI Generate Button — Premium */}
+                        {/* AI Generate — AI subscribers only */}
                         <TouchableOpacity
-                            style={[
-                                styles.aiGenerateBtn,
-                                !(isAISubscriber && isSignedIn) && styles.aiGenerateBtnDisabled,
-                            ]}
+                            style={[styles.aiGenerateBtn, !aiAvailable && styles.aiGenerateBtnDisabled]}
                             onPress={() => {
-                                if (isAISubscriber && isSignedIn) {
+                                if (aiAvailable) {
                                     setNameModalVisible(false);
                                     setWorkoutName('');
                                     navigation.navigate('Main', { screen: 'AI' });
                                 }
                             }}
-                            activeOpacity={isAISubscriber && isSignedIn ? 0.7 : 1}
-                            disabled={!(isAISubscriber && isSignedIn)}
+                            activeOpacity={aiAvailable ? 0.7 : 1}
+                            disabled={!aiAvailable}
                         >
-                            <View style={styles.aiGenerateBtnInner}>
-                                <View style={styles.aiGenerateIconWrap}>
-                                    <Sparkles color={isAISubscriber && isSignedIn ? '#FFFFFF' : colors.textMuted} size={18} />
-                                </View>
-                                <View style={{ flex: 1 }}>
-                                    <Typography
-                                        variant="body"
-                                        color={isAISubscriber && isSignedIn ? '#FFFFFF' : colors.textMuted}
-                                        bold
-                                    >
-                                        {t('home.generateWithAI')}
+                            <View style={styles.aiGenerateIconWrap}>
+                                <Sparkles color={aiAvailable ? colors.secondary : colors.textMuted} size={18} />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Typography variant="body" color={aiAvailable ? colors.text : colors.textMuted} bold>
+                                    {t('home.generateWithAI')}
+                                </Typography>
+                                {!aiAvailable && (
+                                    <Typography variant="caption" color={colors.textMuted} style={{ marginTop: 1 }}>
+                                        {t('home.aiSubscriptionOnly')}
                                     </Typography>
-                                    {!(isAISubscriber && isSignedIn) && (
-                                        <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 10, marginTop: 2 }}>
-                                            {t('home.aiSubscriptionOnly')}
-                                        </Typography>
-                                    )}
-                                </View>
-                                {isAISubscriber && isSignedIn && (
-                                    <Typography variant="body" color="#FFFFFF" style={{ fontSize: 18, opacity: 0.6 }}>›</Typography>
                                 )}
                             </View>
+                            {aiAvailable && <ChevronRight color={colors.secondary} size={18} />}
                         </TouchableOpacity>
-                    </Card>
+                    </View>
                 </View>
             </Modal>
         </ScreenLayout>
     );
 };
 
-const createStyles = (colors: any) => StyleSheet.create({
-    headerRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 20,
-        marginTop: 8,
-    },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
     heroCard: {
-        paddingVertical: 24,
-        paddingHorizontal: 20,
+        padding: 20,
     },
     heroContent: {
         flexDirection: 'row',
         alignItems: 'center',
+        gap: 14,
+    },
+    heroImage: {
+        width: 64,
+        height: 64,
+        borderRadius: 16,
+    },
+    liveChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        alignSelf: 'flex-start',
+        gap: 6,
+        paddingHorizontal: 10,
+        paddingVertical: 3,
+        borderRadius: borderRadius.full,
+        backgroundColor: colors.successSoft,
+        marginBottom: 8,
+    },
+    liveDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: colors.success,
     },
     sectionTitle: {
-        marginTop: 28,
+        marginTop: 26,
         marginBottom: 12,
     },
     statsGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
+        gap: 10,
     },
-    statCell: {
-        flex: 1,
-        minWidth: '45%',
+    statsRow: {
+        flexDirection: 'row',
+        gap: 10,
+    },
+    emptyCard: {
         alignItems: 'center',
-        paddingVertical: 18,
-        marginBottom: 0,
+        gap: 10,
+        paddingVertical: 28,
+    },
+    recentList: {
+        backgroundColor: colors.surface,
+        borderRadius: borderRadius.l,
+        borderWidth: 1,
+        borderColor: colors.border,
+        overflow: 'hidden',
     },
     recentRow: {
         flexDirection: 'row',
         alignItems: 'center',
+        gap: 12,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
     },
-    recentDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: colors.primary,
-        marginRight: 12,
-        opacity: 0.7,
+    recentRowBorder: {
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: colors.border,
+    },
+    dateTile: {
+        width: 44,
+        height: 46,
+        borderRadius: 12,
+        backgroundColor: colors.surfaceLight,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    dateDay: {
+        fontSize: 10.5,
+        lineHeight: 13,
+        textTransform: 'uppercase',
+    },
+    dateNum: {
+        fontSize: 16,
+        lineHeight: 20,
+        fontVariant: ['tabular-nums'],
     },
     modalOverlay: {
         flex: 1,
         backgroundColor: colors.overlay,
         justifyContent: 'center',
-        paddingHorizontal: 24,
+        paddingHorizontal: 22,
     },
     modalCard: {
-        padding: 24,
-        marginBottom: 0,
+        padding: 22,
+        borderRadius: borderRadius.xl,
+        backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: colors.border,
     },
     nameInput: {
         height: 52,
@@ -339,45 +371,31 @@ const createStyles = (colors: any) => StyleSheet.create({
         paddingHorizontal: 16,
         color: colors.text,
         fontSize: 16,
-        borderWidth: 1,
-        borderColor: colors.border,
     },
     modalButtons: {
         flexDirection: 'row',
-        marginTop: 20,
+        gap: 10,
+        marginTop: 18,
     },
     aiGenerateBtn: {
-        marginTop: 16,
-        paddingVertical: 16,
-        paddingHorizontal: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        marginTop: 14,
+        padding: 12,
         borderRadius: borderRadius.m,
-        backgroundColor: '#7C3AED',
-        borderWidth: 1,
-        borderColor: '#8B5CF6' + '60',
-        shadowColor: '#7C3AED',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.35,
-        shadowRadius: 12,
-        elevation: 6,
+        backgroundColor: colors.secondarySoft,
     },
     aiGenerateBtnDisabled: {
         backgroundColor: colors.surfaceLight,
-        borderColor: colors.border,
-        opacity: 0.6,
-        shadowOpacity: 0,
-        elevation: 0,
-    },
-    aiGenerateBtnInner: {
-        flexDirection: 'row',
-        alignItems: 'center',
+        opacity: 0.7,
     },
     aiGenerateIconWrap: {
         width: 36,
         height: 36,
         borderRadius: 10,
-        backgroundColor: 'rgba(255,255,255,0.15)',
+        backgroundColor: colors.surface,
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 12,
     },
 });

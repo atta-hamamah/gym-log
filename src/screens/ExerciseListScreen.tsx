@@ -13,7 +13,10 @@ import { MUSCLE_GROUPS, getExerciseName, getMuscleGroupName } from '../constants
 import { ALL_EQUIPMENT, EXERCISE_CATALOG } from '../constants/exerciseCatalog';
 import { useTranslation } from 'react-i18next';
 import { ConfirmationModal } from '../components/ConfirmationModal';
-import { Dumbbell, PlayCircle } from 'lucide-react-native';
+import { Dumbbell, PlayCircle, Search, Plus, Footprints } from 'lucide-react-native';
+import { Chip } from '../components/Chip';
+import { IconButton } from '../components/IconButton';
+import { SegmentedControl } from '../components/SegmentedControl';
 import { ExerciseInfoModal } from '../components/ExerciseInfoModal';
 import { ExerciseAnimation } from '../components/ExerciseAnimation';
 import { getAnimation } from '../animations';
@@ -169,9 +172,9 @@ export const ExerciseListScreen = ({ navigation }: any) => {
             {/* Search + New */}
             <View style={styles.header}>
                 <View style={styles.searchContainer}>
-                    <Typography variant="bodySmall" color={colors.textMuted} style={{ position: 'absolute', left: 12, zIndex: 1 }}>
-                        🔍
-                    </Typography>
+                    <View style={styles.searchIcon} pointerEvents="none">
+                        <Search color={colors.textMuted} size={17} />
+                    </View>
                     <TextInput
                         style={styles.search}
                         placeholder={t('exerciseList.searchPlaceholder')}
@@ -183,9 +186,10 @@ export const ExerciseListScreen = ({ navigation }: any) => {
                 <Button
                     title={t('exerciseList.new')}
                     variant="secondary"
-                    size="small"
+                    size="medium"
+                    icon={c => <Plus color={c} size={17} />}
                     onPress={() => setModalVisible(true)}
-                    style={{ marginLeft: 8 }}
+                    style={{ marginLeft: 8, height: 44, paddingHorizontal: 14 }}
                 />
             </View>
 
@@ -197,26 +201,13 @@ export const ExerciseListScreen = ({ navigation }: any) => {
                 contentContainerStyle={styles.filterContent}
             >
                 {MUSCLE_GROUPS.map(group => (
-                    <TouchableOpacity
+                    <Chip
                         key={group}
-                        style={[
-                            styles.filterChip,
-                            selectedGroup === group && styles.filterChipActive,
-                        ]}
+                        size="small"
+                        label={getMuscleGroupName(group, t)}
+                        selected={selectedGroup === group}
                         onPress={() => setSelectedGroup(group)}
-                        activeOpacity={0.7}
-                    >
-                        <Typography
-                            variant="caption"
-                            color={selectedGroup === group ? colors.black : colors.textSecondary}
-                            style={{
-                                fontWeight: selectedGroup === group ? '700' : '500',
-                                fontSize: 12,
-                            }}
-                        >
-                            {getMuscleGroupName(group, t)}
-                        </Typography>
-                    </TouchableOpacity>
+                    />
                 ))}
             </ScrollView>
 
@@ -227,25 +218,16 @@ export const ExerciseListScreen = ({ navigation }: any) => {
                 style={styles.equipScroll}
                 contentContainerStyle={styles.filterContent}
             >
-                {EQUIPMENT_FILTERS.map(item => {
-                    const active = selectedEquipment === item;
-                    return (
-                        <TouchableOpacity
-                            key={item}
-                            style={[styles.equipChip, active && styles.equipChipActive]}
-                            onPress={() => setSelectedEquipment(item)}
-                            activeOpacity={0.7}
-                        >
-                            <Typography
-                                variant="caption"
-                                color={active ? colors.primary : colors.textSecondary}
-                                style={{ fontWeight: active ? '700' : '500', fontSize: 12 }}
-                            >
-                                {equipmentLabel(item, t)}
-                            </Typography>
-                        </TouchableOpacity>
-                    );
-                })}
+                {EQUIPMENT_FILTERS.map(item => (
+                    <Chip
+                        key={item}
+                        size="small"
+                        tone="secondary"
+                        label={equipmentLabel(item, t)}
+                        selected={selectedEquipment === item}
+                        onPress={() => setSelectedEquipment(item)}
+                    />
+                ))}
             </ScrollView>
 
             {/* Exercise List */}
@@ -279,9 +261,9 @@ export const ExerciseListScreen = ({ navigation }: any) => {
                 onRequestClose={() => setModalVisible(false)}
             >
                 <View style={styles.modalOverlay}>
-                    <Card variant="elevated" style={styles.modalCard}>
+                    <View style={styles.modalCard}>
                         <Typography variant="h2" style={{ marginBottom: 4 }}>{t('exerciseList.customExercise')}</Typography>
-                        <Typography variant="caption" style={{ marginBottom: 20 }}>
+                        <Typography variant="bodySmall" color={colors.textSecondary} style={{ marginBottom: 18 }}>
                             {t('exerciseList.addToLibrary')}
                         </Typography>
 
@@ -301,70 +283,39 @@ export const ExerciseListScreen = ({ navigation }: any) => {
                         <ScrollView
                             horizontal
                             showsHorizontalScrollIndicator={false}
-                            style={{ maxHeight: 44, marginBottom: 12 }}
-                            contentContainerStyle={{ gap: 6 }}
+                            style={styles.modalChips}
+                            contentContainerStyle={{ gap: 6, paddingVertical: 2 }}
                         >
                             {selectableMuscleGroups.map(group => (
-                                <TouchableOpacity
+                                <Chip
                                     key={group}
-                                    style={[
-                                        styles.muscleChip,
-                                        newExMuscle === group && styles.muscleChipActive,
-                                    ]}
+                                    size="small"
+                                    label={getMuscleGroupName(group, t)}
+                                    selected={newExMuscle === group}
                                     onPress={() => setNewExMuscle(group)}
-                                    activeOpacity={0.7}
-                                >
-                                    <Typography
-                                        variant="caption"
-                                        color={newExMuscle === group ? colors.black : colors.textSecondary}
-                                        style={{
-                                            fontWeight: newExMuscle === group ? '700' : '500',
-                                            fontSize: 12,
-                                        }}
-                                    >
-                                        {getMuscleGroupName(group, t)}
-                                    </Typography>
-                                </TouchableOpacity>
+                                />
                             ))}
                         </ScrollView>
 
-                        <View style={styles.categoryRow}>
-                            <TouchableOpacity
-                                style={[styles.categoryChip, newExCategory === 'strength' && styles.categoryChipActive]}
-                                onPress={() => setNewExCategory('strength')}
-                            >
-                                <Typography
-                                    variant="bodySmall"
-                                    color={newExCategory === 'strength' ? colors.black : colors.textSecondary}
-                                    bold={newExCategory === 'strength'}
-                                >
-                                    🏋️ {t('common.strength')}
-                                </Typography>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.categoryChip, newExCategory === 'cardio' && styles.categoryChipActive]}
-                                onPress={() => setNewExCategory('cardio')}
-                            >
-                                <Typography
-                                    variant="bodySmall"
-                                    color={newExCategory === 'cardio' ? colors.black : colors.textSecondary}
-                                    bold={newExCategory === 'cardio'}
-                                >
-                                    🏃 {t('common.cardioType')}
-                                </Typography>
-                            </TouchableOpacity>
-                        </View>
+                        <SegmentedControl
+                            value={newExCategory}
+                            onChange={setNewExCategory}
+                            options={[
+                                { value: 'strength', label: t('common.strength'), icon: c => <Dumbbell color={c} size={15} /> },
+                                { value: 'cardio', label: t('common.cardioType'), icon: c => <Footprints color={c} size={15} /> },
+                            ]}
+                        />
 
                         <View style={styles.modalButtons}>
                             <Button
                                 title={t('common.cancel')}
-                                variant="ghost"
+                                variant="outline"
                                 onPress={() => setModalVisible(false)}
-                                style={{ flex: 1, marginRight: 8 }}
+                                style={{ flex: 1 }}
                             />
                             <Button title={t('exerciseList.addAndSelect')} onPress={handleCreateExercise} style={{ flex: 1.5 }} />
                         </View>
-                    </Card>
+                    </View>
                 </View>
             </Modal>
 
@@ -420,9 +371,14 @@ const ExerciseRow = memo(function ExerciseRow({
             <View style={{ flex: 1 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     <Typography variant="body" bold style={{ flexShrink: 1 }}>{name}</Typography>
-                    <TouchableOpacity style={styles.infoBtn} onPress={() => onInfo(item)}>
-                        <PlayCircle color={colors.primary} size={20} />
-                    </TouchableOpacity>
+                    <IconButton
+                        icon={c => <PlayCircle color={c} size={17} />}
+                        variant="tonal"
+                        tone="primary"
+                        size={32}
+                        onPress={() => onInfo(item)}
+                        accessibilityLabel={name}
+                    />
                 </View>
                 <View style={styles.tagRow}>
                     <Typography variant="caption" style={{ fontSize: 12 }}>{groupName}</Typography>
@@ -442,7 +398,9 @@ const ExerciseRow = memo(function ExerciseRow({
                     )}
                 </View>
             </View>
-            <Typography variant="body" color={colors.textMuted}>+</Typography>
+            <View style={styles.addIcon}>
+                <Plus color={colors.primary} size={18} />
+            </View>
         </TouchableOpacity>
     );
 });
@@ -450,18 +408,24 @@ const ExerciseRow = memo(function ExerciseRow({
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
     header: {
         flexDirection: 'row',
-        marginBottom: 8,
+        marginTop: 8,
+        marginBottom: 10,
         alignItems: 'center',
     },
     searchContainer: {
         flex: 1,
         justifyContent: 'center',
     },
+    searchIcon: {
+        position: 'absolute',
+        left: 13,
+        zIndex: 1,
+    },
     search: {
-        height: 42,
-        backgroundColor: colors.surfaceLight,
+        height: 44,
+        backgroundColor: colors.surface,
         borderRadius: borderRadius.m,
-        paddingLeft: 36,
+        paddingLeft: 38,
         paddingRight: 12,
         color: colors.text,
         fontSize: 15,
@@ -469,71 +433,49 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         borderColor: colors.border,
     },
     filterScroll: {
-        maxHeight: 44,
-        marginBottom: 12,
-    },
-    filterContent: {
-        paddingVertical: 4,
-        gap: 6,
-    },
-    filterChip: {
-        paddingHorizontal: 16,
-        paddingVertical: 6,
-        borderRadius: borderRadius.full,
-        backgroundColor: colors.surfaceLight,
-        borderWidth: 1,
-        borderColor: colors.border,
-    },
-    filterChipActive: {
-        backgroundColor: colors.primary,
-        borderColor: colors.primary,
+        flexGrow: 0,
+        flexShrink: 0,
+        marginBottom: 4,
     },
     equipScroll: {
-        maxHeight: 40,
-        marginTop: -6,
-        marginBottom: 12,
+        flexGrow: 0,
+        flexShrink: 0,
+        marginBottom: 10,
     },
-    equipChip: {
-        paddingHorizontal: 12,
-        paddingVertical: 5,
-        borderRadius: borderRadius.full,
-        backgroundColor: colors.surface,
-        borderWidth: 1,
-        borderColor: colors.border,
-    },
-    equipChipActive: {
-        borderColor: colors.primary,
+    filterContent: {
+        paddingVertical: 3,
+        gap: 6,
     },
     item: {
         flexDirection: 'row',
         alignItems: 'center',
         padding: spacing.m,
         paddingLeft: spacing.s + 4,
-        borderBottomWidth: 1,
+        borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: colors.border,
         backgroundColor: colors.surface,
     },
     itemFirst: {
-        borderTopLeftRadius: borderRadius.m,
-        borderTopRightRadius: borderRadius.m,
+        borderTopLeftRadius: borderRadius.l,
+        borderTopRightRadius: borderRadius.l,
     },
     thumb: {
         width: THUMB_SIZE,
         height: THUMB_SIZE,
-        borderRadius: borderRadius.s,
+        borderRadius: borderRadius.m,
         backgroundColor: colors.surfaceLight,
         overflow: 'hidden',
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: spacing.s + 4,
     },
-    infoBtn: {
-        backgroundColor: colors.surfaceLight,
-        paddingHorizontal: 20,
-        paddingVertical: 8,
-        borderRadius: borderRadius.s,
-        borderWidth: 1,
-        borderColor: colors.border,
+    addIcon: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginLeft: 6,
     },
     tagRow: {
         flexDirection: 'row',
@@ -544,18 +486,26 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     badge: {
         paddingHorizontal: 6,
         paddingVertical: 1,
-        borderRadius: 4,
+        borderRadius: 6,
         borderWidth: 1,
     },
     modalOverlay: {
         flex: 1,
         backgroundColor: colors.overlay,
         justifyContent: 'center',
-        paddingHorizontal: 24,
+        paddingHorizontal: 22,
     },
     modalCard: {
-        padding: 24,
-        marginBottom: 0,
+        padding: 22,
+        borderRadius: borderRadius.xl,
+        backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    modalChips: {
+        flexGrow: 0,
+        flexShrink: 0,
+        marginBottom: 14,
     },
     input: {
         height: 48,
@@ -563,43 +513,12 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         borderRadius: borderRadius.m,
         paddingHorizontal: 16,
         color: colors.text,
-        marginBottom: 12,
+        marginBottom: 16,
         fontSize: 15,
-        borderWidth: 1,
-        borderColor: colors.border,
-    },
-    categoryRow: {
-        flexDirection: 'row',
-        gap: 8,
-        marginBottom: 8,
-    },
-    categoryChip: {
-        flex: 1,
-        paddingVertical: 12,
-        borderRadius: borderRadius.m,
-        backgroundColor: colors.surfaceLight,
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: colors.border,
-    },
-    categoryChipActive: {
-        backgroundColor: colors.primary,
-        borderColor: colors.primary,
     },
     modalButtons: {
         flexDirection: 'row',
-        marginTop: 12,
-    },
-    muscleChip: {
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-        borderRadius: borderRadius.full,
-        backgroundColor: colors.surfaceLight,
-        borderWidth: 1,
-        borderColor: colors.border,
-    },
-    muscleChipActive: {
-        backgroundColor: colors.primary,
-        borderColor: colors.primary,
+        gap: 10,
+        marginTop: 20,
     },
 });

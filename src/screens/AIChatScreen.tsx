@@ -13,12 +13,13 @@ import {
 import { ScreenLayout } from '../components/ScreenLayout';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Typography } from '../components/Typography';
-import { borderRadius } from '../theme/colors';
+import { borderRadius, ThemeColors } from '../theme/colors';
 import { useAction, useQuery } from 'convex/react';
 import { ConvexError } from 'convex/values';
 import { api } from '../../convex/_generated/api';
 import { useSubscription } from '../context/SubscriptionContext';
-import { Send, X, Bot, User, Sparkles, Zap } from 'lucide-react-native';
+import { ArrowUp, Sparkles, MessageCircle, ChevronRight } from 'lucide-react-native';
+import { Button } from '../components/Button';
 import { AIGeneratedWorkout } from '../types';
 import { useWorkout } from '../context/WorkoutContext';
 import { toCloudWorkout } from '../services/cloudSync';
@@ -165,45 +166,40 @@ export const AIChatScreen = ({ navigation }: any) => {
     const isUser = item.role === 'user';
 
     return (
-      <View style={[styles.messageBubbleRow, isUser && styles.messageBubbleRowUser]}>
+      <View style={[styles.messageRow, isUser && styles.messageRowUser]}>
         {!isUser && (
           <View style={styles.avatarAI}>
-            <Bot color={colors.primary} size={18} />
+            <Sparkles color={colors.secondary} size={15} />
           </View>
         )}
         <View style={[styles.messageBubble, isUser ? styles.userBubble : styles.aiBubble]}>
           <Typography
             variant="body"
-            color={isUser ? '#fff' : colors.text}
+            color={isUser ? colors.onPrimary : colors.text}
             style={{ lineHeight: 22 }}
           >
             {item.content}
           </Typography>
         </View>
-        {isUser && (
-          <View style={styles.avatarUser}>
-            <User color="#fff" size={16} />
-          </View>
-        )}
       </View>
     );
-  }, []);
+  }, [colors, styles]);
 
   // ── Render welcome state ──
   const renderWelcome = () => (
     <View style={styles.welcomeContainer}>
       <View style={styles.welcomeIcon}>
-        <Sparkles color={colors.primary} size={40} />
+        <Sparkles color={colors.secondary} size={30} />
       </View>
-      <Typography variant="h2" align="center" style={{ marginTop: 16 }}>
+      <Typography variant="h2" align="center" style={{ marginTop: 18 }}>
         {t('aiChat.welcomeTitle')}
       </Typography>
-      <Typography variant="body" color={colors.textSecondary} align="center" style={{ marginTop: 8, paddingHorizontal: 20 }}>
+      <Typography variant="body" color={colors.textSecondary} align="center" style={{ marginTop: 6, paddingHorizontal: 12 }}>
         {t('aiChat.welcomeDesc')}
       </Typography>
 
-      {/* Suggestion chips */}
-      <View style={styles.suggestionsContainer}>
+      {/* Suggested prompts */}
+      <View style={styles.suggestions}>
         {[
           t('aiChat.suggestion1'),
           t('aiChat.suggestion2'),
@@ -212,19 +208,22 @@ export const AIChatScreen = ({ navigation }: any) => {
         ].map((suggestion, index) => (
           <TouchableOpacity
             key={index}
-            style={styles.suggestionChip}
-            onPress={() => {
-              setInput(suggestion);
-            }}
+            style={styles.suggestion}
+            onPress={() => setInput(suggestion)}
+            activeOpacity={0.7}
           >
-            <Typography variant="caption" color={colors.primary}>
+            <MessageCircle color={colors.textMuted} size={16} />
+            <Typography variant="bodySmall" color={colors.text} style={{ flex: 1 }}>
               {suggestion}
             </Typography>
+            <ChevronRight color={colors.textMuted} size={16} />
           </TouchableOpacity>
         ))}
       </View>
     </View>
   );
+
+  const canSend = !!input.trim() && !loading;
 
   return (
     <ScreenLayout noPadding edges={['top', 'left', 'right']}>
@@ -233,40 +232,27 @@ export const AIChatScreen = ({ navigation }: any) => {
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <View style={styles.headerIcon}>
-              <Bot color={colors.primary} size={22} />
+              <Sparkles color={colors.secondary} size={20} />
             </View>
-            <View>
+            <View style={{ flexShrink: 1 }}>
               <Typography variant="h3">RepAI</Typography>
-              <Typography variant="caption" color={colors.textSecondary}>
-                {t('aiChat.subtitle')}
-              </Typography>
+              <View style={styles.onlineRow}>
+                <View style={styles.onlineDot} />
+                <Typography variant="caption" color={colors.textSecondary} numberOfLines={1}>
+                  {t('aiChat.subtitle')}
+                </Typography>
+              </View>
             </View>
           </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <TouchableOpacity
-              style={[styles.generateButton, generating && { opacity: 0.6 }]}
-              onPress={handleGenerateWorkoutPress}
-              disabled={generating}
-              activeOpacity={0.7}
-            >
-              {generating ? (
-                <ActivityIndicator size="small" color="#8B5CF6" />
-              ) : (
-                <>
-                  <Zap color="#8B5CF6" size={16} />
-                  <Typography variant="caption" color="#8B5CF6" bold style={{ marginLeft: 4, fontSize: 11 }}>
-                    {t('aiWorkout.generateBtn')}
-                  </Typography>
-                </>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => navigation.goBack()}
-            >
-              <X color={colors.textSecondary} size={22} />
-            </TouchableOpacity>
-          </View>
+          <Button
+            title={t('aiWorkout.generateBtn')}
+            variant="ai"
+            size="small"
+            loading={generating}
+            icon={c => <Sparkles color={c} size={15} />}
+            onPress={handleGenerateWorkoutPress}
+            disabled={generating}
+          />
         </View>
 
         {/* Messages */}
@@ -295,38 +281,42 @@ export const AIChatScreen = ({ navigation }: any) => {
           {loading && (
             <View style={styles.typingContainer}>
               <View style={styles.avatarAI}>
-                <Bot color={colors.primary} size={18} />
+                <Sparkles color={colors.secondary} size={15} />
               </View>
-              <View style={styles.typingBubble}>
-                <ActivityIndicator size="small" color={colors.primary} />
-                <Typography variant="caption" color={colors.textSecondary} style={{ marginLeft: 8 }}>
+              <View style={[styles.messageBubble, styles.aiBubble, styles.typingBubble]}>
+                <ActivityIndicator size="small" color={colors.secondary} />
+                <Typography variant="caption" color={colors.textSecondary}>
                   {t('aiChat.thinking')}
                 </Typography>
               </View>
             </View>
           )}
 
-          {/* Input bar */}
+          {/* Composer */}
           <View style={styles.inputBar}>
-            <TextInput
-              style={styles.textInput}
-              value={input}
-              onChangeText={setInput}
-              placeholder={t('aiChat.placeholder')}
-              placeholderTextColor={colors.textMuted}
-              multiline
-              maxLength={500}
-              editable={!loading}
-              onSubmitEditing={sendMessage}
-              returnKeyType="send"
-            />
-            <TouchableOpacity
-              style={[styles.sendButton, (!input.trim() || loading) && styles.sendButtonDisabled]}
-              onPress={sendMessage}
-              disabled={!input.trim() || loading}
-            >
-              <Send color={input.trim() && !loading ? '#fff' : colors.textMuted} size={20} />
-            </TouchableOpacity>
+            <View style={styles.composer}>
+              <TextInput
+                style={styles.textInput}
+                value={input}
+                onChangeText={setInput}
+                placeholder={t('aiChat.placeholder')}
+                placeholderTextColor={colors.textMuted}
+                multiline
+                maxLength={500}
+                editable={!loading}
+                onSubmitEditing={sendMessage}
+                returnKeyType="send"
+              />
+              <TouchableOpacity
+                style={[styles.sendButton, !canSend && styles.sendButtonDisabled]}
+                onPress={sendMessage}
+                disabled={!canSend}
+                accessibilityRole="button"
+                accessibilityLabel={t('aiChat.placeholder')}
+              >
+                <ArrowUp color={canSend ? colors.onPrimary : colors.textMuted} size={19} strokeWidth={2.6} />
+              </TouchableOpacity>
+            </View>
           </View>
         </KeyboardAvoidingView>
       </Animated.View>
@@ -342,7 +332,7 @@ export const AIChatScreen = ({ navigation }: any) => {
 };
 
 // ── Styles ────────────────────────────────────────────────
-const createStyles = (colors: any, bottomInset: number = 0) => StyleSheet.create({
+const createStyles = (colors: ThemeColors, bottomInset: number = 0) => StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -350,94 +340,83 @@ const createStyles = (colors: any, bottomInset: number = 0) => StyleSheet.create
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    flexShrink: 1,
   },
   headerIcon: {
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: colors.primary + '15',
+    backgroundColor: colors.secondarySoft,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  closeButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.surfaceLight,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  generateButton: {
+  onlineRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#8B5CF6' + '12',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#8B5CF6' + '25',
+    gap: 6,
+  },
+  onlineDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.success,
   },
   chatArea: {
     flex: 1,
   },
   messagesList: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 16,
+    paddingVertical: 16,
+    gap: 14,
   },
-  messageBubbleRow: {
+  messageRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 8,
-    maxWidth: '85%',
+    maxWidth: '88%',
   },
-  messageBubbleRowUser: {
+  messageRowUser: {
     alignSelf: 'flex-end',
-    flexDirection: 'row',
   },
   messageBubble: {
     paddingHorizontal: 14,
     paddingVertical: 10,
-    borderRadius: 18,
+    borderRadius: 20,
     maxWidth: '100%',
     flexShrink: 1,
   },
   userBubble: {
     backgroundColor: colors.primary,
-    borderBottomRightRadius: 4,
+    borderBottomRightRadius: 6,
   },
   aiBubble: {
-    backgroundColor: colors.surfaceLight,
-    borderBottomLeftRadius: 4,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderBottomLeftRadius: 6,
   },
   avatarAI: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: colors.primary + '15',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarUser: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: colors.primary,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.secondarySoft,
     justifyContent: 'center',
     alignItems: 'center',
   },
   typingContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     gap: 8,
     paddingHorizontal: 16,
     paddingBottom: 8,
@@ -445,39 +424,37 @@ const createStyles = (colors: any, bottomInset: number = 0) => StyleSheet.create
   typingBubble: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surfaceLight,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 18,
-    borderBottomLeftRadius: 4,
+    gap: 8,
   },
   inputBar: {
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    paddingBottom: Math.max(14, bottomInset),
+  },
+  composer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    paddingHorizontal: 12,
-    paddingTop: 10,
-    paddingBottom: Math.max(40, bottomInset),
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
     gap: 8,
+    backgroundColor: colors.surface,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingLeft: 16,
+    paddingRight: 5,
+    paddingVertical: 5,
   },
   textInput: {
     flex: 1,
-    backgroundColor: colors.surfaceLight,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    paddingRight: 16,
+    minHeight: 38,
+    paddingVertical: 9,
     fontSize: 16,
     color: colors.text,
-    maxHeight: 100,
-    borderWidth: 1,
-    borderColor: colors.border,
+    maxHeight: 110,
   },
   sendButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
@@ -490,30 +467,30 @@ const createStyles = (colors: any, bottomInset: number = 0) => StyleSheet.create
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
   },
   welcomeIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 24,
-    backgroundColor: colors.primary + '12',
+    width: 68,
+    height: 68,
+    borderRadius: 22,
+    backgroundColor: colors.secondarySoft,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  suggestionsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
+  suggestions: {
+    alignSelf: 'stretch',
     gap: 8,
-    marginTop: 24,
-    paddingHorizontal: 12,
+    marginTop: 28,
   },
-  suggestionChip: {
-    backgroundColor: colors.primary + '10',
+  suggestion: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.primary + '25',
-    borderRadius: 16,
+    borderColor: colors.border,
+    borderRadius: borderRadius.m,
     paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingVertical: 13,
   },
 });

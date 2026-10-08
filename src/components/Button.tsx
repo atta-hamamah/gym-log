@@ -5,19 +5,42 @@ import {
     StyleSheet,
     TouchableOpacityProps,
     View,
+    Text,
 } from 'react-native';
-import { Typography } from './Typography';
-import { spacing, borderRadius, shadows } from '../theme/colors';
+import { shadows } from '../theme/colors';
+import { IconProp, renderIcon, toneColors } from '../theme/tones';
 import { useTheme } from '../context/ThemeContext';
+
+export type ButtonVariant =
+    /** Filled brand color: the one main action on a screen. */
+    | 'primary'
+    /** Tinted brand color: secondary actions. */
+    | 'secondary'
+    /** Neutral hairline border. */
+    | 'outline'
+    /** Text only. */
+    | 'ghost'
+    /** Tinted red: destructive actions. */
+    | 'danger'
+    /** Tinted violet: AI coach actions. */
+    | 'ai';
 
 interface ButtonProps extends TouchableOpacityProps {
     title: string;
-    variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
+    variant?: ButtonVariant;
     size?: 'small' | 'medium' | 'large';
     loading?: boolean;
-    icon?: React.ReactNode;
+    /** Leading icon; pass a function to receive the button's text color. */
+    icon?: IconProp;
+    iconRight?: IconProp;
     fullWidth?: boolean;
 }
+
+const SIZES = {
+    small: { height: 36, paddingHorizontal: 14, borderRadius: 10, fontSize: 13.5, gap: 6 },
+    medium: { height: 46, paddingHorizontal: 20, borderRadius: 13, fontSize: 15, gap: 8 },
+    large: { height: 54, paddingHorizontal: 24, borderRadius: 16, fontSize: 16, gap: 8 },
+};
 
 export const Button: React.FC<ButtonProps> = ({
     title,
@@ -25,94 +48,87 @@ export const Button: React.FC<ButtonProps> = ({
     size = 'medium',
     loading,
     icon,
+    iconRight,
     fullWidth,
     style,
     disabled,
     ...props
 }) => {
-    const { colors } = useTheme();
-    const getBackgroundColor = () => {
-        if (disabled) return colors.surfaceLight;
-        switch (variant) {
-            case 'primary':
-                return colors.primary;
-            case 'secondary':
-                return colors.secondary;
-            case 'outline':
-                return 'transparent';
-            case 'ghost':
-                return 'transparent';
-            case 'danger':
-                return colors.error;
-            default:
-                return colors.primary;
+    const { colors, isDark } = useTheme();
+    const s = SIZES[size];
+
+    let bg = 'transparent';
+    let fg = colors.text;
+    let borderColor: string | undefined;
+    switch (variant) {
+        case 'primary': {
+            bg = colors.primary;
+            fg = colors.onPrimary;
+            break;
         }
-    };
-
-    const getTextColor = () => {
-        if (disabled) return colors.textMuted;
-        switch (variant) {
-            case 'primary':
-                return colors.black;
-            case 'secondary':
-                return colors.white;
-            case 'outline':
-                return colors.primary;
-            case 'ghost':
-                return colors.textSecondary;
-            case 'danger':
-                return colors.white;
-            default:
-                return colors.black;
+        case 'secondary': {
+            const t = toneColors(colors, 'primary');
+            bg = t.soft;
+            fg = t.fg;
+            break;
         }
-    };
+        case 'ai': {
+            const t = toneColors(colors, 'secondary');
+            bg = t.soft;
+            fg = t.fg;
+            break;
+        }
+        case 'danger': {
+            const t = toneColors(colors, 'danger');
+            bg = t.soft;
+            fg = t.fg;
+            break;
+        }
+        case 'outline':
+            borderColor = colors.border;
+            fg = colors.text;
+            break;
+        case 'ghost':
+            fg = colors.textSecondary;
+            break;
+    }
 
-    const sizeStyles = {
-        small: { height: 36, paddingHorizontal: spacing.m, minWidth: 64 },
-        medium: { height: 48, paddingHorizontal: spacing.l, minWidth: 100 },
-        large: { height: 56, paddingHorizontal: spacing.xl, minWidth: 140 },
-    };
-
-    const fontSizes = {
-        small: 12,
-        medium: 14,
-        large: 16,
-    };
+    const inactive = disabled || loading;
 
     return (
         <TouchableOpacity
             style={[
                 styles.container,
-                sizeStyles[size],
                 {
-                    backgroundColor: getBackgroundColor(),
-                    borderWidth: variant === 'outline' ? 1.5 : 0,
-                    borderColor: variant === 'outline' ? colors.primary : undefined,
+                    height: s.height,
+                    paddingHorizontal: s.paddingHorizontal,
+                    borderRadius: s.borderRadius,
+                    backgroundColor: bg,
+                    borderWidth: borderColor ? 1 : 0,
+                    borderColor,
                 },
-                variant === 'primary' && !disabled && shadows.glow(colors.primary),
+                variant === 'primary' && size === 'large' && !inactive && !isDark && shadows.glow(colors.primary),
+                disabled && styles.disabled,
                 fullWidth && { width: '100%' },
                 style,
             ]}
-            disabled={disabled || loading}
-            activeOpacity={0.75}
+            disabled={inactive}
+            activeOpacity={0.8}
+            accessibilityRole="button"
             {...props}
         >
             {loading ? (
-                <ActivityIndicator color={getTextColor()} size="small" />
+                <ActivityIndicator color={fg} size="small" />
             ) : (
-                <View style={styles.content}>
-                    {icon && <View style={{ marginRight: 8 }}>{icon}</View>}
-                    <Typography
-                        variant="label"
-                        style={{
-                            color: getTextColor(),
-                            fontSize: fontSizes[size],
-                            fontWeight: '700',
-                            letterSpacing: 0.5,
-                        }}
+                <View style={[styles.content, { gap: s.gap }]}>
+                    {icon ? renderIcon(icon, fg) : null}
+                    <Text
+                        style={[styles.label, { color: fg, fontSize: s.fontSize }]}
+                        numberOfLines={1}
                     >
                         {title}
-                    </Typography>
+                    </Text>
+                    {iconRight ? renderIcon(iconRight, fg) : null}
                 </View>
             )}
         </TouchableOpacity>
@@ -121,7 +137,6 @@ export const Button: React.FC<ButtonProps> = ({
 
 const styles = StyleSheet.create({
     container: {
-        borderRadius: borderRadius.m,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -129,5 +144,12 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    label: {
+        fontWeight: '600',
+        letterSpacing: 0.1,
+    },
+    disabled: {
+        opacity: 0.45,
     },
 });

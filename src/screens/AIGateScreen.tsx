@@ -34,16 +34,18 @@ import {
   Users,
 } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
+import { Tone, toneColors } from '../theme/tones';
+import { ThemeColors } from '../theme/colors';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-const AI_FEATURES = [
-  { icon: MessageCircle, labelKey: 'aiGate.feature.chat', color: '#00E5FF' },
-  { icon: Brain, labelKey: 'aiGate.feature.insights', color: '#7C4DFF' },
-  { icon: TrendingUp, labelKey: 'aiGate.feature.analysis', color: '#00E676' },
-  { icon: Cloud, labelKey: 'aiGate.feature.cloudSync', color: '#FF4081' },
-  { icon: Shield, labelKey: 'aiGate.feature.backup', color: '#FFD740' },
-  { icon: Dumbbell, labelKey: 'aiGate.feature.coaching', color: '#18FFFF' },
+const AI_FEATURES: { icon: typeof MessageCircle; labelKey: string; tone: Tone }[] = [
+  { icon: MessageCircle, labelKey: 'aiGate.feature.chat', tone: 'secondary' },
+  { icon: Brain, labelKey: 'aiGate.feature.insights', tone: 'primary' },
+  { icon: TrendingUp, labelKey: 'aiGate.feature.analysis', tone: 'success' },
+  { icon: Cloud, labelKey: 'aiGate.feature.cloudSync', tone: 'primary' },
+  { icon: Shield, labelKey: 'aiGate.feature.backup', tone: 'accent' },
+  { icon: Dumbbell, labelKey: 'aiGate.feature.coaching', tone: 'secondary' },
 ];
 
 export const AIGateScreen = ({ navigation }: any) => {
@@ -300,7 +302,7 @@ export const AIGateScreen = ({ navigation }: any) => {
               <View style={styles.heroRingOuter}>
                 <View style={styles.heroRingInner}>
                   <View style={styles.heroIconCore}>
-                    <Sparkles color="#fff" size={32} />
+                    <Sparkles color={colors.onSecondary} size={30} />
                   </View>
                 </View>
               </View>
@@ -338,6 +340,7 @@ export const AIGateScreen = ({ navigation }: any) => {
             <View style={styles.featuresGrid}>
               {AI_FEATURES.map((feature, index) => {
                 const IconComponent = feature.icon;
+                const tone = toneColors(colors, feature.tone);
                 return (
                   <Animated.View
                     key={index}
@@ -362,16 +365,14 @@ export const AIGateScreen = ({ navigation }: any) => {
                       },
                     ]}
                   >
-                    <View style={[styles.featureIconWrapper, { backgroundColor: feature.color + '18' }]}>
-                      <View style={[styles.featureIconInner, { backgroundColor: feature.color + '30' }]}>
-                        <IconComponent color={feature.color} size={20} />
-                      </View>
+                    <View style={[styles.featureIconWrapper, { backgroundColor: tone.soft }]}>
+                      <IconComponent color={tone.fg} size={20} />
                     </View>
                     <Typography variant="bodySmall" align="center" style={styles.featureLabel}>
                       {t(feature.labelKey)}
                     </Typography>
-                    <View style={[styles.featureCheck, { backgroundColor: feature.color + '20' }]}>
-                      <Check color={feature.color} size={12} strokeWidth={3} />
+                    <View style={[styles.featureCheck, { backgroundColor: colors.successSoft }]}>
+                      <Check color={colors.success} size={11} strokeWidth={3} />
                     </View>
                   </Animated.View>
                 );
@@ -381,11 +382,8 @@ export const AIGateScreen = ({ navigation }: any) => {
 
           {/* ─── Showcase: Post-Workout Analysis ─── */}
           <View style={styles.showcaseCard}>
-            <View style={styles.showcaseGlow}>
-              <View style={[styles.showcaseGlowInner, { backgroundColor: colors.success + '15' }]} />
-            </View>
             <View style={styles.showcaseHeader}>
-              <View style={[styles.showcaseIconCircle, { backgroundColor: colors.success + '18' }]}>
+              <View style={[styles.showcaseIconCircle, { backgroundColor: colors.successSoft }]}>
                 <BarChart3 color={colors.success} size={22} />
               </View>
               <View style={styles.showcaseHeaderText}>
@@ -402,7 +400,7 @@ export const AIGateScreen = ({ navigation }: any) => {
             </Typography>
             {/* Mini preview */}
             <View style={styles.showcasePreview}>
-              <View style={[styles.showcasePreviewBar, { backgroundColor: colors.success + '12' }]}>
+              <View style={[styles.showcasePreviewBar, { backgroundColor: colors.surfaceLight }]}>
                 <View style={[styles.showcasePreviewAccent, { backgroundColor: colors.success }]} />
                 <View style={{ flex: 1 }}>
                   <Typography variant="bodySmall" style={{ fontWeight: '700', fontSize: 13 }}>
@@ -418,11 +416,8 @@ export const AIGateScreen = ({ navigation }: any) => {
 
           {/* ─── Showcase: Gym Characters ─── */}
           <View style={styles.showcaseCard}>
-            <View style={styles.showcaseGlow}>
-              <View style={[styles.showcaseGlowInner, { backgroundColor: colors.secondary + '15' }]} />
-            </View>
             <View style={styles.showcaseHeader}>
-              <View style={[styles.showcaseIconCircle, { backgroundColor: colors.secondary + '18' }]}>
+              <View style={[styles.showcaseIconCircle, { backgroundColor: colors.secondarySoft }]}>
                 <Users color={colors.secondary} size={22} />
               </View>
               <View style={styles.showcaseHeaderText}>
@@ -439,25 +434,25 @@ export const AIGateScreen = ({ navigation }: any) => {
             </Typography>
             {/* Character avatars */}
             <View style={styles.characterPreview}>
-              <View style={[styles.characterAvatar, { borderColor: '#FF6B00' }]}>
+              <View style={styles.characterAvatar}>
                 <Typography style={styles.characterEmoji}>🔥</Typography>
-                <Typography variant="caption" style={[styles.characterName, { color: '#FF6B00' }]}>
+                <Typography variant="caption" style={[styles.characterName, { color: colors.accent }]}>
                   {t('aiGate.showcase.chadName', 'Chad')}
                 </Typography>
                 <Typography variant="caption" color={colors.textMuted} style={styles.characterVibe}>
                   {t('aiGate.showcase.chadVibe', 'Savage roasts')}
                 </Typography>
               </View>
-              <View style={[styles.characterAvatar, { borderColor: '#8B5CF6' }]}>
+              <View style={styles.characterAvatar}>
                 <Typography style={styles.characterEmoji}>🛋️</Typography>
-                <Typography variant="caption" style={[styles.characterName, { color: '#8B5CF6' }]}>
+                <Typography variant="caption" style={[styles.characterName, { color: colors.secondary }]}>
                   {t('aiGate.showcase.kevinName', 'Kevin')}
                 </Typography>
                 <Typography variant="caption" color={colors.textMuted} style={styles.characterVibe}>
                   {t('aiGate.showcase.kevinVibe', 'Lazy sarcasm')}
                 </Typography>
               </View>
-              <View style={[styles.characterAvatar, { borderColor: colors.primary }]}>
+              <View style={styles.characterAvatar}>
                 <Typography style={styles.characterEmoji}>🏆</Typography>
                 <Typography variant="caption" style={[styles.characterName, { color: colors.primary }]}>
                   {t('aiGate.showcase.coachName', 'Coach')}
@@ -475,21 +470,21 @@ export const AIGateScreen = ({ navigation }: any) => {
               <View style={styles.trustItem}>
                 <Zap color={colors.warning} size={16} />
                 <Typography variant="bodySmall" color={colors.textSecondary} style={{ marginLeft: 6 }}>
-                  AI-Powered
+                  {t('aiGate.trustAI', 'AI-Powered')}
                 </Typography>
               </View>
               <View style={styles.trustDivider} />
               <View style={styles.trustItem}>
                 <Shield color={colors.success} size={16} />
                 <Typography variant="bodySmall" color={colors.textSecondary} style={{ marginLeft: 6 }}>
-                  Secure & Private
+                  {t('aiGate.trustSecure', 'Secure & Private')}
                 </Typography>
               </View>
               <View style={styles.trustDivider} />
               <View style={styles.trustItem}>
                 <Star color={colors.warning} size={16} />
                 <Typography variant="bodySmall" color={colors.textSecondary} style={{ marginLeft: 6 }}>
-                  Premium
+                  {t('aiGate.trustPremium', 'Premium')}
                 </Typography>
               </View>
             </View>
@@ -514,7 +509,6 @@ export const AIGateScreen = ({ navigation }: any) => {
           >
             {/* CTA Card with glow */}
             <View style={styles.ctaCard}>
-              <View style={styles.ctaGlow} />
 
               <Animated.View style={{ transform: [{ scale: pulseAnim }], width: '100%' }}>
                 <TouchableOpacity
@@ -531,9 +525,9 @@ export const AIGateScreen = ({ navigation }: any) => {
                     ]}
                   />
                   <View style={styles.subscribeContent}>
-                    <Sparkles color="#000" size={18} />
+                    <Sparkles color={colors.onPrimary} size={18} />
                     <Typography
-                      variant="label"
+                      variant="body"
                       style={styles.subscribeText}
                     >
                       {subscribing
@@ -583,7 +577,7 @@ export const AIGateScreen = ({ navigation }: any) => {
   );
 };
 
-const createStyles = (colors: any) => StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   scrollContent: {
     paddingBottom: 50,
     flexGrow: 1,
@@ -598,55 +592,51 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
   heroGlowOuter: {
     position: 'absolute',
-    top: 0,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: colors.primary,
-    opacity: 0.08,
+    top: 6,
+    width: 170,
+    height: 170,
+    borderRadius: 85,
+    backgroundColor: colors.secondarySoft,
   },
   heroIconContainer: {
     marginBottom: 4,
   },
   heroRingOuter: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    backgroundColor: colors.primary + '10',
+    width: 116,
+    height: 116,
+    borderRadius: 58,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.primary + '20',
+    borderColor: colors.secondary + '30',
   },
   heroRingInner: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: colors.primary + '18',
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    backgroundColor: colors.secondarySoft,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.primary + '30',
   },
   heroIconCore: {
     width: 64,
     height: 64,
-    borderRadius: 32,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: colors.primary,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 20,
-    elevation: 12,
+    backgroundColor: colors.secondary,
+    shadowColor: colors.secondary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 18,
+    elevation: 8,
   },
 
   /* Floating particles */
   particle: {
     position: 'absolute',
     borderRadius: 50,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.secondary,
   },
   particle1: {
     width: 6,
@@ -670,10 +660,11 @@ const createStyles = (colors: any) => StyleSheet.create({
   },
 
   heroTitle: {
-    marginTop: 20,
-    fontSize: 32,
-    fontWeight: '800',
-    letterSpacing: -1,
+    marginTop: 22,
+    fontSize: 30,
+    fontWeight: '700',
+    letterSpacing: -0.8,
+    lineHeight: 36,
   },
   heroSubtitle: {
     marginTop: 10,
@@ -695,7 +686,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 10,
-    backgroundColor: colors.warning + '18',
+    backgroundColor: colors.warningSoft,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -705,21 +696,21 @@ const createStyles = (colors: any) => StyleSheet.create({
     justifyContent: 'space-between',
   },
   featureCard: {
-    width: '48%',
-    backgroundColor: colors.surfaceElevated,
+    width: '48.5%',
+    backgroundColor: colors.surface,
     borderRadius: borderRadius.l,
     padding: 16,
-    marginBottom: 12,
+    marginBottom: 10,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: colors.border + '50',
+    borderColor: colors.border,
     position: 'relative',
     overflow: 'hidden',
   },
   featureIconWrapper: {
-    width: 52,
-    height: 52,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 10,
@@ -748,28 +739,14 @@ const createStyles = (colors: any) => StyleSheet.create({
 
   /* ─── Showcase Cards ─── */
   showcaseCard: {
-    backgroundColor: colors.surfaceElevated,
+    backgroundColor: colors.surface,
     borderRadius: borderRadius.xl,
     padding: 20,
-    marginBottom: 16,
+    marginBottom: 14,
     borderWidth: 1,
-    borderColor: colors.border + '40',
+    borderColor: colors.border,
     position: 'relative',
     overflow: 'hidden',
-  },
-  showcaseGlow: {
-    position: 'absolute',
-    top: -20,
-    right: -20,
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    overflow: 'hidden',
-  },
-  showcaseGlowInner: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 50,
   },
   showcaseHeader: {
     flexDirection: 'row',
@@ -817,16 +794,15 @@ const createStyles = (colors: any) => StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 14,
     paddingHorizontal: 8,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceLight,
     borderRadius: borderRadius.m,
-    borderWidth: 1.5,
   },
   characterEmoji: {
     fontSize: 28,
     marginBottom: 6,
   },
   characterName: {
-    fontWeight: '800',
+    fontWeight: '700',
     fontSize: 13,
     textTransform: 'none',
     letterSpacing: 0,
@@ -847,12 +823,9 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surfaceElevated,
     borderRadius: borderRadius.m,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: colors.border + '30',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
   },
   trustItem: {
     flexDirection: 'row',
@@ -877,32 +850,23 @@ const createStyles = (colors: any) => StyleSheet.create({
     borderRadius: borderRadius.xl,
     padding: 24,
     borderWidth: 1,
-    borderColor: colors.primary + '25',
+    borderColor: colors.border,
     position: 'relative',
     overflow: 'hidden',
-  },
-  ctaGlow: {
-    position: 'absolute',
-    top: -40,
-    width: '80%',
-    height: 80,
-    backgroundColor: colors.primary,
-    opacity: 0.06,
-    borderRadius: 100,
   },
   subscribeButton: {
     width: '100%',
     height: 56,
-    borderRadius: borderRadius.m,
+    borderRadius: 16,
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
     shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.45,
-    shadowRadius: 16,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 14,
+    elevation: 6,
   },
   shimmer: {
     position: 'absolute',
@@ -919,11 +883,10 @@ const createStyles = (colors: any) => StyleSheet.create({
     gap: 10,
   },
   subscribeText: {
-    color: '#000',
+    color: colors.onPrimary,
     fontSize: 16,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    fontWeight: '600',
+    letterSpacing: 0.1,
   },
   cancelRow: {
     flexDirection: 'row',
@@ -934,10 +897,8 @@ const createStyles = (colors: any) => StyleSheet.create({
     marginTop: 12,
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: colors.error + '15',
-    borderRadius: borderRadius.s,
-    borderWidth: 1,
-    borderColor: colors.error + '25',
+    backgroundColor: colors.errorSoft,
+    borderRadius: borderRadius.m,
   },
   signInButton: {
     marginTop: 18,
@@ -945,8 +906,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     paddingHorizontal: 24,
   },
   signInText: {
-    textDecorationLine: 'underline',
-    fontWeight: '500',
+    fontWeight: '600',
   },
 
   /* ─── Ready State ─── */
@@ -957,10 +917,10 @@ const createStyles = (colors: any) => StyleSheet.create({
     paddingHorizontal: 24,
   },
   readyIcon: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: colors.primary + '15',
+    width: 88,
+    height: 88,
+    borderRadius: 28,
+    backgroundColor: colors.secondarySoft,
     justifyContent: 'center',
     alignItems: 'center',
   },

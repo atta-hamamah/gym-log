@@ -1,9 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { View, StyleSheet, Modal, TouchableOpacity, ScrollView } from 'react-native';
+import { View, StyleSheet, Modal, ScrollView } from 'react-native';
 import { Typography } from './Typography';
 import { Card } from './Card';
 import { Button } from './Button';
-import { borderRadius } from '../theme/colors';
+import { IconButton } from './IconButton';
+import { SegmentedControl } from './SegmentedControl';
+import { borderRadius, ThemeColors } from '../theme/colors';
+import { AlertTriangle, X } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
 import { useUnits } from '../context/UnitsContext';
@@ -140,9 +143,12 @@ export const PlateCalculator: React.FC<PlateCalculatorProps> = ({ visible, onClo
                                 {t('plateCalculator.subtitle')}
                             </Typography>
                         </View>
-                        <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-                            <Typography variant="h3" color={colors.textMuted}>✕</Typography>
-                        </TouchableOpacity>
+                        <IconButton
+                            icon={c => <X color={c} size={18} />}
+                            size={34}
+                            onPress={onClose}
+                            accessibilityLabel={t('common.close')}
+                        />
                     </View>
 
                     {/* Weight Display */}
@@ -150,7 +156,7 @@ export const PlateCalculator: React.FC<PlateCalculatorProps> = ({ visible, onClo
                         <Typography variant="number" style={styles.weightNumber}>
                             {weight}
                         </Typography>
-                        <Typography variant="bodySmall" color={colors.textSecondary}>
+                        <Typography variant="body" color={colors.textMuted}>
                             {weightUnit}
                         </Typography>
                     </View>
@@ -160,27 +166,11 @@ export const PlateCalculator: React.FC<PlateCalculatorProps> = ({ visible, onClo
                         <Typography variant="label" style={{ marginBottom: 8 }}>
                             {t('plateCalculator.barWeight')}
                         </Typography>
-                        <View style={styles.barOptions}>
-                            {BAR_OPTIONS.map(bw => (
-                                <TouchableOpacity
-                                    key={bw}
-                                    style={[
-                                        styles.barChip,
-                                        barWeight === bw && styles.barChipActive,
-                                    ]}
-                                    onPress={() => setBarWeight(bw)}
-                                    activeOpacity={0.7}
-                                >
-                                    <Typography
-                                        variant="bodySmall"
-                                        color={barWeight === bw ? colors.black : colors.textSecondary}
-                                        bold={barWeight === bw}
-                                    >
-                                        {bw} {weightUnit}
-                                    </Typography>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
+                        <SegmentedControl
+                            options={BAR_OPTIONS.map(bw => ({ value: String(bw), label: `${bw} ${weightUnit}` }))}
+                            value={String(barWeight)}
+                            onChange={v => setBarWeight(Number(v))}
+                        />
                     </View>
 
                     {/* Visual Barbell */}
@@ -284,10 +274,10 @@ export const PlateCalculator: React.FC<PlateCalculatorProps> = ({ visible, onClo
                                                 { backgroundColor: PLATE_COLORS[plate] },
                                             ]}
                                         />
-                                        <Typography variant="body" bold>
+                                        <Typography variant="bodySmall" bold>
                                             {plate} {weightUnit}
                                         </Typography>
-                                        <Typography variant="body" color={colors.textSecondary} style={{ marginLeft: 4 }}>
+                                        <Typography variant="bodySmall" color={colors.textMuted}>
                                             × {count}
                                         </Typography>
                                     </View>
@@ -296,8 +286,9 @@ export const PlateCalculator: React.FC<PlateCalculatorProps> = ({ visible, onClo
 
                             {!isExact && (
                                 <View style={styles.warningBanner}>
-                                    <Typography variant="caption" color={colors.warning}>
-                                        ⚠️ {t('plateCalculator.notExact')}
+                                    <AlertTriangle color={colors.warning} size={14} />
+                                    <Typography variant="caption" color={colors.warning} style={{ flex: 1 }}>
+                                        {t('plateCalculator.notExact')}
                                     </Typography>
                                 </View>
                             )}
@@ -306,10 +297,10 @@ export const PlateCalculator: React.FC<PlateCalculatorProps> = ({ visible, onClo
 
                     <Button
                         title={t('common.close')}
-                        variant="outline"
+                        variant="secondary"
                         onPress={onClose}
                         fullWidth
-                        style={{ marginTop: 16 }}
+                        style={{ marginTop: 18 }}
                     />
                 </Card>
             </View>
@@ -317,7 +308,7 @@ export const PlateCalculator: React.FC<PlateCalculatorProps> = ({ visible, onClo
     );
 };
 
-const createStyles = (colors: any) => StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
     overlay: {
         flex: 1,
         backgroundColor: colors.overlay,
@@ -327,18 +318,13 @@ const createStyles = (colors: any) => StyleSheet.create({
     card: {
         padding: 20,
         marginBottom: 0,
+        borderRadius: 24,
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'flex-start',
         marginBottom: 16,
-    },
-    closeBtn: {
-        width: 32,
-        height: 32,
-        alignItems: 'center',
-        justifyContent: 'center',
     },
     weightDisplay: {
         flexDirection: 'row',
@@ -348,29 +334,14 @@ const createStyles = (colors: any) => StyleSheet.create({
         gap: 6,
     },
     weightNumber: {
-        fontSize: 42,
-        fontWeight: '800',
-        color: colors.primary,
-        letterSpacing: -1,
+        fontSize: 44,
+        lineHeight: 50,
+        fontWeight: '700',
+        color: colors.text,
+        letterSpacing: -1.2,
     },
     barSection: {
         marginBottom: 20,
-    },
-    barOptions: {
-        flexDirection: 'row',
-        gap: 8,
-    },
-    barChip: {
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: borderRadius.m,
-        backgroundColor: colors.surfaceLight,
-        borderWidth: 1,
-        borderColor: colors.border,
-    },
-    barChipActive: {
-        backgroundColor: colors.primary,
-        borderColor: colors.primary,
     },
     barbellContainer: {
         marginBottom: 20,
@@ -440,7 +411,7 @@ const createStyles = (colors: any) => StyleSheet.create({
     breakdownList: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 12,
+        gap: 8,
     },
     breakdownItem: {
         flexDirection: 'row',
@@ -448,10 +419,8 @@ const createStyles = (colors: any) => StyleSheet.create({
         gap: 6,
         backgroundColor: colors.surfaceLight,
         paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: borderRadius.m,
-        borderWidth: 1,
-        borderColor: colors.border,
+        paddingVertical: 7,
+        borderRadius: borderRadius.full,
     },
     breakdownDot: {
         width: 12,
@@ -461,12 +430,13 @@ const createStyles = (colors: any) => StyleSheet.create({
         borderColor: 'rgba(0,0,0,0.1)',
     },
     warningBanner: {
-        marginTop: 10,
-        paddingVertical: 6,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginTop: 12,
+        paddingVertical: 8,
         paddingHorizontal: 12,
-        backgroundColor: colors.warning + '15',
-        borderRadius: borderRadius.s,
-        borderWidth: 1,
-        borderColor: colors.warning + '30',
+        backgroundColor: colors.warningSoft,
+        borderRadius: borderRadius.m,
     },
 });

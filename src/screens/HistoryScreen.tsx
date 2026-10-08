@@ -1,13 +1,14 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { FlatList, TouchableOpacity, View, Alert, StyleSheet, ActivityIndicator } from 'react-native';
-import { Trash2 } from 'lucide-react-native';
+import { Trash2, ChevronRight, NotebookPen, History as HistoryIcon } from 'lucide-react-native';
+import { IconButton } from '../components/IconButton';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { useWorkout } from '../context/WorkoutContext';
 import { Card } from '../components/Card';
-import { StatBadge } from '../components/StatBadge';
 import { format } from 'date-fns';
-import { borderRadius } from '../theme/colors';
+import { borderRadius, ThemeColors } from '../theme/colors';
 import { WorkoutSession } from '../types';
 import { useTranslation } from 'react-i18next';
 import { ConfirmationModal } from '../components/ConfirmationModal';
@@ -137,58 +138,59 @@ export const HistoryScreen = ({ navigation }: any) => {
                     {/* Title Row */}
                     <View style={styles.titleRow}>
                         <View style={styles.dayBadge}>
-                            <Typography variant="label" color={colors.primary} style={{ fontSize: 10 }}>
-                                {format(item.startTime, 'EEE').toUpperCase()}
+                            <Typography variant="caption" color={colors.primary} bold style={styles.dayName}>
+                                {format(item.startTime, 'EEE')}
                             </Typography>
-                            <Typography variant="h3" color={colors.text} style={{ lineHeight: 22 }}>
+                            <Typography variant="body" bold style={styles.dayNum}>
                                 {format(item.startTime, 'dd')}
                             </Typography>
                         </View>
                         <View style={{ flex: 1, marginLeft: 14 }}>
                             <Typography variant="body" bold>{item.name}</Typography>
-                            <Typography variant="caption" style={{ marginTop: 2 }}>
-                                {format(item.startTime, 'MMM yyyy • HH:mm')}
+                            <Typography variant="caption" color={colors.textSecondary} style={{ marginTop: 2 }}>
+                                {format(item.startTime, 'MMM yyyy · HH:mm')}
                             </Typography>
                         </View>
-                        <Typography variant="body" color={colors.textMuted} style={{ fontSize: 20 }}>›</Typography>
+                        <ChevronRight color={colors.textMuted} size={18} />
                     </View>
 
                     {/* Stats Row */}
                     <View style={styles.statsRow}>
                         <View style={styles.stat}>
-                            <Typography variant="bodySmall" color={colors.primary} bold>
+                            <Typography variant="bodySmall" bold style={styles.statValue}>
                                 {item.exercises.length}
                             </Typography>
-                            <Typography variant="caption" style={{ fontSize: 11 }}>{t('common.exercises')}</Typography>
+                            <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 11 }}>{t('common.exercises')}</Typography>
                         </View>
                         <View style={styles.divider} />
                         <View style={styles.stat}>
-                            <Typography variant="bodySmall" color={colors.secondary} bold>
+                            <Typography variant="bodySmall" bold style={styles.statValue}>
                                 {totalSets}
                             </Typography>
-                            <Typography variant="caption" style={{ fontSize: 11 }}>{t('common.sets')}</Typography>
+                            <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 11 }}>{t('common.sets')}</Typography>
                         </View>
                         <View style={styles.divider} />
                         <View style={styles.stat}>
-                            <Typography variant="bodySmall" color={colors.warning} bold>
+                            <Typography variant="bodySmall" bold style={styles.statValue}>
                                 {duration}
                             </Typography>
-                            <Typography variant="caption" style={{ fontSize: 11 }}>{t('common.min')}</Typography>
+                            <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 11 }}>{t('common.min')}</Typography>
                         </View>
                         <View style={styles.divider} />
                         <View style={styles.stat}>
-                            <Typography variant="bodySmall" color={colors.accent} bold>
+                            <Typography variant="bodySmall" bold style={styles.statValue}>
                                 {Math.round(displayWeight(totalVolume)) > 999 ? `${(displayWeight(totalVolume) / 1000).toFixed(1)}k` : Math.round(displayWeight(totalVolume))}
                             </Typography>
-                            <Typography variant="caption" style={{ fontSize: 11 }}>{weightUnit}</Typography>
+                            <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 11 }}>{weightUnit}</Typography>
                         </View>
                     </View>
 
                     {/* Notes preview */}
                     {item.notes ? (
                         <View style={styles.noteRow}>
-                            <Typography variant="caption" numberOfLines={1} style={{ fontStyle: 'italic' }}>
-                                📝 {item.notes}
+                            <NotebookPen color={colors.textMuted} size={13} />
+                            <Typography variant="caption" color={colors.textSecondary} numberOfLines={1} style={{ flex: 1 }}>
+                                {item.notes}
                             </Typography>
                         </View>
                     ) : null}
@@ -208,33 +210,26 @@ export const HistoryScreen = ({ navigation }: any) => {
 
     return (
         <ScreenLayout>
-            <View style={styles.headerRow}>
-                <View>
-                    <Typography variant="h1">{t('history.title')}</Typography>
-                    {totalCount > 0 && (
-                        <Typography variant="caption" color={colors.textMuted} style={{ marginTop: 2 }}>
-                            {t('history.workoutCount', { count: totalCount })}
-                        </Typography>
-                    )}
-                </View>
-                {totalCount > 0 && (
-                    <TouchableOpacity
+            <ScreenHeader
+                title={t('history.title')}
+                subtitle={totalCount > 0 ? t('history.workoutCount', { count: totalCount }) : undefined}
+                right={totalCount > 0 ? (
+                    <IconButton
+                        icon={c => <Trash2 color={c} size={18} />}
+                        variant="tonal"
+                        tone="danger"
                         onPress={handleClearAllHistory}
-                        activeOpacity={0.7}
-                        style={styles.clearAllBtn}
-                    >
-                        <Trash2 color={colors.error} size={16} />
-                        <Typography variant="caption" color={colors.error} bold style={{ marginLeft: 6 }}>
-                            {t('history.clearAllButton')}
-                        </Typography>
-                    </TouchableOpacity>
-                )}
-            </View>
+                        accessibilityLabel={t('history.clearAllButton')}
+                    />
+                ) : undefined}
+            />
 
             {workouts.length === 0 && !isLoadingMore ? (
                 <View style={styles.emptyState}>
-                    <Typography variant="number" style={{ fontSize: 48, marginBottom: 12 }}>📋</Typography>
-                    <Typography variant="h3" color={colors.textMuted} align="center" style={{ marginBottom: 8 }}>
+                    <View style={styles.emptyIcon}>
+                        <HistoryIcon color={colors.primary} size={26} />
+                    </View>
+                    <Typography variant="h3" align="center" style={{ marginBottom: 6 }}>
                         {t('history.noWorkoutsYet')}
                     </Typography>
                     <Typography variant="body" color={colors.textMuted} align="center">
@@ -269,23 +264,7 @@ export const HistoryScreen = ({ navigation }: any) => {
     );
 };
 
-const createStyles = (colors: any) => StyleSheet.create({
-    headerRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 16,
-    },
-    clearAllBtn: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: borderRadius.m,
-        backgroundColor: colors.error + '12',
-        borderWidth: 1,
-        borderColor: colors.error + '30',
-    },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
     titleRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -293,41 +272,66 @@ const createStyles = (colors: any) => StyleSheet.create({
     },
     dayBadge: {
         width: 44,
-        height: 50,
-        borderRadius: borderRadius.s,
+        height: 48,
+        borderRadius: 12,
         backgroundColor: colors.surfaceLight,
         alignItems: 'center',
         justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: colors.border,
+    },
+    dayName: {
+        fontSize: 10.5,
+        lineHeight: 13,
+        textTransform: 'uppercase',
+    },
+    dayNum: {
+        fontSize: 17,
+        lineHeight: 21,
+        fontVariant: ['tabular-nums'],
     },
     statsRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingTop: 10,
-        borderTopWidth: 1,
+        paddingTop: 12,
+        borderTopWidth: StyleSheet.hairlineWidth,
         borderTopColor: colors.border,
     },
     stat: {
         flex: 1,
         alignItems: 'center',
     },
+    statValue: {
+        fontSize: 15,
+        fontVariant: ['tabular-nums'],
+    },
     divider: {
-        width: 1,
+        width: StyleSheet.hairlineWidth,
         height: 24,
         backgroundColor: colors.border,
     },
     noteRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
         marginTop: 10,
-        paddingTop: 8,
-        borderTopWidth: 1,
+        paddingTop: 10,
+        borderTopWidth: StyleSheet.hairlineWidth,
         borderTopColor: colors.border,
     },
     emptyState: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        paddingTop: 80,
+        paddingHorizontal: 24,
+        paddingBottom: 60,
+    },
+    emptyIcon: {
+        width: 60,
+        height: 60,
+        borderRadius: 20,
+        backgroundColor: colors.primarySoft,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 16,
     },
     footerLoader: {
         paddingVertical: 16,
