@@ -80,7 +80,12 @@
       "general": "General",
       "fat_loss": "Fat Loss"
     },
-    "dayN": "Day {{n}}"
+    "dayN": "Day {{n}}",
+    "durationOngoing": "Ongoing",
+    "durationWeeks_one": "{{count}} week",
+    "durationWeeks_other": "{{count}} weeks",
+    "durationCycles_one": "{{count}}-week cycles",
+    "durationCycles_other": "{{count}}-week cycles"
   },
   "history": {
     "title": "History",
@@ -645,7 +650,16 @@
     "kevinBtn": "🛋️ Kevin's Take",
     "aiRequiredTitle": "AI Feature",
     "aiRequiredDesc": "Workout Aura is powered by AI. Subscribe to AI Coach to unlock personalized workout analysis and more.",
-    "goToAI": "Unlock AI Coach"
+    "goToAI": "Unlock AI Coach",
+    "coachTab": "Coach",
+    "auraTab": "Aura",
+    "statsTab": "Stats",
+    "sessionAnalysis": "Session analysis",
+    "coachAnalysis": "AI Coach analysis",
+    "workoutCompleted": "Workout completed",
+    "workoutFallback": "Workout",
+    "totalVolume": "{{unit}} total volume",
+    "verifiedWorkout": "Verified workout"
   },
   "aiWorkout": {
     "generateBtn": "Generate Workout",
@@ -788,5 +802,97 @@
     "equipment": "Equipment",
     "bodyweight": "Bodyweight (no equipment)",
     "level": "Level"
+  },
+  "programContent": {
+    "prog-ppl-3": {
+      "name": "Push Pull Legs",
+      "description": "The classic 3-day PPL split. Hit every muscle group once per week with high volume and compound lifts.",
+      "days": {
+        "0": "Push",
+        "1": "Pull",
+        "2": "Legs"
+      }
+    },
+    "prog-ppl-6": {
+      "name": "PPL 6-Day Split",
+      "description": "High-frequency PPL. Each muscle group twice per week for maximum growth. For serious lifters.",
+      "days": {
+        "0": "Push (Heavy)",
+        "1": "Pull (Heavy)",
+        "2": "Legs (Quad Focus)",
+        "3": "Push (Volume)",
+        "4": "Pull (Volume)",
+        "5": "Legs (Ham/Glute Focus)"
+      }
+    },
+    "prog-upper-lower": {
+      "name": "Upper / Lower Split",
+      "description": "Balanced 4-day program alternating between upper and lower body. Great for intermediate lifters.",
+      "days": {
+        "0": "Upper (Strength)",
+        "1": "Lower (Strength)",
+        "2": "Upper (Hypertrophy)",
+        "3": "Lower (Hypertrophy)"
+      }
+    },
+    "prog-full-body": {
+      "name": "Full Body 3x/Week",
+      "description": "Hit every major muscle group three times a week. Perfect for beginners building a strength foundation.",
+      "days": {
+        "0": "Full Body A",
+        "1": "Full Body B",
+        "2": "Full Body C"
+      }
+    },
+    "prog-531": {
+      "name": "5/3/1 Strength",
+      "description": "Jim Wendler's proven strength program. Focus on 4 big lifts with slow, steady progress. Built for long-term gains.",
+      "days": {
+        "0": "Squat Day",
+        "1": "Bench Day",
+        "2": "Deadlift Day",
+        "3": "OHP Day"
+      }
+    },
+    "prog-bro-split": {
+      "name": "Classic Bro Split",
+      "description": "One muscle group per day, 5 days a week. High volume approach for experienced lifters chasing maximum pump.",
+      "days": {
+        "0": "Chest",
+        "1": "Back",
+        "2": "Shoulders",
+        "3": "Legs",
+        "4": "Arms"
+      }
+    },
+    "prog-home": {
+      "name": "Home Workout",
+      "description": "No gym? No problem. Full bodyweight program you can do anywhere. Zero equipment needed.",
+      "days": {
+        "0": "Upper Body",
+        "1": "Lower Body",
+        "2": "Full Body HIIT"
+      }
+    },
+    "prog-strength": {
+      "name": "Pure Strength",
+      "description": "Low reps, heavy weights, long rest. Maximise your squat, bench, deadlift, and overhead press.",
+      "days": {
+        "0": "Squat + Bench",
+        "1": "Deadlift + OHP",
+        "2": "Squat + Bench (Volume)",
+        "3": "Deadlift + OHP (Volume)"
+      }
+    },
+    "prog-fat-loss": {
+      "name": "Burn & Build",
+      "description": "High-intensity circuits combining strength and cardio. Torch fat while keeping muscle. Short, intense sessions.",
+      "days": {
+        "0": "Upper Body Circuit",
+        "1": "Lower Body Circuit",
+        "2": "Full Body Burn",
+        "3": "Cardio + Core"
+      }
+    }
   }
 }

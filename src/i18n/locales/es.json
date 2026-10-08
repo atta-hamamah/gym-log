@@ -80,7 +80,12 @@
       "general": "General",
       "fat_loss": "Quema de grasa"
     },
-    "dayN": "Día {{n}}"
+    "dayN": "Día {{n}}",
+    "durationOngoing": "Continuo",
+    "durationWeeks_one": "{{count}} semana",
+    "durationWeeks_other": "{{count}} semanas",
+    "durationCycles_one": "Ciclos de {{count}} semana",
+    "durationCycles_other": "Ciclos de {{count}} semanas"
   },
   "history": {
     "title": "Historial",
@@ -645,7 +650,16 @@
     "kevinBtn": "🛋️ Opinión de Kevin",
     "aiRequiredTitle": "Función IA",
     "aiRequiredDesc": "El Aura del entrenamiento funciona con IA. Suscríbete a AI Coach para desbloquear análisis personalizados.",
-    "goToAI": "Desbloquear AI Coach"
+    "goToAI": "Desbloquear AI Coach",
+    "coachTab": "Coach",
+    "auraTab": "Aura",
+    "statsTab": "Estadísticas",
+    "sessionAnalysis": "Análisis de la sesión",
+    "coachAnalysis": "Análisis del Coach IA",
+    "workoutCompleted": "Entrenamiento completado",
+    "workoutFallback": "Entrenamiento",
+    "totalVolume": "{{unit}} de volumen total",
+    "verifiedWorkout": "Entrenamiento verificado"
   },
   "aiWorkout": {
     "generateBtn": "Generar entrenamiento",
@@ -788,5 +802,97 @@
     "equipment": "Equipamiento",
     "bodyweight": "Peso corporal (sin equipo)",
     "level": "Nivel"
+  },
+  "programContent": {
+    "prog-ppl-3": {
+      "name": "Empuje / Tirón / Pierna",
+      "description": "La clásica rutina PPL de 3 días. Trabaja cada grupo muscular una vez por semana con mucho volumen y ejercicios compuestos.",
+      "days": {
+        "0": "Empuje",
+        "1": "Tirón",
+        "2": "Pierna"
+      }
+    },
+    "prog-ppl-6": {
+      "name": "PPL de 6 días",
+      "description": "PPL de alta frecuencia. Cada grupo muscular dos veces por semana para el máximo crecimiento. Para quienes entrenan en serio.",
+      "days": {
+        "0": "Empuje (pesado)",
+        "1": "Tirón (pesado)",
+        "2": "Pierna (enfoque en cuádriceps)",
+        "3": "Empuje (volumen)",
+        "4": "Tirón (volumen)",
+        "5": "Pierna (femorales y glúteos)"
+      }
+    },
+    "prog-upper-lower": {
+      "name": "Torso / Pierna",
+      "description": "Programa equilibrado de 4 días que alterna tren superior e inferior. Ideal para nivel intermedio.",
+      "days": {
+        "0": "Torso (fuerza)",
+        "1": "Pierna (fuerza)",
+        "2": "Torso (hipertrofia)",
+        "3": "Pierna (hipertrofia)"
+      }
+    },
+    "prog-full-body": {
+      "name": "Cuerpo completo 3 días/semana",
+      "description": "Trabaja todos los grupos musculares principales tres veces por semana. Perfecto para principiantes que construyen una base de fuerza.",
+      "days": {
+        "0": "Cuerpo completo A",
+        "1": "Cuerpo completo B",
+        "2": "Cuerpo completo C"
+      }
+    },
+    "prog-531": {
+      "name": "Fuerza 5/3/1",
+      "description": "El probado programa de fuerza de Jim Wendler. Se centra en 4 grandes levantamientos con un progreso lento y constante. Pensado para ganancias a largo plazo.",
+      "days": {
+        "0": "Día de sentadilla",
+        "1": "Día de press de banca",
+        "2": "Día de peso muerto",
+        "3": "Día de press militar"
+      }
+    },
+    "prog-bro-split": {
+      "name": "Rutina Weider clásica",
+      "description": "Un grupo muscular por día, 5 días a la semana. Enfoque de alto volumen para quienes ya tienen experiencia y buscan el máximo bombeo.",
+      "days": {
+        "0": "Pecho",
+        "1": "Espalda",
+        "2": "Hombros",
+        "3": "Pierna",
+        "4": "Brazos"
+      }
+    },
+    "prog-home": {
+      "name": "Entrenamiento en casa",
+      "description": "¿Sin gimnasio? Sin problema. Programa completo con tu peso corporal que puedes hacer en cualquier lugar. No necesitas equipo.",
+      "days": {
+        "0": "Tren superior",
+        "1": "Tren inferior",
+        "2": "HIIT de cuerpo completo"
+      }
+    },
+    "prog-strength": {
+      "name": "Fuerza pura",
+      "description": "Pocas repeticiones, mucho peso y descansos largos. Maximiza tu sentadilla, press de banca, peso muerto y press militar.",
+      "days": {
+        "0": "Sentadilla + banca",
+        "1": "Peso muerto + press militar",
+        "2": "Sentadilla + banca (volumen)",
+        "3": "Peso muerto + press militar (volumen)"
+      }
+    },
+    "prog-fat-loss": {
+      "name": "Quema y construye",
+      "description": "Circuitos de alta intensidad que combinan fuerza y cardio. Quema grasa mientras mantienes el músculo. Sesiones cortas e intensas.",
+      "days": {
+        "0": "Circuito de tren superior",
+        "1": "Circuito de tren inferior",
+        "2": "Quema de cuerpo completo",
+        "3": "Cardio + core"
+      }
+    }
   }
 }

@@ -9,6 +9,7 @@ import { ConfirmationModal } from '../components/ConfirmationModal';
 import { borderRadius, ThemeColors } from '../theme/colors';
 import { PROGRAMS } from '../constants/programs';
 import { ProgramDay, ProgramExercise, WorkoutProgram } from '../types';
+import { programDayName, programDescription, programDuration, programName } from '../utils/programText';
 import { useTranslation } from 'react-i18next';
 import { getExerciseName } from '../constants/exercises';
 import { PlayCircle, ChevronDown, Lightbulb, Play, CalendarDays, ListChecks, Clock } from 'lucide-react-native';
@@ -94,7 +95,7 @@ export const ProgramDetailScreen = ({ route, navigation }: any) => {
             return;
         }
 
-        const workoutName = `${program.name} — ${day.name}`;
+        const workoutName = `${programName(program, t)} — ${programDayName(program, program.days.indexOf(day), t)}`;
         startPlannedWorkout(
             workoutName,
             { type: 'program', programId: program.id, dayName: day.name },
@@ -131,7 +132,7 @@ export const ProgramDetailScreen = ({ route, navigation }: any) => {
                     <View style={[styles.bigIcon, { backgroundColor: tone.soft }]}>
                         <GoalIcon goal={program.goal} color={tone.fg} size={30} />
                     </View>
-                    <Typography variant="h1" align="center" style={{ marginTop: 14 }}>{program.name}</Typography>
+                    <Typography variant="h1" align="center" style={{ marginTop: 14 }}>{programName(program, t)}</Typography>
 
                     {/* Tags */}
                     <View style={styles.tagRow}>
@@ -150,7 +151,7 @@ export const ProgramDetailScreen = ({ route, navigation }: any) => {
 
                     {/* Description */}
                     <Typography variant="body" color={colors.textSecondary} align="center" style={{ marginTop: 14, lineHeight: 22 }}>
-                        {program.description}
+                        {programDescription(program, t)}
                     </Typography>
                 </Card>
 
@@ -158,7 +159,7 @@ export const ProgramDetailScreen = ({ route, navigation }: any) => {
                 <View style={styles.statsRow}>
                     <StatTile compact value={program.daysPerWeek} label={t('programs.daysPerWeek')} icon={c => <CalendarDays color={c} size={14} />} tone={goalTone(program.goal)} />
                     <StatTile compact value={totalExercises} label={t('common.exercises')} icon={c => <ListChecks color={c} size={14} />} tone={goalTone(program.goal)} />
-                    <StatTile compact value={program.duration} label={t('programs.duration')} icon={c => <Clock color={c} size={14} />} tone={goalTone(program.goal)} />
+                    <StatTile compact valueLines={2} value={programDuration(program.duration, t)} label={t('programs.duration')} icon={c => <Clock color={c} size={14} />} tone={goalTone(program.goal)} />
                 </View>
 
                 {/* Day Cards */}
@@ -181,7 +182,7 @@ export const ProgramDetailScreen = ({ route, navigation }: any) => {
                                     </Typography>
                                 </View>
                                 <View style={{ flex: 1, marginLeft: 10 }}>
-                                    <Typography variant="body" bold>{day.name}</Typography>
+                                    <Typography variant="body" bold>{programDayName(program, dayIndex, t)}</Typography>
                                     <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 11, marginTop: 1 }}>
                                         {day.exercises.length} {t('common.exercises')}
                                     </Typography>
@@ -240,7 +241,7 @@ export const ProgramDetailScreen = ({ route, navigation }: any) => {
 
                                     {/* Start This Workout Button */}
                                     <Button
-                                        title={`${t('programs.startDay')} — ${day.name}`}
+                                        title={`${t('programs.startDay')} — ${programDayName(program, dayIndex, t)}`}
                                         onPress={() => handleStartDay(day)}
                                         size="medium"
                                         icon={c => <Play color={c} size={16} fill={c} />}

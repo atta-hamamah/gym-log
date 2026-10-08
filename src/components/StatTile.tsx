@@ -14,11 +14,13 @@ interface StatTileProps {
     compact?: boolean;
     /** Color for the number itself (use for gains / losses). */
     valueColor?: string;
+    /** Lines the value may use; text values such as durations can need two. */
+    valueLines?: number;
     style?: StyleProp<ViewStyle>;
 }
 
 /** Number + label tile. Numbers stay neutral; the tone only tints the small icon. */
-export const StatTile: React.FC<StatTileProps> = ({ value, label, icon, tone = 'primary', compact, valueColor, style }) => {
+export const StatTile: React.FC<StatTileProps> = ({ value, label, icon, tone = 'primary', compact, valueColor, valueLines = 1, style }) => {
     const { colors, isDark } = useTheme();
     const t = toneColors(colors, tone);
     return (
@@ -39,9 +41,9 @@ export const StatTile: React.FC<StatTileProps> = ({ value, label, icon, tone = '
             <Typography
                 variant={compact ? 'h3' : 'h2'}
                 color={valueColor}
-                style={[styles.value, compact && { fontSize: 18, lineHeight: 24 }]}
-                numberOfLines={1}
-                adjustsFontSizeToFit
+                style={[styles.value, compact && { fontSize: 18, lineHeight: 24 }, valueLines > 1 && styles.valueWrap]}
+                numberOfLines={valueLines}
+                adjustsFontSizeToFit={valueLines === 1}
             >
                 {value}
             </Typography>
@@ -80,5 +82,10 @@ const styles = StyleSheet.create({
     },
     value: {
         fontVariant: ['tabular-nums'],
+    },
+    valueWrap: {
+        fontSize: 15,
+        lineHeight: 19,
+        textAlign: 'center',
     },
 });

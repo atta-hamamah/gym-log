@@ -80,7 +80,12 @@
       "general": "Général",
       "fat_loss": "Perte de gras"
     },
-    "dayN": "Jour {{n}}"
+    "dayN": "Jour {{n}}",
+    "durationOngoing": "Continu",
+    "durationWeeks_one": "{{count}} semaine",
+    "durationWeeks_other": "{{count}} semaines",
+    "durationCycles_one": "Cycles de {{count}} semaine",
+    "durationCycles_other": "Cycles de {{count}} semaines"
   },
   "history": {
     "title": "Historique",
@@ -645,7 +650,16 @@
     "kevinBtn": "🛋️ L'avis de Kevin",
     "aiRequiredTitle": "Fonctionnalité IA",
     "aiRequiredDesc": "L'Aura d'entraînement est alimentée par l'IA. Abonnez-vous à AI Coach pour débloquer l'analyse personnalisée.",
-    "goToAI": "Débloquer AI Coach"
+    "goToAI": "Débloquer AI Coach",
+    "coachTab": "Coach",
+    "auraTab": "Aura",
+    "statsTab": "Stats",
+    "sessionAnalysis": "Analyse de la séance",
+    "coachAnalysis": "Analyse du coach IA",
+    "workoutCompleted": "Séance terminée",
+    "workoutFallback": "Séance",
+    "totalVolume": "Volume total ({{unit}})",
+    "verifiedWorkout": "Séance vérifiée"
   },
   "aiWorkout": {
     "generateBtn": "Générer une séance",
@@ -788,5 +802,97 @@
     "equipment": "Équipement",
     "bodyweight": "Poids du corps (sans matériel)",
     "level": "Niveau"
+  },
+  "programContent": {
+    "prog-ppl-3": {
+      "name": "Poussée / Tirage / Jambes",
+      "description": "Le split PPL classique sur 3 jours. Chaque groupe musculaire une fois par semaine, avec beaucoup de volume et des exercices polyarticulaires.",
+      "days": {
+        "0": "Poussée",
+        "1": "Tirage",
+        "2": "Jambes"
+      }
+    },
+    "prog-ppl-6": {
+      "name": "PPL sur 6 jours",
+      "description": "PPL à haute fréquence. Chaque groupe musculaire deux fois par semaine pour une croissance maximale. Pour les pratiquants sérieux.",
+      "days": {
+        "0": "Poussée (lourd)",
+        "1": "Tirage (lourd)",
+        "2": "Jambes (quadriceps)",
+        "3": "Poussée (volume)",
+        "4": "Tirage (volume)",
+        "5": "Jambes (ischios et fessiers)"
+      }
+    },
+    "prog-upper-lower": {
+      "name": "Haut / Bas du corps",
+      "description": "Programme équilibré sur 4 jours qui alterne haut et bas du corps. Idéal pour les pratiquants intermédiaires.",
+      "days": {
+        "0": "Haut du corps (force)",
+        "1": "Bas du corps (force)",
+        "2": "Haut du corps (hypertrophie)",
+        "3": "Bas du corps (hypertrophie)"
+      }
+    },
+    "prog-full-body": {
+      "name": "Corps entier 3x/semaine",
+      "description": "Chaque grand groupe musculaire trois fois par semaine. Parfait pour les débutants qui posent leurs bases de force.",
+      "days": {
+        "0": "Corps entier A",
+        "1": "Corps entier B",
+        "2": "Corps entier C"
+      }
+    },
+    "prog-531": {
+      "name": "Force 5/3/1",
+      "description": "Le programme de force éprouvé de Jim Wendler. Centré sur 4 grands mouvements avec une progression lente et régulière. Conçu pour des gains durables.",
+      "days": {
+        "0": "Jour squat",
+        "1": "Jour développé couché",
+        "2": "Jour soulevé de terre",
+        "3": "Jour développé militaire"
+      }
+    },
+    "prog-bro-split": {
+      "name": "Split classique par muscle",
+      "description": "Un groupe musculaire par jour, 5 jours par semaine. Approche à gros volume pour les pratiquants expérimentés qui cherchent la congestion maximale.",
+      "days": {
+        "0": "Poitrine",
+        "1": "Dos",
+        "2": "Épaules",
+        "3": "Jambes",
+        "4": "Bras"
+      }
+    },
+    "prog-home": {
+      "name": "Entraînement à la maison",
+      "description": "Pas de salle ? Pas de problème. Un programme complet au poids du corps, à faire n'importe où. Aucun équipement nécessaire.",
+      "days": {
+        "0": "Haut du corps",
+        "1": "Bas du corps",
+        "2": "HIIT corps entier"
+      }
+    },
+    "prog-strength": {
+      "name": "Force pure",
+      "description": "Peu de répétitions, charges lourdes, longs repos. Maximisez votre squat, développé couché, soulevé de terre et développé militaire.",
+      "days": {
+        "0": "Squat + développé couché",
+        "1": "Soulevé de terre + développé militaire",
+        "2": "Squat + développé couché (volume)",
+        "3": "Soulevé de terre + développé militaire (volume)"
+      }
+    },
+    "prog-fat-loss": {
+      "name": "Brûler & Construire",
+      "description": "Circuits à haute intensité qui combinent force et cardio. Brûlez du gras tout en gardant le muscle. Séances courtes et intenses.",
+      "days": {
+        "0": "Circuit haut du corps",
+        "1": "Circuit bas du corps",
+        "2": "Brûle-graisse corps entier",
+        "3": "Cardio + gainage"
+      }
+    }
   }
 }

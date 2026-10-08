@@ -12,6 +12,7 @@ import { GoalIcon, LevelDots, goalTone } from '../components/ProgramVisuals';
 import { toneColors } from '../theme/tones';
 import { PROGRAMS, PROGRAM_LEVELS, PROGRAM_GOALS } from '../constants/programs';
 import { WorkoutProgram } from '../types';
+import { programDescription, programDuration, programName } from '../utils/programText';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
 
@@ -46,7 +47,7 @@ export const ProgramsScreen = ({ navigation }: any) => {
                             <GoalIcon goal={item.goal} color={tone.fg} />
                         </View>
                         <View style={{ flex: 1, marginLeft: 12 }}>
-                            <Typography variant="h3" numberOfLines={1}>{item.name}</Typography>
+                            <Typography variant="h3" numberOfLines={2}>{programName(item, t)}</Typography>
                             <View style={styles.tagRow}>
                                 <View style={styles.tag}>
                                     <LevelDots level={item.level} />
@@ -66,7 +67,7 @@ export const ProgramsScreen = ({ navigation }: any) => {
 
                     {/* Description */}
                     <Typography variant="bodySmall" color={colors.textSecondary} style={{ marginTop: 12, lineHeight: 19 }}>
-                        {item.description}
+                        {programDescription(item, t)}
                     </Typography>
 
                     {/* Stats row */}
@@ -82,7 +83,7 @@ export const ProgramsScreen = ({ navigation }: any) => {
                         </View>
                         <View style={styles.statDivider} />
                         <View style={styles.statItem}>
-                            <Typography variant="body" bold style={styles.statValue} numberOfLines={1}>{item.duration}</Typography>
+                            <Typography variant="body" bold style={[styles.statValue, styles.statValueWrap]} numberOfLines={2}>{programDuration(item.duration, t)}</Typography>
                             <Typography variant="caption" color={colors.textMuted} style={styles.statLabel}>{t('programs.duration')}</Typography>
                         </View>
                     </View>
@@ -217,6 +218,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     },
     statValue: {
         fontVariant: ['tabular-nums'],
+    },
+    // Durations such as "Ciclos de 4 semanas" wrap onto a second line instead of being cut off.
+    statValueWrap: {
+        textAlign: 'center',
+        lineHeight: 19,
     },
     statLabel: {
         fontSize: 11,
