@@ -46,3 +46,12 @@ export const EXERCISE_GIFS: Record<string, any> = {
   'ex-tri-dips': require('../../../assets/workouts/Tricep Dips.gif'),
   'ex-tri-pushdown': require('../../../assets/workouts/Tricep Pushdown.gif')
 };
+
+/** Entries above that are still photos rather than animations; these show the vector animation instead. */
+const STILL_IMAGES = new Set(['ex-plank', 'ex-skull-crusher', 'ex-jump-rope', 'ex-cycling']);
+
+/** Animated GIF/WebP demo for an exercise, if one exists. */
+export function getExerciseGif(exerciseId: string | null | undefined): any {
+  if (!exerciseId || STILL_IMAGES.has(exerciseId)) return undefined;
+  return EXERCISE_GIFS[exerciseId];
+}

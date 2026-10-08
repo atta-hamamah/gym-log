@@ -1,29 +1,57 @@
-import React, { useState, useMemo } from 'react';
-import { FlatList, TouchableOpacity, StyleSheet, View, TextInput, Modal, Alert, ScrollView } from 'react-native';
+import React, { useState, useMemo, useCallback, memo } from 'react';
+import { FlatList, TouchableOpacity, StyleSheet, View, TextInput, Modal, ScrollView } from 'react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { useWorkout } from '../context/WorkoutContext';
-import { borderRadius, spacing } from '../theme/colors';
+import { borderRadius, spacing, ThemeColors } from '../theme/colors';
 import { StorageService } from '../services/storage';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { generateId } from '../utils/generateId';
-import { Exercise } from '../types';
+import { Equipment, Exercise } from '../types';
 import { MUSCLE_GROUPS, getExerciseName, getMuscleGroupName } from '../constants/exercises';
+import { ALL_EQUIPMENT, EXERCISE_CATALOG } from '../constants/exerciseCatalog';
 import { useTranslation } from 'react-i18next';
 import { ConfirmationModal } from '../components/ConfirmationModal';
-import { PlayCircle } from 'lucide-react-native';
+import { Dumbbell, PlayCircle } from 'lucide-react-native';
 import { ExerciseInfoModal } from '../components/ExerciseInfoModal';
+import { ExerciseAnimation } from '../components/ExerciseAnimation';
+import { getAnimation } from '../animations';
 import { useTheme } from '../context/ThemeContext';
+
+type EquipmentFilter = 'all' | 'bodyweight' | Equipment;
+
+/** Equipment chips: only items that at least one built-in exercise needs. */
+const EQUIPMENT_FILTERS: EquipmentFilter[] = [
+    'all',
+    'bodyweight',
+    ...ALL_EQUIPMENT.filter(item => EXERCISE_CATALOG.some(e => e.equipment?.includes(item))),
+];
+
+function matchesEquipment(e: Exercise, filter: EquipmentFilter): boolean {
+    if (filter === 'all') return true;
+    // Custom exercises have no equipment data, so they only show up unfiltered.
+    if (!e.equipment) return false;
+    return filter === 'bodyweight' ? e.equipment.length === 0 : e.equipment.includes(filter);
+}
+
+function equipmentLabel(item: EquipmentFilter, t: (key: string) => string): string {
+    if (item === 'all') return t('exerciseList.allEquipment');
+    if (item === 'bodyweight') return t('exerciseList.bodyweight');
+    return t(`equipment.${item}`);
+}
+
+const THUMB_SIZE = 52;
 
 export const ExerciseListScreen = ({ navigation }: any) => {
     const { t } = useTranslation();
     const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const styles = useMemo(() => createStyles(colors), [colors]);
     const { exercises, addExerciseToWorkout, refreshData } = useWorkout();
     const [search, setSearch] = useState('');
     const [modalVisible, setModalVisible] = useState(false);
     const [selectedGroup, setSelectedGroup] = useState('All');
+    const [selectedEquipment, setSelectedEquipment] = useState<EquipmentFilter>('all');
 
     const [newExName, setNewExName] = useState('');
     const [newExMuscle, setNewExMuscle] = useState('My Exercises');
@@ -84,14 +112,34 @@ export const ExerciseListScreen = ({ navigation }: any) => {
                 translatedName.toLowerCase().includes(search.toLowerCase()) ||
                 translatedGroup.toLowerCase().includes(search.toLowerCase());
             const matchesGroup = selectedGroup === 'All' || e.muscleGroup === selectedGroup;
-            return matchesSearch && matchesGroup;
+            return matchesSearch && matchesGroup && matchesEquipment(e, selectedEquipment);
         });
-    }, [exercises, search, selectedGroup, t]);
+    }, [exercises, search, selectedGroup, selectedEquipment, t]);
 
-    const handleSelect = (exercise: Exercise) => {
+    const handleSelect = useCallback((exercise: Exercise) => {
         addExerciseToWorkout(exercise);
         navigation.goBack();
-    };
+    }, [addExerciseToWorkout, navigation]);
+
+    const openInfo = useCallback((exercise: Exercise) => {
+        setSelectedExerciseInfo({ id: exercise.id, name: getExerciseName(exercise.id, t, exercise.name) });
+        setInfoModalVisible(true);
+    }, [t]);
+
+    const renderItem = useCallback(({ item, index }: { item: Exercise; index: number }) => (
+        <ExerciseRow
+            item={item}
+            first={index === 0}
+            name={getExerciseName(item.id, t, item.name)}
+            groupName={getMuscleGroupName(item.muscleGroup, t)}
+            cardioLabel={t('common.cardio')}
+            customLabel={t('common.custom')}
+            onSelect={handleSelect}
+            onInfo={openInfo}
+            colors={colors}
+            styles={styles}
+        />
+    ), [t, handleSelect, openInfo, colors, styles]);
 
     const handleCreateExercise = async () => {
         if (!newExName.trim() || !newExMuscle) {
@@ -172,64 +220,52 @@ export const ExerciseListScreen = ({ navigation }: any) => {
                 ))}
             </ScrollView>
 
+            {/* Equipment Filter */}
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.equipScroll}
+                contentContainerStyle={styles.filterContent}
+            >
+                {EQUIPMENT_FILTERS.map(item => {
+                    const active = selectedEquipment === item;
+                    return (
+                        <TouchableOpacity
+                            key={item}
+                            style={[styles.equipChip, active && styles.equipChipActive]}
+                            onPress={() => setSelectedEquipment(item)}
+                            activeOpacity={0.7}
+                        >
+                            <Typography
+                                variant="caption"
+                                color={active ? colors.primary : colors.textSecondary}
+                                style={{ fontWeight: active ? '700' : '500', fontSize: 12 }}
+                            >
+                                {equipmentLabel(item, t)}
+                            </Typography>
+                        </TouchableOpacity>
+                    );
+                })}
+            </ScrollView>
+
             {/* Exercise List */}
             <FlatList
                 data={filtered}
                 keyExtractor={(item) => item.id}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={{ paddingBottom: 20 }}
-                renderItem={({ item, index }) => (
-                    <TouchableOpacity
-                        style={[styles.item, index === 0 && { borderTopLeftRadius: borderRadius.m, borderTopRightRadius: borderRadius.m }]}
-                        onPress={() => handleSelect(item)}
-                        activeOpacity={0.6}
-                    >
-                        <View style={{ flex: 1 }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                <Typography variant="body" bold>{getExerciseName(item.id, t, item.name)}</Typography>
-                                <TouchableOpacity
-                                    style={{ 
-                                        backgroundColor: colors.surfaceLight,
-                                        paddingHorizontal: 20,
-                                        paddingVertical: 8,
-                                        borderRadius: borderRadius.s,
-                                        borderWidth: 1,
-                                        borderColor: colors.border,
-                                    }}
-                                    onPress={(e) => {
-                                        e.stopPropagation(); 
-                                        setSelectedExerciseInfo({ id: item.id, name: getExerciseName(item.id, t, item.name) });
-                                        setInfoModalVisible(true);
-                                    }}
-                                >
-                                    <PlayCircle color={colors.primary} size={20} />
-                                </TouchableOpacity>
-                            </View>
-                            <View style={styles.tagRow}>
-                                <Typography variant="caption" style={{ fontSize: 12 }}>{getMuscleGroupName(item.muscleGroup, t)}</Typography>
-                                {item.category === 'cardio' && (
-                                    <View style={[styles.badge, { borderColor: colors.primary }]}>
-                                        <Typography variant="label" color={colors.primary} style={{ fontSize: 9 }}>
-                                            {t('common.cardio')}
-                                        </Typography>
-                                    </View>
-                                )}
-                                {item.isCustom && (
-                                    <View style={[styles.badge, { borderColor: colors.accent }]}>
-                                        <Typography variant="label" color={colors.accent} style={{ fontSize: 9 }}>
-                                            {t('common.custom')}
-                                        </Typography>
-                                    </View>
-                                )}
-                            </View>
-                        </View>
-                        <Typography variant="body" color={colors.textMuted}>+</Typography>
-                    </TouchableOpacity>
-                )}
+                renderItem={renderItem}
+                initialNumToRender={10}
+                maxToRenderPerBatch={8}
+                windowSize={7}
+                removeClippedSubviews
                 ListEmptyComponent={
                     <View style={{ padding: 40, alignItems: 'center' }}>
                         <Typography variant="body" color={colors.textMuted} align="center">
-                            {t('exerciseList.noResults', { query: search || selectedGroup })}
+                            {t('exerciseList.noResults', {
+                                query: search
+                                    || (selectedEquipment !== 'all' ? equipmentLabel(selectedEquipment, t) : getMuscleGroupName(selectedGroup, t)),
+                            })}
                         </Typography>
                     </View>
                 }
@@ -353,7 +389,65 @@ export const ExerciseListScreen = ({ navigation }: any) => {
     );
 };
 
-const createStyles = (colors: any) => StyleSheet.create({
+interface ExerciseRowProps {
+    item: Exercise;
+    first: boolean;
+    name: string;
+    groupName: string;
+    cardioLabel: string;
+    customLabel: string;
+    onSelect: (exercise: Exercise) => void;
+    onInfo: (exercise: Exercise) => void;
+    colors: ThemeColors;
+    styles: ReturnType<typeof createStyles>;
+}
+
+const ExerciseRow = memo(function ExerciseRow({
+    item, first, name, groupName, cardioLabel, customLabel, onSelect, onInfo, colors, styles,
+}: ExerciseRowProps) {
+    const hasAnimation = !!getAnimation(item.id);
+    return (
+        <TouchableOpacity
+            style={[styles.item, first && styles.itemFirst]}
+            onPress={() => onSelect(item)}
+            activeOpacity={0.6}
+        >
+            <TouchableOpacity style={styles.thumb} onPress={() => onInfo(item)} activeOpacity={0.7}>
+                {hasAnimation
+                    ? <ExerciseAnimation exerciseId={item.id} thumbnail size={THUMB_SIZE} />
+                    : <Dumbbell color={colors.textMuted} size={20} />}
+            </TouchableOpacity>
+            <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Typography variant="body" bold style={{ flexShrink: 1 }}>{name}</Typography>
+                    <TouchableOpacity style={styles.infoBtn} onPress={() => onInfo(item)}>
+                        <PlayCircle color={colors.primary} size={20} />
+                    </TouchableOpacity>
+                </View>
+                <View style={styles.tagRow}>
+                    <Typography variant="caption" style={{ fontSize: 12 }}>{groupName}</Typography>
+                    {item.category === 'cardio' && (
+                        <View style={[styles.badge, { borderColor: colors.primary }]}>
+                            <Typography variant="label" color={colors.primary} style={{ fontSize: 9 }}>
+                                {cardioLabel}
+                            </Typography>
+                        </View>
+                    )}
+                    {item.isCustom && (
+                        <View style={[styles.badge, { borderColor: colors.accent }]}>
+                            <Typography variant="label" color={colors.accent} style={{ fontSize: 9 }}>
+                                {customLabel}
+                            </Typography>
+                        </View>
+                    )}
+                </View>
+            </View>
+            <Typography variant="body" color={colors.textMuted}>+</Typography>
+        </TouchableOpacity>
+    );
+});
+
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
     header: {
         flexDirection: 'row',
         marginBottom: 8,
@@ -394,13 +488,52 @@ const createStyles = (colors: any) => StyleSheet.create({
         backgroundColor: colors.primary,
         borderColor: colors.primary,
     },
+    equipScroll: {
+        maxHeight: 40,
+        marginTop: -6,
+        marginBottom: 12,
+    },
+    equipChip: {
+        paddingHorizontal: 12,
+        paddingVertical: 5,
+        borderRadius: borderRadius.full,
+        backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    equipChipActive: {
+        borderColor: colors.primary,
+    },
     item: {
         flexDirection: 'row',
         alignItems: 'center',
         padding: spacing.m,
+        paddingLeft: spacing.s + 4,
         borderBottomWidth: 1,
         borderBottomColor: colors.border,
         backgroundColor: colors.surface,
+    },
+    itemFirst: {
+        borderTopLeftRadius: borderRadius.m,
+        borderTopRightRadius: borderRadius.m,
+    },
+    thumb: {
+        width: THUMB_SIZE,
+        height: THUMB_SIZE,
+        borderRadius: borderRadius.s,
+        backgroundColor: colors.surfaceLight,
+        overflow: 'hidden',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: spacing.s + 4,
+    },
+    infoBtn: {
+        backgroundColor: colors.surfaceLight,
+        paddingHorizontal: 20,
+        paddingVertical: 8,
+        borderRadius: borderRadius.s,
+        borderWidth: 1,
+        borderColor: colors.border,
     },
     tagRow: {
         flexDirection: 'row',
