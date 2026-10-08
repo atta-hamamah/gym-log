@@ -1,14 +1,16 @@
 import { v } from "convex/values";
-import { query, mutation } from "./_generated/server";
+import { query, internalQuery, internalMutation } from "./_generated/server";
+import { getCurrentUser } from "./users";
 
 /**
- * Workout queries — primarily for future AI assistant use.
+ * Workout queries. Everything except getWorkoutStatsCard is internal —
+ * only the AI actions (which resolve the user from auth) may call them.
  */
 
 /**
  * Get all workouts for a user, sorted by date descending.
  */
-export const getWorkoutsByUser = query({
+export const getWorkoutsByUser = internalQuery({
   args: {
     userId: v.id("users"),
     limit: v.optional(v.float64()),
@@ -33,7 +35,7 @@ export const getWorkoutsByUser = query({
 /**
  * Get exercise logs for a specific workout.
  */
-export const getExerciseLogsByWorkout = query({
+export const getExerciseLogsByWorkout = internalQuery({
   args: { workoutId: v.id("workouts") },
   handler: async (ctx, args) => {
     return await ctx.db
@@ -46,7 +48,7 @@ export const getExerciseLogsByWorkout = query({
 /**
  * Get sets for a specific exercise log.
  */
-export const getSetsByExerciseLog = query({
+export const getSetsByExerciseLog = internalQuery({
   args: { exerciseLogId: v.id("exerciseLogs") },
   handler: async (ctx, args) => {
     return await ctx.db
@@ -60,7 +62,7 @@ export const getSetsByExerciseLog = query({
  * Get all exercise history for a user + specific exercise.
  * Useful for AI queries like "show me all bench press progress".
  */
-export const getExerciseHistory = query({
+export const getExerciseHistory = internalQuery({
   args: {
     userId: v.id("users"),
     exerciseId: v.string(),
@@ -97,7 +99,7 @@ export const getExerciseHistory = query({
 /**
  * Get detailed data for a workout to generate an aura.
  */
-export const getWorkoutDetailsForAura = query({
+export const getWorkoutDetailsForAura = internalQuery({
   args: { workoutId: v.id("workouts") },
   handler: async (ctx, args) => {
     const workout = await ctx.db.get(args.workoutId);
@@ -140,7 +142,7 @@ export const getWorkoutDetailsForAura = query({
 /**
  * Update a workout with its generated aura.
  */
-export const updateWorkoutAura = mutation({
+export const updateWorkoutAura = internalMutation({
   args: {
     workoutId: v.id("workouts"),
     auraTitle: v.string(),
@@ -161,8 +163,9 @@ export const updateWorkoutAura = mutation({
 export const getWorkoutStatsCard = query({
   args: { workoutId: v.id("workouts") },
   handler: async (ctx, args) => {
+    const user = await getCurrentUser(ctx);
     const workout = await ctx.db.get(args.workoutId);
-    if (!workout) throw new Error("Workout not found");
+    if (!user || !workout || workout.userId !== user._id) return null;
 
     const exerciseLogs = await ctx.db
       .query("exerciseLogs")

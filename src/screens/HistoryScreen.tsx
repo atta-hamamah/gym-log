@@ -11,9 +11,7 @@ import { borderRadius } from '../theme/colors';
 import { WorkoutSession } from '../types';
 import { useTranslation } from 'react-i18next';
 import { ConfirmationModal } from '../components/ConfirmationModal';
-import { usePaginatedQuery, useQuery, useConvexAuth } from 'convex/react';
-import { api } from '../../convex/_generated/api';
-import { useSubscription } from '../context/SubscriptionContext';
+import { useCloudSync } from '../context/CloudSyncContext';
 import { useTheme } from '../context/ThemeContext';
 import { useUnits } from '../context/UnitsContext';
 
@@ -24,50 +22,25 @@ export const HistoryScreen = ({ navigation }: any) => {
     const { colors } = useTheme();
     const styles = createStyles(colors);
     const { weightUnit, displayWeight } = useUnits();
+    // Local storage holds the full history; for AI subscribers it is kept in
+    // sync with the cloud, so this list always matches Workout Details/Progress.
     const { workouts: localWorkouts, deleteWorkout, clearAllWorkouts } = useWorkout();
-    const { isAuthenticated } = useConvexAuth();
-    const { isAISubscriber } = useSubscription();
+    const { accountLinked } = useCloudSync();
 
-    // Only use Convex queries when user has AI subscription AND Convex is authenticated
-    const useCloud = isAISubscriber && isAuthenticated;
-
-    // ── Convex paginated query (only active when authenticated) ──
-    const {
-        results: cloudWorkouts,
-        status: cloudStatus,
-        loadMore: cloudLoadMore,
-    } = usePaginatedQuery(
-        api.paginatedWorkouts.list,
-        useCloud ? {} : "skip",
-        { initialNumItems: PAGE_SIZE }
-    );
-    const cloudCount = useQuery(api.paginatedWorkouts.count, useCloud ? {} : "skip");
-
-    // ── Local pagination state (for non-subscribers) ──
     const [localVisibleCount, setLocalVisibleCount] = useState(PAGE_SIZE);
-    const localVisible = useMemo(
+    const workouts = useMemo(
         () => localWorkouts.slice(0, localVisibleCount),
         [localWorkouts, localVisibleCount]
     );
-    const localHasMore = localVisibleCount < localWorkouts.length;
-
-    // ── Unified data ──
-    const workouts = useCloud ? (cloudWorkouts as any[] ?? []) : localVisible;
-    const totalCount = useCloud ? (cloudCount ?? 0) : localWorkouts.length;
-    const hasMore = useCloud ? cloudStatus === "CanLoadMore" : localHasMore;
-    const isLoadingMore = useCloud ? cloudStatus === "LoadingMore" : false;
+    const totalCount = localWorkouts.length;
+    const hasMore = localVisibleCount < localWorkouts.length;
+    const isLoadingMore = false;
 
     const handleLoadMore = useCallback(() => {
-        if (useCloud) {
-            if (cloudStatus === "CanLoadMore") {
-                cloudLoadMore(PAGE_SIZE);
-            }
-        } else {
-            if (localHasMore) {
-                setLocalVisibleCount(prev => Math.min(prev + PAGE_SIZE, localWorkouts.length));
-            }
+        if (hasMore) {
+            setLocalVisibleCount(prev => Math.min(prev + PAGE_SIZE, localWorkouts.length));
         }
-    }, [useCloud, cloudStatus, cloudLoadMore, localHasMore, localWorkouts.length]);
+    }, [hasMore, localWorkouts.length]);
 
     const [modalVisible, setModalVisible] = useState(false);
     const [modalConfig, setModalConfig] = useState({
@@ -130,7 +103,7 @@ export const HistoryScreen = ({ navigation }: any) => {
     const handleClearAllHistory = () => {
         showModal(
             t('history.clearAllTitle'),
-            useCloud ? t('history.clearAllCloudMessage') : t('history.clearAllMessage'),
+            accountLinked ? t('history.clearAllCloudMessage') : t('history.clearAllMessage'),
             async () => {
                 await clearAllWorkouts();
                 showModal(t('history.cleared'), t('history.clearedMessage'), undefined, 'success');

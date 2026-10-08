@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   ScrollView,
@@ -15,37 +15,85 @@ import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { borderRadius } from '../theme/colors';
 import { useSignUp, useSignIn, useAuth, useUser } from '@clerk/clerk-expo';
-import { useMutation } from 'convex/react';
+import { useConvexAuth, useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-import { migrateLocalToConvex, syncConvexToLocal, type MigrationProgress } from '../services/migration';
-import { useConvex } from 'convex/react';
 import { useTranslation } from 'react-i18next';
-import { Check, Brain, Cloud, ChevronRight, Calendar, Users, Sparkles, X, Eye, EyeOff, Target } from 'lucide-react-native';
-import { identifyUser } from '../services/billing';
+import { Check, Brain, Calendar, Users, Sparkles, X, Eye, EyeOff, Target, CloudOff, UserCheck } from 'lucide-react-native';
 import { useSubscription } from '../context/SubscriptionContext';
+import { useCloudSync } from '../context/CloudSyncContext';
 import { useTheme } from '../context/ThemeContext';
 import { useWorkout } from '../context/WorkoutContext';
+import { isProfileComplete } from '../utils/profile';
+import type { SyncProgress, SyncReport } from '../services/cloudSync';
 
-type OnboardingStep = 'signup' | 'profile' | 'migrating' | 'complete';
+/**
+ * Account flow for AI Coach. Each step waits for real state instead of timers:
+ *
+ *   auth ──► linking ──► (conflict) ──► inactive            (signed in, no active AI)
+ *                                  └──► preparing ──► profile ──► syncing ──► complete
+ *
+ * - auth:      sign in, or sign up (sign-up only after paying for AI)
+ * - linking:   wait for Clerk + RevenueCat to point at the same user, then
+ *              link this device's data to the account
+ * - conflict:  data on this device belongs to another account → user chooses
+ * - preparing: create the cloud profile, check whether it's complete
+ * - syncing:   upload local data, download the cloud history
+ */
+type OnboardingStep =
+  | 'auth'
+  | 'linking'
+  | 'linkError'
+  | 'conflict'
+  | 'inactive'
+  | 'preparing'
+  | 'profile'
+  | 'syncing'
+  | 'syncError'
+  | 'complete';
+
+/** How long to wait for the subscription / server before offering a retry. */
+const LINK_TIMEOUT_MS = 20000;
+
+type SignInResult = NonNullable<ReturnType<typeof useSignIn>['signIn']>;
+type SecondFactorStrategy = 'email_code' | 'phone_code' | 'totp' | 'backup_code';
 
 export const AIOnboardingScreen = ({ navigation, route }: any) => {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const styles = createStyles(colors);
-  const { refreshData } = useWorkout();
+  const { workouts, bodyMeasurements } = useWorkout();
 
   // ── Clerk Auth State ──
   const { signUp, setActive, isLoaded: isSignUpLoaded } = useSignUp();
   const { signIn, setActive: setSignInActive, isLoaded: isSignInLoaded } = useSignIn();
   const { isSignedIn } = useAuth();
   const { user } = useUser();
+  const { isAuthenticated: convexAuthenticated } = useConvexAuth();
 
-  // Read route params — AIGateScreen passes { mode: 'signin' } for returning users
-  const initialMode = route?.params?.mode || 'signup';
+  // ── Subscription & sync ──
+  const {
+    hasAIEntitlement,
+    hasLifetimePro,
+    identityReady,
+    purchaseAISubscription,
+    refreshSubscriptionState,
+  } = useSubscription();
+  const { cloudSyncActive, ownership, claimLocalData, resolveOwnership, syncNow } = useCloudSync();
 
-  // Start at signup or skip to profile if already signed in
-  const [step, setStep] = useState<OnboardingStep>(isSignedIn ? 'profile' : 'signup');
-  const [authMode, setAuthMode] = useState<'signup' | 'signin'>(initialMode);
+  // ── Convex ──
+  const profile = useQuery(api.users.me, isSignedIn && convexAuthenticated ? {} : 'skip');
+  const ensureUser = useMutation(api.users.ensureUser);
+  const updateProfile = useMutation(api.users.updateProfile);
+
+  // Registration is only offered after paying for AI; signing in is always possible.
+  const canSignUp = hasAIEntitlement;
+  const requestedMode: 'signup' | 'signin' | undefined = route?.params?.mode;
+
+  const [step, setStep] = useState<OnboardingStep>(isSignedIn ? 'linking' : 'auth');
+  const [authMode, setAuthMode] = useState<'signup' | 'signin'>(
+    requestedMode === 'signin' || !canSignUp ? 'signin' : 'signup'
+  );
+  const effectiveAuthMode = authMode === 'signup' && !canSignUp ? 'signin' : authMode;
 
   // ── Signup/Signin Fields ──
   const [email, setEmail] = useState('');
@@ -62,6 +110,10 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
   const [newPassword, setNewPassword] = useState('');
   const [pendingReset, setPendingReset] = useState(false);
 
+  // ── Second factor (code after the password) ──
+  const [secondFactor, setSecondFactor] = useState<{ strategy: SecondFactorStrategy; target?: string } | null>(null);
+  const [secondFactorCode, setSecondFactorCode] = useState('');
+
   // ── Profile Fields ──
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date(2000, 0, 1));
@@ -69,19 +121,25 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
   const [gender, setGender] = useState<'male' | 'female' | 'other' | ''>('');
   const [goal, setGoal] = useState('');
 
-  // ── Migration State ──
-  const [migrationProgress, setMigrationProgress] = useState<MigrationProgress | null>(null);
-  const [migrationResult, setMigrationResult] = useState<any>(null);
+  // ── Sync State ──
+  const [syncProgress, setSyncProgress] = useState<SyncProgress | null>(null);
+  const [syncReport, setSyncReport] = useState<SyncReport | null>(null);
+  const [syncAttempt, setSyncAttempt] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // ── Convex ──
-  const convex = useConvex();
-  const createUser = useMutation(api.users.createUser);
-  const { refreshSubscriptionState } = useSubscription();
+  // Values read inside async steps without re-triggering them.
+  const latest = useRef({ hasAIEntitlement, hasLocalData: false });
+  latest.current = {
+    hasAIEntitlement,
+    hasLocalData: workouts.length > 0 || bodyMeasurements.length > 0,
+  };
+
+  const clerkError = (err: any, fallback: string) =>
+    err?.errors?.[0]?.longMessage || err?.message || fallback;
 
   // ══════════════════════════════════════════════════════
-  // STEP: SIGN UP
+  // AUTH
   // ══════════════════════════════════════════════════════
   const handleSignUp = useCallback(async () => {
     if (!isSignUpLoaded) return;
@@ -100,11 +158,16 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
       setPendingVerification(true);
     } catch (err: any) {
-      setError(err.errors?.[0]?.longMessage || err.message || 'Sign up failed');
+      if (err?.errors?.[0]?.code === 'form_identifier_exists') {
+        setAuthMode('signin');
+        setError(t('aiOnboarding.emailTaken'));
+      } else {
+        setError(clerkError(err, 'Sign up failed'));
+      }
     } finally {
       setLoading(false);
     }
-  }, [isSignUpLoaded, signUp, email, password, firstName, lastName]);
+  }, [isSignUpLoaded, signUp, email, password, firstName, lastName, t]);
 
   const handleVerifyEmail = useCallback(async () => {
     if (!isSignUpLoaded) return;
@@ -118,27 +181,54 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
 
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId });
-
-        // CRITICAL: Link RevenueCat to the new Clerk user ID.
-        // This transfers the anonymous purchase (made before signup) to this user.
-        const clerkUserId = signUp.createdUserId;
-        console.log('[AIOnboarding] Clerk user created:', clerkUserId);
-        if (clerkUserId) {
-          console.log('[AIOnboarding] Identifying user in RevenueCat...');
-          await identifyUser(clerkUserId);
-          console.log('[AIOnboarding] Refreshing subscription state...');
-          await refreshSubscriptionState();
-          console.log('[AIOnboarding] ✅ Subscription state refreshed');
-        }
-
-        setStep('profile');
+        // RevenueCat follows the new Clerk user automatically, which moves the
+        // purchase made before sign-up onto this account.
+        setStep('linking');
       }
     } catch (err: any) {
-      setError(err.errors?.[0]?.longMessage || err.message || 'Verification failed');
+      setError(clerkError(err, 'Verification failed'));
     } finally {
       setLoading(false);
     }
-  }, [isSignUpLoaded, signUp, verificationCode, setActive, refreshSubscriptionState]);
+  }, [isSignUpLoaded, signUp, verificationCode, setActive]);
+
+  // Clerk may ask for a one-time code after the password (e.g. the first
+  // sign-in on a new device). Send it and show the code step.
+  const startSecondFactor = useCallback(async (result: SignInResult) => {
+    const factors = result.supportedSecondFactors ?? [];
+    const factor =
+      factors.find(f => f.strategy === 'email_code') ??
+      factors.find(f => f.strategy === 'phone_code') ??
+      factors.find(f => f.strategy === 'totp') ??
+      factors.find(f => f.strategy === 'backup_code');
+    if (!factor) {
+      setError(t('aiOnboarding.unsupportedSignIn'));
+      return;
+    }
+    if (factor.strategy === 'email_code') {
+      await result.prepareSecondFactor({ strategy: 'email_code', emailAddressId: factor.emailAddressId });
+    } else if (factor.strategy === 'phone_code') {
+      await result.prepareSecondFactor({ strategy: 'phone_code', phoneNumberId: factor.phoneNumberId });
+    }
+    setSecondFactorCode('');
+    setSecondFactor({
+      strategy: factor.strategy as SecondFactorStrategy,
+      target: 'safeIdentifier' in factor ? factor.safeIdentifier : undefined,
+    });
+  }, [t]);
+
+  const continueSignIn = useCallback(async (result: SignInResult) => {
+    if (result.status === 'complete') {
+      if (!setSignInActive) return;
+      await setSignInActive({ session: result.createdSessionId });
+      setSecondFactor(null);
+      setStep('linking');
+    } else if (result.status === 'needs_second_factor') {
+      await startSecondFactor(result);
+    } else {
+      setError(t('aiOnboarding.unsupportedSignIn'));
+    }
+  }, [setSignInActive, startSecondFactor, t]);
 
   const handleSignIn = useCallback(async () => {
     if (!isSignInLoaded) return;
@@ -151,46 +241,44 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
         password,
       });
 
-      if (result.status === 'complete') {
-        await setSignInActive({ session: result.createdSessionId });
-
-        // Show restoring UI immediately
-        setStep('migrating');
-        setMigrationProgress({ step: 'restoring', current: 0, total: 1 });
-
-        // Wait for Clerk to propagate user state, then link RevenueCat.
-        // The SubscriptionContext also does this via useEffect on user?.id,
-        // but we do it explicitly here to ensure it completes before navigating.
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Refresh subscription — by now the SubscriptionContext's useEffect
-        // should have called identifyUser(). This ensures entitlements are current.
-        await refreshSubscriptionState();
-
-        // Sync cloud data to local storage (works for any signed-in user)
-        try {
-          await syncConvexToLocal(convex);
-          await refreshData();
-        } catch (syncErr) {
-          console.warn('[AIOnboarding] Cloud sync failed (user may be new):', syncErr);
-        }
-        
-        setMigrationProgress({ step: 'restoring', current: 1, total: 1 });
-
-        // Navigate back — AITabScreen will check isAISubscriber && isSignedIn
-        // and show chat (active sub) or gate (expired/cancelled sub)
-        setTimeout(() => {
-          navigation.goBack();
-        }, 1000);
-      } else {
-        setError('Complete sign in via other methods not supported here yet.');
-        setLoading(false);
-      }
+      await continueSignIn(result);
     } catch (err: any) {
-      setError(err.errors?.[0]?.longMessage || err.message || 'Sign in failed');
+      if (err?.errors?.[0]?.code === 'session_exists') {
+        setStep('linking');
+      } else {
+        setError(clerkError(err, 'Sign in failed'));
+      }
+    } finally {
       setLoading(false);
     }
-  }, [isSignInLoaded, signIn, email, password, setSignInActive, navigation, convex, refreshSubscriptionState]);
+  }, [isSignInLoaded, signIn, email, password, continueSignIn]);
+
+  const handleVerifySecondFactor = useCallback(async () => {
+    if (!isSignInLoaded || !secondFactor) return;
+    setLoading(true);
+    setError('');
+    try {
+      const result = await signIn.attemptSecondFactor({
+        strategy: secondFactor.strategy,
+        code: secondFactorCode.trim(),
+      } as Parameters<typeof signIn.attemptSecondFactor>[0]);
+      await continueSignIn(result);
+    } catch (err: any) {
+      setError(clerkError(err, 'Verification failed'));
+    } finally {
+      setLoading(false);
+    }
+  }, [isSignInLoaded, signIn, secondFactor, secondFactorCode, continueSignIn]);
+
+  const handleResendSecondFactor = useCallback(async () => {
+    if (!isSignInLoaded) return;
+    setError('');
+    try {
+      await startSecondFactor(signIn);
+    } catch (err: any) {
+      setError(clerkError(err, 'Failed to send code'));
+    }
+  }, [isSignInLoaded, signIn, startSecondFactor]);
 
   // ══════════════════════════════════════════════════════
   // FORGOT PASSWORD
@@ -211,7 +299,7 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
       });
       setPendingReset(true);
     } catch (err: any) {
-      setError(err.errors?.[0]?.longMessage || err.message || 'Failed to send reset code');
+      setError(clerkError(err, 'Failed to send reset code'));
     } finally {
       setLoading(false);
     }
@@ -229,41 +317,130 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
         password: newPassword,
       });
 
-      if (result.status === 'complete') {
-        await setSignInActive({ session: result.createdSessionId });
-
-        // Show restoring UI
-        setStep('migrating');
-        setMigrationProgress({ step: 'restoring', current: 0, total: 1 });
-
-        // Wait for Clerk to propagate user state, then refresh subscription
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        await refreshSubscriptionState();
-
-        // Restore cloud data
-        try {
-          await syncConvexToLocal(convex);
-          await refreshData();
-        } catch (syncErr) {
-          console.warn('[AIOnboarding] Cloud sync failed after password reset:', syncErr);
-        }
-        setMigrationProgress({ step: 'restoring', current: 1, total: 1 });
-
-        setTimeout(() => {
-          navigation.goBack();
-        }, 1000);
+      if (result.status === 'complete' || result.status === 'needs_second_factor') {
+        setForgotPasswordMode(false);
+        setPendingReset(false);
+        await continueSignIn(result);
       } else {
         setError(t('aiOnboarding.resetIncomplete', 'Password reset could not be completed.'));
-        setLoading(false);
       }
     } catch (err: any) {
-      setError(err.errors?.[0]?.longMessage || err.message || 'Reset failed');
+      setError(clerkError(err, 'Reset failed'));
+    } finally {
       setLoading(false);
     }
-  }, [isSignInLoaded, signIn, resetCode, newPassword, setSignInActive, navigation, convex, refreshSubscriptionState, t]);
+  }, [isSignInLoaded, signIn, resetCode, newPassword, continueSignIn, t]);
 
   // ══════════════════════════════════════════════════════
-  // STEP: PROFILE COMPLETION + MIGRATION
+  // LINKING: Clerk + RevenueCat agree on the user → link device data
+  // ══════════════════════════════════════════════════════
+  useEffect(() => {
+    if (step !== 'linking') return;
+    if (!isSignedIn || !identityReady) {
+      const timer = setTimeout(() => setStep('linkError'), LINK_TIMEOUT_MS);
+      return () => clearTimeout(timer);
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const result = await claimLocalData();
+        if (cancelled) return;
+        if (result?.status === 'otherAccount') {
+          if (latest.current.hasLocalData) {
+            setStep('conflict');
+            return;
+          }
+          // Nothing on this device worth asking about.
+          await resolveOwnership('replace');
+          if (cancelled) return;
+        }
+        setStep(latest.current.hasAIEntitlement ? 'preparing' : 'inactive');
+      } catch (e) {
+        console.warn('[AIOnboarding] Linking failed:', e);
+        if (!cancelled) setStep('linkError');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [step, isSignedIn, identityReady, claimLocalData, resolveOwnership]);
+
+  // ══════════════════════════════════════════════════════
+  // PREPARING: make sure the cloud profile exists
+  // ══════════════════════════════════════════════════════
+  useEffect(() => {
+    if (step !== 'preparing') return;
+    if (!convexAuthenticated) {
+      const timer = setTimeout(() => setStep('linkError'), LINK_TIMEOUT_MS);
+      return () => clearTimeout(timer);
+    }
+
+    let cancelled = false;
+    ensureUser({
+      name: user?.fullName ?? undefined,
+      email: user?.primaryEmailAddress?.emailAddress ?? undefined,
+    }).catch(e => {
+      console.warn('[AIOnboarding] Could not create profile:', e);
+      if (!cancelled) setStep('linkError');
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [step, convexAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (step !== 'preparing' || !profile) return;
+    setStep(isProfileComplete(profile) ? 'syncing' : 'profile');
+  }, [step, profile]);
+
+  // Prefill the profile form with anything already saved.
+  useEffect(() => {
+    if (step !== 'profile' || !profile) return;
+    if (profile.dateOfBirth && !dateOfBirth) {
+      setDateOfBirth(profile.dateOfBirth);
+      setSelectedDate(new Date(profile.dateOfBirth));
+    }
+    if (profile.gender && !gender) setGender(profile.gender);
+    if (profile.goal && !goal) setGoal(profile.goal);
+  }, [step, profile]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ══════════════════════════════════════════════════════
+  // SYNCING: upload this device's data, download the cloud history
+  // ══════════════════════════════════════════════════════
+  useEffect(() => {
+    if (step !== 'syncing') return;
+    if (!cloudSyncActive) {
+      const timer = setTimeout(() => setStep('syncError'), LINK_TIMEOUT_MS);
+      return () => clearTimeout(timer);
+    }
+
+    let cancelled = false;
+    setSyncProgress(null);
+    syncNow(progress => {
+      if (!cancelled) setSyncProgress(progress);
+    }).then(result => {
+      if (cancelled) return;
+      if (result.ok) {
+        setSyncReport(result.report);
+        setStep('complete');
+      } else if (result.reason === 'conflict') {
+        setStep('conflict');
+      } else if (result.reason === 'notVerified') {
+        setError(t('account.syncNotVerified'));
+        setStep('syncError');
+      } else {
+        setError(result.reason === 'error' ? result.message ?? '' : '');
+        setStep('syncError');
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [step, cloudSyncActive, syncAttempt, syncNow, t]);
+
+  // ══════════════════════════════════════════════════════
+  // ACTIONS FOR THE OTHER STEPS
   // ══════════════════════════════════════════════════════
   const handleCompleteProfile = useCallback(async () => {
     if (!gender || !dateOfBirth) {
@@ -272,41 +449,63 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
     }
     setLoading(true);
     setError('');
-    setStep('migrating');
 
     try {
-      // 1. Create user in Convex
-      const userId = await createUser({
-        clerkId: user?.id || '',
-        name: `${user?.firstName || ''} ${user?.lastName || ''}`.trim(),
-        email: user?.primaryEmailAddress?.emailAddress || '',
+      await updateProfile({
         dateOfBirth,
-        gender: gender as 'male' | 'female' | 'other',
+        gender,
         goal: goal.trim() || undefined,
       });
-
-      // 2. Migrate local data
-      const result = await migrateLocalToConvex(
-        convex,
-        userId,
-        (progress) => setMigrationProgress(progress),
-      );
-
-      if (result.success) {
-        setMigrationResult(result);
-        setStep('complete');
-      } else {
-        setError(result.error || t('aiOnboarding.migrationFailed'));
-        setStep('profile');
-      }
+      setStep('syncing');
     } catch (err: any) {
-      console.error('[AIOnboarding] Migration error:', err);
-      setError(err.message || t('aiOnboarding.migrationFailed'));
-      setStep('profile');
+      console.error('[AIOnboarding] Profile update failed:', err);
+      setError(err?.message || t('aiOnboarding.migrationFailed'));
     } finally {
       setLoading(false);
     }
-  }, [gender, dateOfBirth, goal, createUser, user, convex, t]);
+  }, [gender, dateOfBirth, goal, updateProfile, t]);
+
+  const handleResolveConflict = useCallback(async (choice: 'merge' | 'replace') => {
+    setLoading(true);
+    try {
+      await resolveOwnership(choice);
+      setStep('linking');
+    } catch (e: any) {
+      setError(e?.message || t('aiOnboarding.migrationFailed'));
+    } finally {
+      setLoading(false);
+    }
+  }, [resolveOwnership, t]);
+
+  const handleSubscribe = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    const result = await purchaseAISubscription();
+    setLoading(false);
+    if (result.success) {
+      setStep('linking');
+    } else if (result.alreadyOwned) {
+      setError(t('aiGate.alreadyOwned'));
+    } else if (result.error && !result.cancelled) {
+      setError(result.error);
+    }
+  }, [purchaseAISubscription, t]);
+
+  const handleRetryLink = useCallback(() => {
+    setError('');
+    refreshSubscriptionState();
+    setStep(isSignedIn ? 'linking' : 'auth');
+  }, [refreshSubscriptionState, isSignedIn]);
+
+  const handleRetrySync = useCallback(() => {
+    setError('');
+    setSyncAttempt(n => n + 1);
+    setStep('syncing');
+  }, []);
+
+  const goToAICoach = useCallback(() => {
+    navigation.navigate('Main', { screen: 'AI' });
+  }, [navigation]);
 
   // ── Date Picker Handler ──
   const handleDateChange = useCallback((event: DateTimePickerEvent, date?: Date) => {
@@ -319,9 +518,78 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
   }, []);
 
   // ══════════════════════════════════════════════════════
-  // RENDER: SIGNUP STEP
+  // RENDER: AUTH STEP
   // ══════════════════════════════════════════════════════
-  const renderSignup = () => (
+  const renderSecondFactor = () => {
+    const strategy = secondFactor?.strategy;
+    const message =
+      strategy === 'email_code'
+        ? t('aiOnboarding.secondFactorEmail', { target: secondFactor?.target ?? email })
+        : strategy === 'phone_code'
+          ? t('aiOnboarding.secondFactorPhone', { target: secondFactor?.target ?? '' })
+          : strategy === 'totp'
+            ? t('aiOnboarding.secondFactorTotp')
+            : t('aiOnboarding.secondFactorBackup');
+    const canResend = strategy === 'email_code' || strategy === 'phone_code';
+
+    return (
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
+        <View style={styles.stepHeader}>
+          <View style={styles.stepIconContainer}>
+            <UserCheck color={colors.primary} size={24} />
+          </View>
+          <Typography variant="h2" style={{ marginTop: 12 }}>
+            {t('aiOnboarding.secondFactorTitle')}
+          </Typography>
+          <Typography variant="body" color={colors.textSecondary} align="center" style={{ marginTop: 4 }}>
+            {message}
+          </Typography>
+        </View>
+
+        <TextInput
+          style={styles.input}
+          value={secondFactorCode}
+          onChangeText={setSecondFactorCode}
+          placeholder={strategy === 'backup_code' ? 'xxxx-xxxx' : '123456'}
+          placeholderTextColor={colors.textMuted}
+          keyboardType={strategy === 'backup_code' ? 'default' : 'number-pad'}
+          autoCapitalize="none"
+          autoFocus
+        />
+
+        {error ? (
+          <Typography variant="caption" color={colors.error} style={{ marginTop: 8 }}>
+            {error}
+          </Typography>
+        ) : null}
+
+        <Button
+          title={loading ? t('subscription.processing') : t('aiOnboarding.verify')}
+          onPress={handleVerifySecondFactor}
+          size="large"
+          style={{ marginTop: 24 }}
+          disabled={loading || !secondFactorCode.trim()}
+        />
+
+        {canResend && (
+          <TouchableOpacity onPress={handleResendSecondFactor} disabled={loading} style={{ marginTop: 16, alignItems: 'center' }}>
+            <Typography variant="bodySmall" color={colors.primary}>
+              {t('aiOnboarding.resendCode')}
+            </Typography>
+          </TouchableOpacity>
+        )}
+
+        <Button
+          title={t('common.cancel')}
+          variant="ghost"
+          onPress={() => { setSecondFactor(null); setSecondFactorCode(''); setError(''); }}
+          style={{ marginTop: 12 }}
+        />
+      </ScrollView>
+    );
+  };
+
+  const renderAuth = () => secondFactor ? renderSecondFactor() : (
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
       {/* Header */}
       <View style={styles.stepHeader}>
@@ -333,18 +601,18 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
             ? t('aiOnboarding.verifyEmail')
             : forgotPasswordMode
               ? t('aiOnboarding.resetPassword', 'Reset Password')
-              : authMode === 'signup'
+              : effectiveAuthMode === 'signup'
                 ? t('aiOnboarding.createAccount')
                 : t('aiOnboarding.signIn', 'Sign In')}
         </Typography>
-        <Typography variant="body" color={colors.textSecondary} style={{ marginTop: 4 }}>
+        <Typography variant="body" color={colors.textSecondary} align="center" style={{ marginTop: 4 }}>
           {pendingVerification
             ? t('aiOnboarding.verificationSent', { email })
             : forgotPasswordMode
               ? (pendingReset
                 ? t('aiOnboarding.resetCodeSent', 'Enter the code sent to {{email}} and your new password', { email })
                 : t('aiOnboarding.resetDesc', 'We\'ll send a code to your email'))
-              : authMode === 'signup'
+              : effectiveAuthMode === 'signup'
                 ? t('aiOnboarding.accountRequired')
                 : t('aiOnboarding.signInDesc', 'Welcome back to your AI Coach')}
         </Typography>
@@ -462,7 +730,7 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
         )
       ) : !pendingVerification ? (
         <>
-          {authMode === 'signup' && (
+          {effectiveAuthMode === 'signup' && (
             <View style={styles.nameRow}>
               <View style={styles.nameField}>
                 <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 4 }}>
@@ -518,7 +786,7 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
               placeholderTextColor={colors.textMuted}
               secureTextEntry={!showPassword}
             />
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => setShowPassword(!showPassword)}
               style={styles.eyeIcon}
               activeOpacity={0.7}
@@ -538,15 +806,15 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
           ) : null}
 
           <Button
-            title={loading ? t('subscription.processing') : (authMode === 'signup' ? t('aiOnboarding.signUp') : t('aiOnboarding.signIn', 'Sign In'))}
-            onPress={authMode === 'signup' ? handleSignUp : handleSignIn}
+            title={loading ? t('subscription.processing') : (effectiveAuthMode === 'signup' ? t('aiOnboarding.signUp') : t('aiOnboarding.signIn', 'Sign In'))}
+            onPress={effectiveAuthMode === 'signup' ? handleSignUp : handleSignIn}
             size="large"
             style={{ marginTop: 24 }}
-            disabled={loading || !email || !password || (authMode === 'signup' && !firstName)}
+            disabled={loading || !email || !password || (effectiveAuthMode === 'signup' && !firstName)}
           />
 
           {/* Forgot Password link — only in sign-in mode */}
-          {authMode === 'signin' && (
+          {effectiveAuthMode === 'signin' && (
             <TouchableOpacity
               onPress={() => {
                 setForgotPasswordMode(true);
@@ -560,21 +828,27 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
             </TouchableOpacity>
           )}
 
-          <TouchableOpacity
-            onPress={() => {
-              setAuthMode(authMode === 'signup' ? 'signin' : 'signup');
-              setForgotPasswordMode(false);
-              setPendingReset(false);
-              setError('');
-            }}
-            style={{ marginTop: 16, alignItems: 'center' }}
-          >
-            <Typography variant="bodySmall" color={colors.primary}>
-              {authMode === 'signup'
-                ? t('aiOnboarding.alreadyHaveAccount', 'Already have an account? Sign in')
-                : t('aiOnboarding.needAccount', "Don't have an account? Sign up")}
+          {canSignUp ? (
+            <TouchableOpacity
+              onPress={() => {
+                setAuthMode(effectiveAuthMode === 'signup' ? 'signin' : 'signup');
+                setForgotPasswordMode(false);
+                setPendingReset(false);
+                setError('');
+              }}
+              style={{ marginTop: 16, alignItems: 'center' }}
+            >
+              <Typography variant="bodySmall" color={colors.primary}>
+                {effectiveAuthMode === 'signup'
+                  ? t('aiOnboarding.alreadyHaveAccount', 'Already have an account? Sign in')
+                  : t('aiOnboarding.needAccount', "Don't have an account? Sign up")}
+              </Typography>
+            </TouchableOpacity>
+          ) : (
+            <Typography variant="caption" color={colors.textMuted} align="center" style={{ marginTop: 16 }}>
+              {t('aiOnboarding.signupAfterPurchase')}
             </Typography>
-          </TouchableOpacity>
+          )}
         </>
       ) : (
         <>
@@ -726,38 +1000,171 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
   );
 
   // ══════════════════════════════════════════════════════
-  // RENDER: MIGRATING STEP
+  // RENDER: STATUS STEPS
   // ══════════════════════════════════════════════════════
-  const renderMigrating = () => (
-    <View style={styles.centerContainer}>
-      <ActivityIndicator size="large" color={colors.primary} />
-      <Typography variant="h3" align="center" style={{ marginTop: 24 }}>
-        {t('aiOnboarding.migratingTitle')}
-      </Typography>
-      <Typography variant="body" color={colors.textSecondary} align="center" style={{ marginTop: 8 }}>
-        {migrationProgress?.step === 'reading'
-          ? t('aiOnboarding.migratingReading')
-          : migrationProgress?.step === 'uploading'
-            ? t('aiOnboarding.migratingUploading')
-            : migrationProgress?.step === 'restoring'
-              ? t('aiOnboarding.restoringCloud', 'Restoring from Cloud...')
-              : t('aiOnboarding.migratingProcessing')}
-      </Typography>
-
-      {/* Progress bar */}
-      <View style={styles.progressBarContainer}>
-        <View style={[styles.progressBarFill, {
-          width: `${((migrationProgress?.current || 0) / (migrationProgress?.total || 4)) * 100}%`
-        }]} />
-      </View>
-    </View>
+  const renderCentered = (content: React.ReactNode) => (
+    <View style={styles.centerContainer}>{content}</View>
   );
 
-  // ══════════════════════════════════════════════════════
-  // RENDER: COMPLETE STEP
-  // ══════════════════════════════════════════════════════
-  const renderComplete = () => (
-    <View style={styles.centerContainer}>
+  const renderWaiting = (title: string, message?: string) => renderCentered(
+    <>
+      <ActivityIndicator size="large" color={colors.primary} />
+      <Typography variant="h3" align="center" style={{ marginTop: 24 }}>
+        {title}
+      </Typography>
+      {message ? (
+        <Typography variant="body" color={colors.textSecondary} align="center" style={{ marginTop: 8 }}>
+          {message}
+        </Typography>
+      ) : null}
+    </>
+  );
+
+  const renderSyncing = () => {
+    const progressText = syncProgress
+      ? t(syncProgress.phase === 'uploading' ? 'aiOnboarding.uploading' : 'aiOnboarding.downloading', {
+        done: syncProgress.done,
+        total: syncProgress.total,
+      })
+      : t('aiOnboarding.syncingDesc');
+    const ratio = syncProgress && syncProgress.total > 0 ? syncProgress.done / syncProgress.total : 0;
+
+    return renderCentered(
+      <>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Typography variant="h3" align="center" style={{ marginTop: 24 }}>
+          {t('aiOnboarding.migratingTitle')}
+        </Typography>
+        <Typography variant="body" color={colors.textSecondary} align="center" style={{ marginTop: 8 }}>
+          {progressText}
+        </Typography>
+        {syncProgress && (
+          <View style={styles.progressBarContainer}>
+            <View style={[styles.progressBarFill, { width: `${Math.round(ratio * 100)}%` }]} />
+          </View>
+        )}
+      </>
+    );
+  };
+
+  const renderLinkError = () => renderCentered(
+    <>
+      <View style={[styles.statusCircle, { backgroundColor: colors.error + '18' }]}>
+        <CloudOff color={colors.error} size={40} />
+      </View>
+      <Typography variant="h2" align="center" style={{ marginTop: 24 }}>
+        {t('aiOnboarding.linkErrorTitle')}
+      </Typography>
+      <Typography variant="body" color={colors.textSecondary} align="center" style={{ marginTop: 8 }}>
+        {t('aiOnboarding.linkErrorDesc')}
+      </Typography>
+      <Button title={t('aiGate.retry')} onPress={handleRetryLink} size="large" style={{ marginTop: 32, width: '100%' }} />
+      <Button title={t('common.close')} variant="ghost" onPress={() => navigation.goBack()} style={{ marginTop: 8, width: '100%' }} />
+    </>
+  );
+
+  const renderSyncError = () => renderCentered(
+    <>
+      <View style={[styles.statusCircle, { backgroundColor: colors.warning + '18' }]}>
+        <CloudOff color={colors.warning} size={40} />
+      </View>
+      <Typography variant="h2" align="center" style={{ marginTop: 24 }}>
+        {t('aiOnboarding.linkErrorTitle')}
+      </Typography>
+      <Typography variant="body" color={colors.textSecondary} align="center" style={{ marginTop: 8 }}>
+        {t('aiOnboarding.syncError')}
+      </Typography>
+      {error ? (
+        <Typography variant="caption" color={colors.textMuted} align="center" style={{ marginTop: 8 }}>
+          {error}
+        </Typography>
+      ) : null}
+      <Button title={t('aiGate.retry')} onPress={handleRetrySync} size="large" style={{ marginTop: 32, width: '100%' }} />
+      <Button title={t('common.continue')} variant="ghost" onPress={goToAICoach} style={{ marginTop: 8, width: '100%' }} />
+    </>
+  );
+
+  const renderConflict = () => {
+    const ownerEmail = ownership?.status === 'otherAccount' ? ownership.ownerEmail : null;
+    return renderCentered(
+      <>
+        <View style={[styles.statusCircle, { backgroundColor: colors.warning + '18' }]}>
+          <Users color={colors.warning} size={40} />
+        </View>
+        <Typography variant="h2" align="center" style={{ marginTop: 24 }}>
+          {t('account.conflictTitle')}
+        </Typography>
+        <Typography variant="body" color={colors.textSecondary} align="center" style={{ marginTop: 8 }}>
+          {t('account.conflictMessage', { email: ownerEmail || '—' })}
+        </Typography>
+        {error ? (
+          <Typography variant="caption" color={colors.error} align="center" style={{ marginTop: 8 }}>
+            {error}
+          </Typography>
+        ) : null}
+        <Button
+          title={t('account.conflictMerge')}
+          onPress={() => handleResolveConflict('merge')}
+          disabled={loading}
+          size="large"
+          style={{ marginTop: 32, width: '100%' }}
+        />
+        <Button
+          title={t('account.conflictReplace')}
+          variant="outline"
+          onPress={() => handleResolveConflict('replace')}
+          disabled={loading}
+          style={{ marginTop: 12, width: '100%' }}
+        />
+        <Typography variant="caption" color={colors.textMuted} align="center" style={{ marginTop: 12 }}>
+          {t('account.conflictReplaceConfirm')}
+        </Typography>
+      </>
+    );
+  };
+
+  const renderInactive = () => renderCentered(
+    <>
+      <View style={[styles.statusCircle, { backgroundColor: colors.primary + '15' }]}>
+        <UserCheck color={colors.primary} size={40} />
+      </View>
+      <Typography variant="h2" align="center" style={{ marginTop: 24 }}>
+        {t('aiOnboarding.inactiveTitle')}
+      </Typography>
+      <Typography variant="body" color={colors.textSecondary} align="center" style={{ marginTop: 8 }}>
+        {t('aiOnboarding.inactiveDesc')}
+      </Typography>
+      {hasLifetimePro && (
+        <Typography variant="bodySmall" color={colors.success} align="center" style={{ marginTop: 8 }}>
+          {t('aiOnboarding.inactiveLifetime')}
+        </Typography>
+      )}
+      <Typography variant="caption" color={colors.textMuted} align="center" style={{ marginTop: 8 }}>
+        {t('aiOnboarding.inactiveCloudNote')}
+      </Typography>
+      {error ? (
+        <Typography variant="caption" color={colors.error} align="center" style={{ marginTop: 8 }}>
+          {error}
+        </Typography>
+      ) : null}
+      <Button
+        title={loading ? t('subscription.processing') : t('aiOnboarding.subscribe')}
+        onPress={handleSubscribe}
+        disabled={loading}
+        size="large"
+        style={{ marginTop: 32, width: '100%' }}
+      />
+      <Button
+        title={t('common.continue')}
+        variant="ghost"
+        onPress={() => navigation.goBack()}
+        style={{ marginTop: 8, width: '100%' }}
+      />
+    </>
+  );
+
+  const renderComplete = () => renderCentered(
+    <>
       <View style={styles.successCircle}>
         <Check color="#fff" size={48} />
       </View>
@@ -768,37 +1175,57 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
         {t('aiOnboarding.successDesc')}
       </Typography>
 
-      {migrationResult && (
+      {syncReport && (syncReport.uploaded > 0 || syncReport.downloaded > 0) && (
         <Card style={{ marginTop: 24, width: '100%' }}>
-          <Typography variant="caption" color={colors.textSecondary}>
-            {t('aiOnboarding.migratedWorkouts', { count: migrationResult.workoutsInserted })}
-          </Typography>
-          <Typography variant="caption" color={colors.textSecondary}>
-            {t('aiOnboarding.migratedPRs', { count: migrationResult.prsInserted })}
-          </Typography>
-          <Typography variant="caption" color={colors.textSecondary}>
-            {t('aiOnboarding.migratedMeasurements', { count: migrationResult.measurementsInserted })}
-          </Typography>
+          {syncReport.uploaded > 0 && (
+            <Typography variant="caption" color={colors.textSecondary}>
+              {t('aiOnboarding.uploadedCount', { count: syncReport.uploaded })}
+            </Typography>
+          )}
+          {syncReport.downloaded > 0 && (
+            <Typography variant="caption" color={colors.textSecondary}>
+              {t('aiOnboarding.downloadedCount', { count: syncReport.downloaded })}
+            </Typography>
+          )}
         </Card>
       )}
 
       <Button
         title={t('aiOnboarding.startChatting')}
-        onPress={async () => {
-          // Refresh subscription state so AITabScreen knows we're subscribed
-          await refreshSubscriptionState();
-          // Go back to AI tab — the wrapper will show chat automatically
-          navigation.goBack();
-        }}
+        onPress={goToAICoach}
         size="large"
         style={{ marginTop: 32 }}
       />
-    </View>
+    </>
   );
 
   // ══════════════════════════════════════════════════════
   // MAIN RENDER
   // ══════════════════════════════════════════════════════
+  const renderStep = () => {
+    switch (step) {
+      case 'auth':
+        return renderAuth();
+      case 'linking':
+      case 'preparing':
+        return renderWaiting(t('aiOnboarding.linkingTitle'), t('aiGate.connecting'));
+      case 'linkError':
+        return renderLinkError();
+      case 'conflict':
+        return renderConflict();
+      case 'inactive':
+        return renderInactive();
+      case 'profile':
+        return renderProfile();
+      case 'syncing':
+        return renderSyncing();
+      case 'syncError':
+        return renderSyncError();
+      case 'complete':
+        return renderComplete();
+    }
+  };
+
   return (
     <ScreenLayout>
       {/* Close button */}
@@ -811,10 +1238,7 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
         </TouchableOpacity>
       </View>
 
-      {step === 'signup' && renderSignup()}
-      {step === 'profile' && renderProfile()}
-      {step === 'migrating' && renderMigrating()}
-      {step === 'complete' && renderComplete()}
+      {renderStep()}
     </ScreenLayout>
   );
 };
@@ -929,6 +1353,13 @@ const createStyles = (colors: any) => StyleSheet.create({
     height: 96,
     borderRadius: 48,
     backgroundColor: colors.success,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statusCircle: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     justifyContent: 'center',
     alignItems: 'center',
   },

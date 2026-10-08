@@ -16,9 +16,7 @@ import { StorageService } from '../services/storage';
 import { generateId } from '../utils/generateId';
 import { PlayCircle, Sparkles, RefreshCw, Trash2, ChevronLeft, Zap } from 'lucide-react-native';
 import { useAction, useQuery } from 'convex/react';
-import { useAuth } from '@clerk/clerk-expo';
 import { api } from '../../convex/_generated/api';
-import { Id } from '../../convex/_generated/dataModel';
 
 const AI_COLOR = '#8B5CF6';
 
@@ -27,13 +25,9 @@ export const AIWorkoutPreviewScreen = ({ route, navigation }: any) => {
     const { colors } = useTheme();
     const styles = createStyles(colors);
     const { currentWorkout, startWorkout, addExerciseToWorkout } = useWorkout();
-    const { userId: clerkUserId } = useAuth();
     const generateWorkoutAction = useAction(api.aiWorkout.generateWorkout);
 
-    const convexUser = useQuery(
-        api.users.getUserByClerkId,
-        clerkUserId ? { clerkId: clerkUserId } : "skip"
-    );
+    const convexUser = useQuery(api.users.me);
 
     const [workout, setWorkout] = useState<AIGeneratedWorkout>(route.params.workout);
     const [regenerating, setRegenerating] = useState(false);
@@ -96,7 +90,6 @@ export const AIWorkoutPreviewScreen = ({ route, navigation }: any) => {
         const comment = route.params?.userComment?.trim();
         try {
             const result = await generateWorkoutAction({
-                userId: convexUser._id as Id<"users">,
                 ...(comment ? { userComment: comment } : {}),
             });
             setWorkout(result as AIGeneratedWorkout);

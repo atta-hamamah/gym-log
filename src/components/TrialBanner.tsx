@@ -4,7 +4,8 @@ import { Typography } from './Typography';
 import { useSubscription } from '../context/SubscriptionContext';
 import { borderRadius } from '../theme/colors';
 import { useTranslation } from 'react-i18next';
-import { Clock, ChevronRight, Crown } from 'lucide-react-native';
+import { Clock, ChevronRight, Crown, Sparkles } from 'lucide-react-native';
+import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
 
 interface TrialBannerProps {
@@ -15,7 +16,34 @@ export const TrialBanner: React.FC<TrialBannerProps> = ({ onPress }) => {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const styles = createStyles(colors);
-  const { tier, trialDaysRemaining } = useSubscription();
+  const navigation = useNavigation<any>();
+  const { tier, trialDaysRemaining, needsAccount } = useSubscription();
+
+  // Paid for AI but no account yet — the most important thing to finish
+  if (needsAccount) {
+    return (
+      <TouchableOpacity
+        onPress={() => navigation.navigate('AIOnboarding', { mode: 'signup' })}
+        activeOpacity={0.8}
+        style={[styles.container, styles.containerUpgrade]}
+      >
+        <View style={[styles.iconCircle, styles.iconCircleUpgrade]}>
+          <Sparkles color={colors.primary} size={16} />
+        </View>
+
+        <View style={styles.textContainer}>
+          <Typography variant="bodySmall" bold color={colors.text}>
+            {t('account.needsAccountTitle')}
+          </Typography>
+          <Typography variant="caption" color={colors.textSecondary} style={{ marginTop: 1 }}>
+            {t('account.needsAccountHint')}
+          </Typography>
+        </View>
+
+        <ChevronRight color={colors.textMuted} size={18} />
+      </TouchableOpacity>
+    );
+  }
 
   // Show during active Pro trial
   if (tier === 'pro_trial') {

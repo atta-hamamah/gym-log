@@ -1,46 +1,72 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { AppState, AppStateStatus, Linking } from 'react-native';
-import { useUser } from '@clerk/clerk-expo';
-import { StorageService } from '../services/storage';
+import { useAuth, useUser } from '@clerk/clerk-expo';
+import { StorageService, type BillingCache } from '../services/storage';
 import {
   initBilling,
-  checkAllEntitlements,
-  presentPaywall,
-  presentAIPaywall,
-  restorePurchasesRC,
+  isBillingReady,
+  fetchBillingSnapshot,
+  logInBillingUser,
+  logOutBillingUser,
+  addBillingListener,
+  purchaseProPackage,
+  purchaseAIPackage,
+  restoreBillingPurchases,
   getManagementURL,
-  disposeBilling,
-  identifyUser,
+  type BillingSnapshot,
 } from '../services/billing';
 import { SubscriptionTier } from '../types';
 
 // ── Constants ────────────────────────────────────────────
-const TRIAL_DURATION_DAYS = 14;
+export const TRIAL_DURATION_DAYS = 14;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+export interface PurchaseResult {
+  success: boolean;
+  cancelled?: boolean;
+  /** The store account already owns this (bought under another app account). */
+  alreadyOwned?: boolean;
+  error?: string;
+}
 
 // ── Context Type ─────────────────────────────────────────
 interface SubscriptionContextType {
-  /** Highest active tier */
+  /** Highest usable tier */
   tier: SubscriptionTier;
-  /** Whether the user has at least Pro (one-time purchase or active trial) */
+  /** Basic (Pro) features unlocked: trial, Pro purchase, or AI subscriber (current or past) */
   isPro: boolean;
-  /** Whether the user has an active AI subscription */
+  /** Pro is unlocked forever: bought Pro, or subscribed to AI at least once */
+  hasLifetimePro: boolean;
+  /** Has subscribed to AI at least once (used for "Resubscribe" wording) */
+  hasEverSubscribedAI: boolean;
+  /** The store reports an active AI subscription (it may not be linked to an account yet) */
+  hasAIEntitlement: boolean;
+  /** AI subscription is active AND linked to the signed-in account → AI + cloud usable */
   isAISubscriber: boolean;
+  /** Paid for AI but hasn't created / signed in to an account yet */
+  needsAccount: boolean;
+  /** RevenueCat is identified as the signed-in Clerk user (always true when signed out) */
+  identityReady: boolean;
+  aiExpiresAt: number | null;
+  aiWillRenew: boolean;
+  aiBillingIssue: boolean;
   /** Whether the user is in the 14-day Pro trial period */
   isProTrial: boolean;
   trialDaysRemaining: number;
   loading: boolean;
 
   /** Purchase the one-time Pro unlock */
-  purchasePro: () => Promise<{ success: boolean; error?: string }>;
+  purchasePro: () => Promise<PurchaseResult>;
   /** Purchase the AI monthly subscription */
-  purchaseAISubscription: () => Promise<{ success: boolean; error?: string }>;
+  purchaseAISubscription: () => Promise<PurchaseResult>;
   /** Open the store's subscription management page (for cancel) */
   openManageSubscription: () => Promise<void>;
-  /** Restore all purchases */
+  /** Restore all purchases owned by the device's store account */
   restorePurchases: () => Promise<{ success: boolean; restoredPro: boolean; restoredAI: boolean }>;
-  /** Force refresh subscription state from RevenueCat */
+  /** Re-align RevenueCat with the signed-in user and refresh entitlements */
   refreshSubscriptionState: () => Promise<void>;
+  /** Forget device-level entitlements (after the account was deleted) */
+  forgetDeviceEntitlements: () => void;
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined);
@@ -54,246 +80,205 @@ function calculateTrialDaysRemaining(firstOpenDate: number): number {
 
 // ── Provider ─────────────────────────────────────────────
 export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [tier, setTier] = useState<SubscriptionTier>('pro_trial');
-  const [isPro, setIsPro] = useState(false);
-  const [isAISubscriber, setIsAISubscriber] = useState(false);
-  const [isProTrial, setIsProTrial] = useState(true);
-  const [trialDaysRemaining, setTrialDaysRemaining] = useState(TRIAL_DURATION_DAYS);
+  const { isLoaded: authLoaded, isSignedIn, userId } = useAuth();
+  const { user } = useUser();
+
+  const [snapshot, setSnapshot] = useState<BillingSnapshot | null>(null);
+  const [cache, setCache] = useState<BillingCache | null>(null);
+  const cacheRef = useRef<BillingCache | null>(null);
+  const [firstOpenDate, setFirstOpenDate] = useState<number | null>(null);
+  const [billingReady, setBillingReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const appState = useRef(AppState.currentState);
-  // Track if a purchase just happened — prevents RC server overriding local state
-  // (critical for test store where anonymous→identified transfer doesn't work)
-  const recentAIPurchaseRef = useRef(false);
 
-  // ── Determine subscription state ────────────────────
-  const refreshSubscriptionState = useCallback(async () => {
-    try {
-      // 1. Check/set first open date
-      let firstOpenDate = await StorageService.getFirstOpenDate();
-      if (firstOpenDate === null) {
-        firstOpenDate = Date.now();
-        await StorageService.setFirstOpenDate(firstOpenDate);
-      }
+  // Latest Clerk state, read by queued billing tasks when they actually run.
+  const authRef = useRef({ authLoaded: false, isSignedIn: false, userId: null as string | null });
+  authRef.current = { authLoaded, isSignedIn: !!isSignedIn, userId: userId ?? null };
 
-      let hasPurchasedPro = false;
-      let hasAI = false;
-
-      // 2. RevenueCat is the SOURCE OF TRUTH for subscription state
-      try {
-        const entitlements = await checkAllEntitlements();
-        hasPurchasedPro = entitlements.hasPro;
-        hasAI = entitlements.hasAI;
-
-        // If a purchase JUST happened locally but RC doesn't reflect it yet
-        // (e.g., test store can't transfer anonymous purchases), preserve the local state
-        if (!hasAI && recentAIPurchaseRef.current) {
-          console.log('[Subscription] RC says no AI but purchase just happened — preserving local state');
-          hasAI = true;
-        }
-
-        // Update local cache to match
-        await StorageService.setPurchaseStatus(hasPurchasedPro ? 'pro' : 'free');
-        await StorageService.setAISubscriptionStatus(hasAI ? 'active' : 'expired');
-      } catch (e) {
-        // RevenueCat failed — only trust local cache if we have a reason to
-        console.warn('[Subscription] RevenueCat check failed, checking local cache:', e);
-        const purchaseStatus = await StorageService.getPurchaseStatus();
-        const aiStatus = await StorageService.getAISubscriptionStatus();
-        hasPurchasedPro = purchaseStatus === 'pro' || purchaseStatus === 'local_premium';
-        hasAI = aiStatus === 'active';
-      }
-
-      // 3. Set state
-      setIsAISubscriber(hasAI);
-
-      // 4. Determine highest tier
-      if (hasAI) {
-        setTier('ai_subscriber');
-        setIsPro(true);
-        setIsProTrial(false);
-        setTrialDaysRemaining(0);
-      } else if (hasPurchasedPro) {
-        setTier('pro');
-        setIsPro(true);
-        setIsProTrial(false);
-        setTrialDaysRemaining(0);
-      } else {
-        // Trial / free logic
-        const remaining = calculateTrialDaysRemaining(firstOpenDate);
-        setTrialDaysRemaining(remaining);
-        if (remaining > 0) {
-          // 14-day reverse trial: user gets all Pro features for free
-          setTier('pro_trial');
-          setIsPro(true);
-          setIsProTrial(true);
-        } else {
-          // Trial expired: downgrade to free tier (app still works, just limited)
-          setTier('free');
-          setIsPro(false);
-          setIsProTrial(false);
-        }
-      }
-    } catch (error) {
-      console.error('[Subscription] Failed to refresh state:', error);
-      setTier('pro_trial');
-      setIsProTrial(true);
-      setTrialDaysRemaining(TRIAL_DURATION_DAYS);
-    }
+  // RevenueCat identity changes and purchases must never interleave.
+  const queueRef = useRef<Promise<unknown>>(Promise.resolve());
+  const enqueue = useCallback(<T,>(task: () => Promise<T>): Promise<T> => {
+    const run = queueRef.current.then(task);
+    queueRef.current = run.catch(() => undefined);
+    return run;
   }, []);
+
+  const applySnapshot = useCallback((next: BillingSnapshot) => {
+    const updated: BillingCache = {
+      lifetimePro:
+        (cacheRef.current?.lifetimePro ?? false) || next.hasProPurchase || next.everHadAI || next.hasAI,
+      hasAI: next.hasAI,
+      aiExpiresAt: next.aiExpiresAt,
+      appUserId: next.appUserId,
+    };
+    cacheRef.current = updated;
+    setCache(updated);
+    setSnapshot(next);
+    StorageService.setBillingCache(updated);
+  }, []);
+
+  /**
+   * RevenueCat follows Clerk: identified as the Clerk user while signed in,
+   * anonymous while signed out. Then refresh entitlements.
+   */
+  const syncBilling = useCallback(() => enqueue(async () => {
+    if (!isBillingReady()) return;
+    const auth = authRef.current;
+    try {
+      let next: BillingSnapshot;
+      if (!auth.authLoaded) {
+        next = await fetchBillingSnapshot();
+      } else if (auth.isSignedIn && auth.userId) {
+        next = await logInBillingUser(auth.userId);
+      } else {
+        next = await logOutBillingUser();
+      }
+      applySnapshot(next);
+    } catch (e) {
+      // Offline or store unavailable: keep the last known state.
+      console.warn('[Subscription] Billing refresh failed:', e);
+    }
+  }), [enqueue, applySnapshot]);
 
   // ── Initialize on mount ─────────────────────────────
   useEffect(() => {
     let mounted = true;
 
     const init = async () => {
-      await initBilling();
-      await refreshSubscriptionState();
-
-      if (mounted) {
-        setLoading(false);
+      let first = await StorageService.getFirstOpenDate();
+      if (first === null) {
+        first = Date.now();
+        await StorageService.setFirstOpenDate(first);
       }
+      const cached = await StorageService.getBillingCache();
+      if (!mounted) return;
+      setFirstOpenDate(first);
+      cacheRef.current = cached;
+      setCache(cached);
+
+      const ready = initBilling();
+      setBillingReady(ready);
+      if (ready) await syncBilling();
+      if (mounted) setLoading(false);
     };
 
     init();
-
     return () => {
       mounted = false;
-      disposeBilling();
     };
-  }, [refreshSubscriptionState]);
+  }, [syncBilling]);
+
+  // ── Live entitlement updates (renewal, expiry, purchase) ──
+  useEffect(() => {
+    if (!billingReady) return;
+    return addBillingListener(applySnapshot);
+  }, [billingReady, applySnapshot]);
+
+  // ── Follow Clerk sign-in / sign-out ─────────────────
+  useEffect(() => {
+    if (!billingReady || !authLoaded) return;
+    syncBilling();
+  }, [billingReady, authLoaded, isSignedIn, userId, syncBilling]);
 
   // ── Re-check when app returns to foreground ─────────
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-        refreshSubscriptionState();
+        syncBilling();
       }
       appState.current = nextAppState;
     });
-
     return () => subscription.remove();
-  }, [refreshSubscriptionState]);
+  }, [syncBilling]);
 
-  // ── Purchase Pro (one-time) ─────────────────────────
-  const purchasePro = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
+  // ── Purchases ───────────────────────────────────────
+  const purchasePro = useCallback(async (): Promise<PurchaseResult> => {
+    await syncBilling(); // make sure the purchase lands on the right account
+    const { snapshot: next, ...result } = await enqueue(() => purchaseProPackage());
+    if (next) applySnapshot(next);
+    return result;
+  }, [syncBilling, enqueue, applySnapshot]);
+
+  const purchaseAISubscription = useCallback(async (): Promise<PurchaseResult> => {
+    await syncBilling();
+    const { snapshot: next, ...result } = await enqueue(() => purchaseAIPackage());
+    if (next) applySnapshot(next);
+    return result;
+  }, [syncBilling, enqueue, applySnapshot]);
+
+  const restorePurchases = useCallback(async () => {
     try {
-      const result = await presentPaywall();
-
-      if (result.success) {
-        await StorageService.setPurchaseStatus('pro');
-        setIsPro(true);
-        setIsProTrial(false);
-        if (!isAISubscriber) {
-          setTier('pro');
-        }
-        setTrialDaysRemaining(0);
-        return { success: true };
-      }
-
-      return { success: false, error: result.error };
-    } catch (error: any) {
-      return { success: false, error: error?.message || 'Purchase failed' };
+      await syncBilling();
+      const next = await enqueue(() => restoreBillingPurchases());
+      applySnapshot(next);
+      return {
+        success: true,
+        restoredPro: next.hasProPurchase || next.everHadAI,
+        restoredAI: next.hasAI,
+      };
+    } catch (error) {
+      console.warn('[Subscription] Restore failed:', error);
+      return { success: false, restoredPro: false, restoredAI: false };
     }
-  }, [isAISubscriber]);
-
-  // ── Purchase AI subscription ────────────────────────
-  const purchaseAISubscription = useCallback(async (): Promise<{ success: boolean; error?: string }> => {
-    try {
-      const result = await presentAIPaywall();
-
-      if (result.success) {
-        await StorageService.setAISubscriptionStatus('active');
-        setIsAISubscriber(true);
-        setTier('ai_subscriber');
-        setIsProTrial(false);
-        setTrialDaysRemaining(0);
-
-        // Mark that a purchase just happened — prevents refreshSubscriptionState
-        // from overriding this state if RC server hasn't synced yet
-        recentAIPurchaseRef.current = true;
-        // Clear after 5 minutes (RC should have synced by then)
-        setTimeout(() => { recentAIPurchaseRef.current = false; }, 5 * 60 * 1000);
-
-        // AI subscribers also get Pro-level local access
-        if (!isPro) {
-          await StorageService.setPurchaseStatus('pro');
-          setIsPro(true);
-        }
-        return { success: true };
-      }
-
-      return { success: false, error: result.error };
-    } catch (error: any) {
-      return { success: false, error: error?.message || 'Subscription failed' };
-    }
-  }, [isPro]);
+  }, [syncBilling, enqueue, applySnapshot]);
 
   // ── Open subscription management (cancel flow) ──────
   const openManageSubscription = useCallback(async () => {
     try {
-      const url = await getManagementURL();
-      await Linking.openURL(url);
+      await Linking.openURL(getManagementURL(snapshot));
     } catch (error) {
       console.warn('[Subscription] Failed to open management URL:', error);
     }
-  }, []);
+  }, [snapshot]);
 
-  // ── Restore handler ─────────────────────────────────
-  const restorePurchases = useCallback(async (): Promise<{ success: boolean; restoredPro: boolean; restoredAI: boolean }> => {
-    try {
-      const result = await restorePurchasesRC();
+  const forgetDeviceEntitlements = useCallback(() => {
+    cacheRef.current = null;
+    setCache(null);
+    syncBilling();
+  }, [syncBilling]);
 
-      if (result.restoredPro) {
-        await StorageService.setPurchaseStatus('pro');
-        setIsPro(true);
-        setIsProTrial(false);
-      }
-      if (result.restoredAI) {
-        await StorageService.setAISubscriptionStatus('active');
-        setIsAISubscriber(true);
-        setIsProTrial(false);
-      }
+  // ── Derived state ───────────────────────────────────
+  // Offline fallback: trust a cached AI entitlement until it expires.
+  const cachedAIValid = !!cache?.hasAI && (cache.aiExpiresAt ?? 0) > Date.now();
+  const hasAIEntitlement = snapshot ? snapshot.hasAI : cachedAIValid;
+  const billingUserId = snapshot?.appUserId ?? cache?.appUserId ?? null;
+  const identityReady = !isSignedIn || billingUserId === userId;
 
-      // Update tier
-      if (result.restoredAI) {
-        setTier('ai_subscriber');
-        setTrialDaysRemaining(0);
-      } else if (result.restoredPro) {
-        setTier('pro');
-        setTrialDaysRemaining(0);
-      }
+  const hasEverSubscribedAI = !!snapshot?.everHadAI || hasAIEntitlement;
+  const hasLifetimePro =
+    !!cache?.lifetimePro || !!snapshot?.hasProPurchase || hasEverSubscribedAI;
+  const isAISubscriber = hasAIEntitlement && !!isSignedIn && identityReady;
+  const needsAccount = hasAIEntitlement && authLoaded && !isSignedIn;
 
-      return result;
-    } catch (error) {
-      return { success: false, restoredPro: false, restoredAI: false };
-    }
-  }, []);
-
-  const { user } = useUser();
-  const isSignedIn = !!user;
-
-  // ── Sync Clerk User with RevenueCat ─────────────────────
-  useEffect(() => {
-    if (user?.id) {
-      identifyUser(user.id)
-        .then(() => refreshSubscriptionState())
-        .catch(console.error);
-    }
-  }, [user?.id, refreshSubscriptionState]);
+  const trialDaysRemaining = firstOpenDate !== null
+    ? calculateTrialDaysRemaining(firstOpenDate)
+    : TRIAL_DURATION_DAYS;
+  const isProTrial = !hasLifetimePro && trialDaysRemaining > 0;
+  const isPro = hasLifetimePro || isProTrial;
+  const tier: SubscriptionTier = isAISubscriber
+    ? 'ai_subscriber'
+    : hasLifetimePro
+      ? 'pro'
+      : isProTrial
+        ? 'pro_trial'
+        : 'free';
 
   const isSuperAdmin = user?.primaryEmailAddress?.emailAddress === 'super@admin.com';
-
-  // AI features REQUIRE a Clerk account (for Convex auth + cloud data).
-  // If user is not signed in, AI subscription is always false regardless of RevenueCat.
-  const effectiveAISubscriber = isSignedIn && isAISubscriber;
-  const effectiveTier: SubscriptionTier = !isSignedIn && tier === 'ai_subscriber' ? (isPro ? 'pro' : (isProTrial ? 'pro_trial' : 'free')) : tier;
 
   return (
     <SubscriptionContext.Provider
       value={{
-        tier: isSuperAdmin ? 'ai_subscriber' : effectiveTier,
+        tier: isSuperAdmin ? 'ai_subscriber' : tier,
         isPro: isSuperAdmin ? true : isPro,
-        isAISubscriber: isSuperAdmin ? true : effectiveAISubscriber,
+        hasLifetimePro: isSuperAdmin ? true : hasLifetimePro,
+        hasEverSubscribedAI: isSuperAdmin ? true : hasEverSubscribedAI,
+        hasAIEntitlement: isSuperAdmin ? true : hasAIEntitlement,
+        isAISubscriber: isSuperAdmin ? true : isAISubscriber,
+        needsAccount: isSuperAdmin ? false : needsAccount,
+        identityReady: isSuperAdmin ? true : identityReady,
+        aiExpiresAt: snapshot?.aiExpiresAt ?? null,
+        aiWillRenew: snapshot?.aiWillRenew ?? false,
+        aiBillingIssue: snapshot?.aiBillingIssue ?? false,
         isProTrial: isSuperAdmin ? false : isProTrial,
         trialDaysRemaining: isSuperAdmin ? 0 : trialDaysRemaining,
         loading,
@@ -301,7 +286,8 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         purchaseAISubscription,
         openManageSubscription,
         restorePurchases,
-        refreshSubscriptionState,
+        refreshSubscriptionState: syncBilling,
+        forgetDeviceEntitlements,
       }}
     >
       {children}

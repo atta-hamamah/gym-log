@@ -16,9 +16,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Typography } from '../components/Typography';
 import { borderRadius } from '../theme/colors';
 import { useAction, useQuery } from 'convex/react';
-import { useAuth } from '@clerk/clerk-expo';
+import { ConvexError } from 'convex/values';
 import { api } from '../../convex/_generated/api';
-import { Id } from '../../convex/_generated/dataModel';
+import { useSubscription } from '../context/SubscriptionContext';
 import { Send, X, Bot, User, Sparkles, Zap } from 'lucide-react-native';
 import { AIGeneratedWorkout } from '../types';
 import { useTranslation } from 'react-i18next';
@@ -36,18 +36,25 @@ export const AIChatScreen = ({ navigation }: any) => {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const styles = createStyles(colors, insets.bottom);
-  const { userId: clerkUserId } = useAuth();
   const chatAction = useAction(api.ai.chat);
   const generateWorkoutAction = useAction(api.aiWorkout.generateWorkout);
   const [generating, setGenerating] = useState(false);
   const [commentModalVisible, setCommentModalVisible] = useState(false);
   const [userComment, setUserComment] = useState('');
 
-  // Get Convex user from Clerk ID
-  const convexUser = useQuery(
-    api.users.getUserByClerkId,
-    clerkUserId ? { clerkId: clerkUserId } : "skip"
-  );
+  // Signed-in user's cloud profile (the AI actions resolve the user from auth)
+  const convexUser = useQuery(api.users.me);
+  const { refreshSubscriptionState } = useSubscription();
+
+  // The server rejected the request because the subscription isn't active
+  // (e.g. expired or refunded): re-check with the store so the app updates.
+  const subscriptionErrorText = useCallback((error: unknown): string | null => {
+    if (error instanceof ConvexError && (error.data as any)?.code === 'AI_SUBSCRIPTION_REQUIRED') {
+      refreshSubscriptionState();
+      return t('aiChat.subscriptionRequired');
+    }
+    return null;
+  }, [refreshSubscriptionState, t]);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -94,7 +101,6 @@ export const AIChatScreen = ({ navigation }: any) => {
       }));
 
       const response = await chatAction({
-        userId: convexUser._id as Id<"users">,
         message: userMessage.content,
         conversationHistory: history,
       });
@@ -112,14 +118,14 @@ export const AIChatScreen = ({ navigation }: any) => {
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: t('aiChat.error'),
+        content: subscriptionErrorText(error) ?? t('aiChat.error'),
         timestamp: Date.now(),
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setLoading(false);
     }
-  }, [input, loading, convexUser, messages, chatAction, scrollToBottom, t]);
+  }, [input, loading, convexUser, messages, chatAction, scrollToBottom, t, subscriptionErrorText]);
 
   // ── Show comment modal before generating ──
   const handleGenerateWorkoutPress = useCallback(() => {
@@ -135,7 +141,6 @@ export const AIChatScreen = ({ navigation }: any) => {
     const comment = userComment.trim();
     try {
       const result = await generateWorkoutAction({
-        userId: convexUser._id as Id<"users">,
         ...(comment ? { userComment: comment } : {}),
       });
       navigation.navigate('AIWorkoutPreview', {
@@ -146,7 +151,7 @@ export const AIChatScreen = ({ navigation }: any) => {
       const errorMessage: ChatMessage = {
         id: Date.now().toString(),
         role: 'assistant',
-        content: t('aiWorkout.errorMessage'),
+        content: subscriptionErrorText(error) ?? t('aiWorkout.errorMessage'),
         timestamp: Date.now(),
       };
       setMessages(prev => [...prev, errorMessage]);
@@ -154,7 +159,7 @@ export const AIChatScreen = ({ navigation }: any) => {
       setGenerating(false);
       setUserComment('');
     }
-  }, [generating, convexUser, generateWorkoutAction, navigation, t, userComment]);
+  }, [generating, convexUser, generateWorkoutAction, navigation, t, userComment, subscriptionErrorText]);
 
   // ── Render a single message bubble ──
   const renderMessage = useCallback(({ item }: { item: ChatMessage }) => {

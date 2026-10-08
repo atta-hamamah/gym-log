@@ -11,9 +11,9 @@
 import type * as ai from "../ai.js";
 import type * as aiHelpers from "../aiHelpers.js";
 import type * as aiWorkout from "../aiWorkout.js";
-import type * as liveSync from "../liveSync.js";
-import type * as migration from "../migration.js";
-import type * as paginatedWorkouts from "../paginatedWorkouts.js";
+import type * as entitlements from "../entitlements.js";
+import type * as http from "../http.js";
+import type * as sync from "../sync.js";
 import type * as users from "../users.js";
 import type * as workouts from "../workouts.js";
 
@@ -27,9 +27,9 @@ declare const fullApi: ApiFromModules<{
   ai: typeof ai;
   aiHelpers: typeof aiHelpers;
   aiWorkout: typeof aiWorkout;
-  liveSync: typeof liveSync;
-  migration: typeof migration;
-  paginatedWorkouts: typeof paginatedWorkouts;
+  entitlements: typeof entitlements;
+  http: typeof http;
+  sync: typeof sync;
   users: typeof users;
   workouts: typeof workouts;
 }>;

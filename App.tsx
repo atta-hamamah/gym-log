@@ -8,6 +8,7 @@ import { ConvexProviderWithClerk } from 'convex/react-clerk';
 import { ConvexReactClient } from 'convex/react';
 import { tokenCache } from './src/services/auth';
 import { SubscriptionProvider } from './src/context/SubscriptionContext';
+import { CloudSyncProvider } from './src/context/CloudSyncContext';
 import { WorkoutProvider } from './src/context/WorkoutContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { UnitsProvider } from './src/context/UnitsContext';
@@ -38,11 +39,13 @@ const AppContent = () => {
             <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
                 <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
                     <SubscriptionProvider>
-                        <WorkoutProvider>
-                            <UnitsProvider>
-                                <AppNavigator />
-                            </UnitsProvider>
-                        </WorkoutProvider>
+                        <CloudSyncProvider>
+                            <WorkoutProvider>
+                                <UnitsProvider>
+                                    <AppNavigator />
+                                </UnitsProvider>
+                            </WorkoutProvider>
+                        </CloudSyncProvider>
                     </SubscriptionProvider>
                 </ConvexProviderWithClerk>
             </ClerkProvider>

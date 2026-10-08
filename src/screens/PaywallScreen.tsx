@@ -20,7 +20,7 @@ const FEATURES = [
   { icon: Zap, labelKey: 'subscription.features.noLimits' },
 ];
 
-export const PaywallScreen = () => {
+export const PaywallScreen = ({ navigation }: any) => {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const styles = createStyles(colors);
@@ -45,12 +45,26 @@ export const PaywallScreen = () => {
     setError(null);
 
     const result = await purchasePro();
+    setPurchasing(false);
 
-    if (!result.success) {
+    if (result.success) {
+      navigation.goBack();
+    } else if (!result.cancelled) {
       setError(result.error || t('subscription.purchaseError'));
     }
+  };
 
+  const handleRestore = async () => {
+    setPurchasing(true);
+    setError(null);
+    const result = await restorePurchases();
     setPurchasing(false);
+
+    if (result.restoredPro || result.restoredAI) {
+      navigation.goBack();
+    } else {
+      setError(t('subscription.noRestoreFoundMessage'));
+    }
   };
 
 
@@ -123,6 +137,14 @@ export const PaywallScreen = () => {
           <Typography variant="caption" color={colors.textMuted} align="center" style={{ marginTop: 8 }}>
             {t('subscription.oneTimePayment')}
           </Typography>
+
+          <Button
+            title={t('subscription.restorePurchase')}
+            variant="ghost"
+            onPress={handleRestore}
+            disabled={purchasing}
+            style={{ marginTop: 8 }}
+          />
 
           {/* Error message */}
           {error && (

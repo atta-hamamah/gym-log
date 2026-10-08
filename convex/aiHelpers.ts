@@ -1,13 +1,14 @@
 import { v } from "convex/values";
-import { query } from "./_generated/server";
+import { internalQuery } from "./_generated/server";
 
 /**
  * Helper queries for the AI chat action.
  * These must be in a separate file (not "use node") because
  * queries run in the Convex runtime, not Node.js.
+ * Internal-only: they take a userId, so clients must not call them directly.
  */
 
-export const getPersonalRecords = query({
+export const getPersonalRecords = internalQuery({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
     return await ctx.db
@@ -17,7 +18,7 @@ export const getPersonalRecords = query({
   },
 });
 
-export const getBodyMeasurements = query({
+export const getBodyMeasurements = internalQuery({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
     return await ctx.db
@@ -32,7 +33,7 @@ export const getBodyMeasurements = query({
  * Aggregate yearly training statistics for the AI prompt.
  * Computes everything server-side so only a tiny summary is sent to OpenAI.
  */
-export const getYearlyStats = query({
+export const getYearlyStats = internalQuery({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
     const oneYearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000;
@@ -95,7 +96,7 @@ export const getYearlyStats = query({
  * Get all custom exercises for a user.
  * Used by the AI workout generator to include custom exercises in the catalog.
  */
-export const getCustomExercises = query({
+export const getCustomExercises = internalQuery({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
     return await ctx.db

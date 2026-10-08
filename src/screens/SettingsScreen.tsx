@@ -5,7 +5,6 @@ import { Typography } from '../components/Typography';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { ProFeatureGate } from '../components/ProFeatureGate';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useWorkout } from '../context/WorkoutContext';
 import { borderRadius, ThemeColors } from '../theme/colors';
 import { format } from 'date-fns';
@@ -13,14 +12,14 @@ import { useTranslation } from 'react-i18next';
 import { LANGUAGE_LABELS, SupportedLanguage, isRTL, saveLanguagePreference } from '../i18n';
 import * as Updates from 'expo-updates';
 import { ConfirmationModal } from '../components/ConfirmationModal';
-import { useSubscription } from '../context/SubscriptionContext';
-import { StorageService } from '../services/storage';
+import { useSubscription, TRIAL_DURATION_DAYS } from '../context/SubscriptionContext';
+import { useCloudSync, SUBSCRIPTION_NOT_VERIFIED } from '../context/CloudSyncContext';
 import { BodyMeasurement, MeasurementKey } from '../types';
 import { generateId } from '../utils/generateId';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-import { Crown, Sparkles, Zap, CreditCard, LogOut, Sun, Moon, Target, Ruler, Weight } from 'lucide-react-native';
+import { Crown, Sparkles, CreditCard, LogOut, Sun, Moon, Target, Ruler, Cloud, CloudOff, RefreshCw, AlertTriangle, UserCircle } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useUnits, UnitSystem } from '../context/UnitsContext';
 
@@ -30,26 +29,40 @@ export const SettingsScreen = ({ navigation }: any) => {
     const { colors, themeMode, setThemeMode } = useTheme();
     const styles = createStyles(colors);
     const { unitSystem, setUnitSystem, weightUnit, lengthUnit, displayWeight, displayLength, toMetricWeight, toMetricLength } = useUnits();
-    const { updateUserStats, userStats, workouts, refreshData, bodyMeasurements, addBodyMeasurement, clearAllWorkouts } = useWorkout();
+    const { updateUserStats, userStats, workouts, bodyMeasurements, addBodyMeasurement, clearAllData, cancelWorkout } = useWorkout();
     const {
         tier,
         isPro,
         isAISubscriber,
-        isProTrial,
+        hasLifetimePro,
+        hasEverSubscribedAI,
+        needsAccount,
+        aiExpiresAt,
+        aiWillRenew,
+        aiBillingIssue,
         trialDaysRemaining,
         purchasePro,
-        purchaseAISubscription,
         openManageSubscription,
         restorePurchases,
     } = useSubscription();
-    const { isSignedIn, signOut } = useAuth();
+    const {
+        cloudSyncActive,
+        status: syncStatus,
+        lastSyncedAt,
+        pendingChanges,
+        lastError: lastSyncError,
+        accountLinked,
+        ownership,
+        syncNow,
+        resolveOwnership,
+        signOut,
+        deleteAccount,
+    } = useCloudSync();
+    const { isSignedIn } = useAuth();
     const { user } = useUser();
-    const deleteUser = useMutation(api.users.deleteUser);
-    const updateUserProfile = useMutation(api.users.updateUserProfile);
-    const convexUser = useQuery(
-        api.users.getUserByClerkId,
-        user?.id ? { clerkId: user.id } : 'skip'
-    );
+    const updateProfile = useMutation(api.users.updateProfile);
+    const convexUser = useQuery(api.users.me, isSignedIn ? {} : 'skip');
+    const [restoring, setRestoring] = useState(false);
     const [weight, setWeight] = useState('');
     const [bodyFat, setBodyFat] = useState('');
     const [height, setHeight] = useState('');
@@ -133,11 +146,16 @@ export const SettingsScreen = ({ navigation }: any) => {
         const h = parseFloat(height);
 
         // Always store in metric (kg / cm)
-        await updateUserStats({
+        const stats = {
             weight: toMetricWeight(w),
             bodyFat: isNaN(bf) ? undefined : bf,
             height: isNaN(h) ? undefined : toMetricLength(h),
-        });
+        };
+        await updateUserStats(stats);
+        // The AI coach reads body stats from the cloud profile.
+        if (convexUser) {
+            updateProfile(stats).catch(e => console.warn('[Settings] Profile stats sync failed:', e));
+        }
         showModal(t('settings.saved'), t('settings.savedMessage'), undefined, 'success');
     };
 
@@ -183,11 +201,11 @@ export const SettingsScreen = ({ navigation }: any) => {
     const handleReset = () => {
         showModal(
             t('settings.resetTitle'),
-            isAISubscriber ? t('settings.resetCloudMessage') : t('settings.resetMessage'),
+            accountLinked ? t('settings.resetCloudMessage') : t('settings.resetMessage'),
             async () => {
-                await clearAllWorkouts();
-                await AsyncStorage.clear();
-                await refreshData();
+                // Preferences, language and trial date are kept; cloud copy is
+                // cleared on the next sync when this device is linked to an account.
+                await clearAllData();
                 showModal(t('settings.dataCleared'), t('settings.dataClearedMessage'), undefined, 'success');
             },
             'danger',
@@ -202,23 +220,20 @@ export const SettingsScreen = ({ navigation }: any) => {
     const handleDeleteAccount = () => {
         showModal(
             t('settings.deleteAccountTitle', 'Delete Account'),
-            t('settings.deleteAccountMessage', 'Are you sure you want to delete your account and all associated data permanently? This action cannot be undone.'),
+            t('account.deleteAccountMessage'),
             async () => {
                 try {
-                    if (user) {
-                        try {
-                            await deleteUser({ clerkId: user.id });
-                        } catch (convexError) {
-                            console.error("Failed to delete from Convex", convexError);
-                        }
-                        await user.delete();
-                    }
-                    await AsyncStorage.clear();
-                    await StorageService.setIsLive(false);
-                    await signOut();
-                } catch (error) {
+                    await deleteAccount();
+                    await cancelWorkout();
+                    showModal(t('settings.deleteAccountTitle', 'Delete Account'), t('account.deleteSuccess'), undefined, 'success');
+                } catch (error: any) {
                     console.error("Error deleting account:", error);
-                    showModal(t('common.error', 'Error'), t('settings.deleteError', 'Failed to delete account.'), undefined, 'danger');
+                    showModal(
+                        t('common.error', 'Error'),
+                        `${t('settings.deleteError', 'Failed to delete account.')}\n${error?.message ?? ''}`,
+                        undefined,
+                        'danger'
+                    );
                 }
             },
             'danger',
@@ -227,6 +242,54 @@ export const SettingsScreen = ({ navigation }: any) => {
             () => { },
             true,
             t('settings.understandDelete', 'I understand this is permanent')
+        );
+    };
+
+    const handleSignOut = () => {
+        const unsynced = !cloudSyncActive && accountLinked && pendingChanges > 0;
+        showModal(
+            t('account.signOutTitle'),
+            unsynced
+                ? `${t('account.signOutMessage')}\n\n${t('account.signOutPending', { count: pendingChanges })}`
+                : t('account.signOutMessage'),
+            async () => {
+                try {
+                    await signOut();
+                } catch (error: any) {
+                    showModal(t('common.error', 'Error'), error?.message ?? '', undefined, 'danger');
+                }
+            },
+            'primary',
+            t('account.signOut'),
+            t('common.cancel'),
+            () => { }
+        );
+    };
+
+    const handleRestore = async () => {
+        setRestoring(true);
+        const result = await restorePurchases();
+        setRestoring(false);
+        if (!result.success || (!result.restoredPro && !result.restoredAI)) {
+            showModal(t('subscription.noRestoreFound'), t('subscription.noRestoreFoundMessage'), undefined, 'primary');
+        } else {
+            showModal(t('subscription.restored'), t('subscription.restoredMessage'), undefined, 'success');
+        }
+    };
+
+    const handleResolveConflict = (choice: 'merge' | 'replace') => {
+        if (choice === 'merge') {
+            resolveOwnership('merge');
+            return;
+        }
+        showModal(
+            t('account.conflictTitle'),
+            t('account.conflictReplaceConfirm'),
+            () => { resolveOwnership('replace'); },
+            'danger',
+            t('account.conflictReplace'),
+            t('common.cancel'),
+            () => { }
         );
     };
 
@@ -324,8 +387,72 @@ export const SettingsScreen = ({ navigation }: any) => {
         { key: 'calves', label: t('measurements.calves'), state: mCalves, setter: setMCalves },
     ];
 
-    // ── Determine what to show in subscription card ──
+    const handlePurchasePro = async () => {
+        const result = await purchasePro();
+        if (!result.success && !result.cancelled) {
+            showModal(t('subscription.purchaseError'), result.error || '', undefined, 'danger');
+        }
+    };
+
+    const formatDate = (ms: number) => format(ms, 'MMM d, yyyy');
+    const aiStatusLine = aiBillingIssue
+        ? t('plan.aiBillingIssue')
+        : aiExpiresAt
+            ? (aiWillRenew
+                ? t('plan.aiRenews', { date: formatDate(aiExpiresAt) })
+                : t('plan.aiEnds', { date: formatDate(aiExpiresAt) }))
+            : null;
+
+    const renderRestoreRow = () => (
+        <TouchableOpacity
+            style={styles.manageRow}
+            onPress={handleRestore}
+            disabled={restoring}
+            activeOpacity={0.7}
+        >
+            <RefreshCw color={colors.textSecondary} size={18} />
+            <Typography variant="body" color={colors.text} style={{ flex: 1, marginLeft: 12 }}>
+                {restoring ? t('subscription.processing') : t('account.restorePurchases')}
+            </Typography>
+        </TouchableOpacity>
+    );
+
+    // ── Plan card: what the user has paid for ──
     const renderSubscriptionCard = () => {
+        if (needsAccount) {
+            // ── Paid for AI, no account yet ──
+            return (
+                <Card style={styles.aiCard}>
+                    <View style={styles.tierHeader}>
+                        <View style={styles.tierBadgeAI}>
+                            <Sparkles color={colors.primary} size={16} />
+                            <Typography variant="body" bold color={colors.primary} style={{ marginLeft: 8 }}>
+                                {t('settings.aiActive')}
+                            </Typography>
+                        </View>
+                    </View>
+                    <Typography variant="body" bold style={{ marginTop: 12 }}>
+                        {t('account.needsAccountTitle')}
+                    </Typography>
+                    <Typography variant="caption" color={colors.textSecondary} style={{ marginTop: 4 }}>
+                        {t('account.needsAccountMessage')}
+                    </Typography>
+                    <Button
+                        title={t('account.createAccount')}
+                        onPress={() => navigation.navigate('AIOnboarding', { mode: 'signup' })}
+                        size="medium"
+                        style={{ marginTop: 12 }}
+                    />
+                    <Button
+                        title={t('aiGate.haveAccountSignIn')}
+                        variant="ghost"
+                        onPress={() => navigation.navigate('AIOnboarding', { mode: 'signin' })}
+                        style={{ marginTop: 4 }}
+                    />
+                </Card>
+            );
+        }
+
         if (isAISubscriber) {
             // ── AI Subscriber ──
             return (
@@ -342,6 +469,18 @@ export const SettingsScreen = ({ navigation }: any) => {
                     <Typography variant="caption" color={colors.textSecondary} style={{ marginTop: 8 }}>
                         {t('settings.aiActiveDesc')}
                     </Typography>
+                    {aiStatusLine && (
+                        <View style={styles.statusLine}>
+                            {aiBillingIssue && <AlertTriangle color={colors.warning} size={14} />}
+                            <Typography
+                                variant="caption"
+                                color={aiBillingIssue ? colors.warning : colors.textMuted}
+                                style={{ marginLeft: aiBillingIssue ? 6 : 0, flex: 1 }}
+                            >
+                                {aiStatusLine}
+                            </Typography>
+                        </View>
+                    )}
 
                     {/* Fitness Goal Editor */}
                     <View style={styles.goalSection}>
@@ -367,10 +506,7 @@ export const SettingsScreen = ({ navigation }: any) => {
                                 style={styles.saveGoalButton}
                                 onPress={async () => {
                                     if (convexUser?._id) {
-                                        await updateUserProfile({
-                                            userId: convexUser._id,
-                                            goal: fitnessGoal.trim(),
-                                        });
+                                        await updateProfile({ goal: fitnessGoal.trim() });
                                         setFitnessGoal(null);
                                         showModal(
                                             t('settings.saved'),
@@ -401,31 +537,12 @@ export const SettingsScreen = ({ navigation }: any) => {
                         </Typography>
                         <Typography variant="caption" color={colors.textMuted}>›</Typography>
                     </TouchableOpacity>
-
-                    {/* Sign Out */}
-                    {isSignedIn && (
-                        <TouchableOpacity
-                            style={styles.manageRow}
-                            onPress={async () => {
-                                await signOut();
-                                await StorageService.setIsLive(false);
-                                await StorageService.clearSyncData();
-                                await refreshData();
-                            }}
-                            activeOpacity={0.7}
-                        >
-                            <LogOut color={colors.error} size={18} />
-                            <Typography variant="body" color={colors.error} style={{ flex: 1, marginLeft: 12 }}>
-                                {t('settings.signOut')}
-                            </Typography>
-                        </TouchableOpacity>
-                    )}
                 </Card>
             );
         }
 
-        if (isPro && !isProTrial) {
-            // ── Pro (one-time purchase) ──
+        if (hasLifetimePro) {
+            // ── Pro forever: one-time purchase, or included with a past AI subscription ──
             return (
                 <Card style={styles.premiumCard}>
                     <View style={styles.tierHeader}>
@@ -436,6 +553,11 @@ export const SettingsScreen = ({ navigation }: any) => {
                             </Typography>
                         </View>
                     </View>
+                    {hasEverSubscribedAI && (
+                        <Typography variant="caption" color={colors.textSecondary} style={{ marginTop: 8 }}>
+                            {t('plan.proFromAI')}
+                        </Typography>
+                    )}
 
                     {/* Upsell to AI */}
                     <TouchableOpacity
@@ -447,13 +569,16 @@ export const SettingsScreen = ({ navigation }: any) => {
                             <Sparkles color={colors.primary} size={18} />
                         </View>
                         <View style={{ flex: 1 }}>
-                            <Typography variant="body" bold>{t('settings.upgradeToAI')}</Typography>
+                            <Typography variant="body" bold>
+                                {hasEverSubscribedAI ? t('plan.resubscribeAI') : t('settings.upgradeToAI')}
+                            </Typography>
                             <Typography variant="caption" color={colors.textSecondary}>
                                 {t('settings.upgradeToAIDesc')}
                             </Typography>
                         </View>
                         <Typography variant="body" color={colors.primary}>›</Typography>
                     </TouchableOpacity>
+                    {renderRestoreRow()}
                 </Card>
             );
         }
@@ -469,16 +594,11 @@ export const SettingsScreen = ({ navigation }: any) => {
                             {t('subscription.proTrialBanner', { days: trialDaysRemaining, defaultValue: '{{days}} days of Pro remaining' })}
                         </Typography>
                         <View style={styles.trialProgressBar}>
-                            <View style={[styles.trialProgressFill, { width: `${(trialDaysRemaining / 14) * 100}%` }]} />
+                            <View style={[styles.trialProgressFill, { width: `${(trialDaysRemaining / TRIAL_DURATION_DAYS) * 100}%` }]} />
                         </View>
                         <Button
                             title={t('subscription.unlockForever')}
-                            onPress={async () => {
-                                const result = await purchasePro();
-                                if (!result.success) {
-                                    showModal(t('subscription.purchaseError'), result.error || '', undefined, 'danger');
-                                }
-                            }}
+                            onPress={handlePurchasePro}
                             size="medium"
                             style={{ marginTop: 12 }}
                         />
@@ -490,18 +610,132 @@ export const SettingsScreen = ({ navigation }: any) => {
                         </Typography>
                         <Button
                             title={t('subscription.unlockForever')}
-                            onPress={async () => {
-                                const result = await purchasePro();
-                                if (!result.success) {
-                                    showModal(t('subscription.purchaseError'), result.error || '', undefined, 'danger');
-                                }
-                            }}
+                            onPress={handlePurchasePro}
                             size="medium"
                         />
                     </View>
                 )}
 
+                {renderRestoreRow()}
+            </Card>
+        );
+    };
 
+    // ── Account card: who is signed in and how the data syncs ──
+    const renderAccountCard = () => {
+        if (!isSignedIn) {
+            // The plan card already asks AI subscribers without an account to create one.
+            if (needsAccount) return null;
+            return (
+                <Card>
+                    <View style={styles.tierHeader}>
+                        <UserCircle color={colors.textSecondary} size={18} />
+                        <Typography variant="h3" style={{ marginLeft: 8 }}>{t('account.title')}</Typography>
+                    </View>
+                    <TouchableOpacity
+                        style={styles.manageRow}
+                        onPress={() => navigation.navigate('AIOnboarding', { mode: 'signin' })}
+                        activeOpacity={0.7}
+                    >
+                        <Typography variant="body" color={colors.primary} style={{ flex: 1 }}>
+                            {t('aiGate.alreadyHaveAccount')}
+                        </Typography>
+                        <Typography variant="caption" color={colors.textMuted}>›</Typography>
+                    </TouchableOpacity>
+                </Card>
+            );
+        }
+
+        const conflict = ownership?.status === 'otherAccount';
+        let SyncIcon = Cloud;
+        let syncColor: string = colors.success;
+        let syncText: string;
+        if (conflict) {
+            SyncIcon = AlertTriangle;
+            syncColor = colors.warning;
+            syncText = t('account.conflictMessage', { email: ownership.ownerEmail || '—' });
+        } else if (!cloudSyncActive) {
+            SyncIcon = CloudOff;
+            syncColor = colors.textMuted;
+            syncText = isAISubscriber ? t('aiGate.connecting') : t('account.syncPaused');
+        } else if (syncStatus === 'syncing') {
+            SyncIcon = RefreshCw;
+            syncColor = colors.primary;
+            syncText = t('account.syncing');
+        } else if (syncStatus === 'error') {
+            SyncIcon = AlertTriangle;
+            syncColor = colors.warning;
+            syncText = lastSyncError === SUBSCRIPTION_NOT_VERIFIED
+                ? t('account.syncNotVerified')
+                : t('account.syncError');
+        } else {
+            syncText = lastSyncedAt
+                ? t('account.syncedAt', { time: format(lastSyncedAt, 'MMM d, HH:mm') })
+                : t('account.syncWaiting');
+        }
+
+        return (
+            <Card>
+                <View style={styles.tierHeader}>
+                    <UserCircle color={colors.textSecondary} size={18} />
+                    <Typography variant="h3" style={{ marginLeft: 8 }}>{t('account.title')}</Typography>
+                </View>
+                <Typography variant="caption" color={colors.textSecondary} style={{ marginTop: 6 }}>
+                    {t('account.signedInAs', { email: user?.primaryEmailAddress?.emailAddress ?? '' })}
+                </Typography>
+
+                <View style={[styles.statusLine, { marginTop: 12 }]}>
+                    <SyncIcon color={syncColor} size={16} />
+                    <Typography variant="caption" color={syncColor} style={{ marginLeft: 8, flex: 1 }}>
+                        {syncText}
+                    </Typography>
+                </View>
+                {pendingChanges > 0 && !conflict && (
+                    <Typography variant="caption" color={colors.textMuted} style={{ marginTop: 4, marginLeft: 24 }}>
+                        {t('account.pendingChanges', { count: pendingChanges })}
+                    </Typography>
+                )}
+
+                {conflict && (
+                    <View style={{ marginTop: 12 }}>
+                        <Button
+                            title={t('account.conflictMerge')}
+                            onPress={() => handleResolveConflict('merge')}
+                            size="small"
+                        />
+                        <Button
+                            title={t('account.conflictReplace')}
+                            variant="outline"
+                            onPress={() => handleResolveConflict('replace')}
+                            size="small"
+                            style={{ marginTop: 8 }}
+                        />
+                    </View>
+                )}
+
+                {cloudSyncActive && !conflict && syncStatus !== 'syncing' && (
+                    <TouchableOpacity
+                        style={styles.manageRow}
+                        onPress={() => syncNow()}
+                        activeOpacity={0.7}
+                    >
+                        <RefreshCw color={colors.textSecondary} size={18} />
+                        <Typography variant="body" color={colors.text} style={{ flex: 1, marginLeft: 12 }}>
+                            {t('account.syncNow')}
+                        </Typography>
+                    </TouchableOpacity>
+                )}
+
+                <TouchableOpacity
+                    style={styles.manageRow}
+                    onPress={handleSignOut}
+                    activeOpacity={0.7}
+                >
+                    <LogOut color={colors.error} size={18} />
+                    <Typography variant="body" color={colors.error} style={{ flex: 1, marginLeft: 12 }}>
+                        {t('account.signOut')}
+                    </Typography>
+                </TouchableOpacity>
             </Card>
         );
     };
@@ -513,6 +747,9 @@ export const SettingsScreen = ({ navigation }: any) => {
 
                 {/* Subscription / Plan Status */}
                 {renderSubscriptionCard()}
+
+                {/* Account & Cloud Sync */}
+                {renderAccountCard()}
 
                 {/* Language Selector */}
                 <Card>
@@ -615,7 +852,7 @@ export const SettingsScreen = ({ navigation }: any) => {
                             onPress={async () => {
                                 await setUnitSystem('metric');
                                 if (convexUser?._id) {
-                                    await updateUserProfile({ userId: convexUser._id, unitPreference: 'metric' });
+                                    await updateProfile({ unitPreference: 'metric' });
                                 }
                             }}
                             activeOpacity={0.85}
@@ -637,7 +874,7 @@ export const SettingsScreen = ({ navigation }: any) => {
                             onPress={async () => {
                                 await setUnitSystem('imperial');
                                 if (convexUser?._id) {
-                                    await updateUserProfile({ userId: convexUser._id, unitPreference: 'imperial' });
+                                    await updateProfile({ unitPreference: 'imperial' });
                                 }
                             }}
                             activeOpacity={0.85}
@@ -1045,6 +1282,11 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         paddingVertical: 14,
         borderTopWidth: 1,
         borderTopColor: colors.border + '30',
+        marginTop: 8,
+    },
+    statusLine: {
+        flexDirection: 'row',
+        alignItems: 'center',
         marginTop: 8,
     },
     trialProgressBar: {

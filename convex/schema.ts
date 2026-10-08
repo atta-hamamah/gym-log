@@ -16,6 +16,12 @@ export default defineSchema({
     unitPreference: v.optional(v.union(v.literal("metric"), v.literal("imperial"))),
     createdAt: v.float64(),
     migrationComplete: v.boolean(),
+    // Bumped on every cloud data change so other devices know to pull.
+    dataVersion: v.optional(v.float64()),
+    // AI subscription as last reported by RevenueCat (see entitlements.ts).
+    aiActive: v.optional(v.boolean()),
+    aiExpiresAt: v.optional(v.float64()),   // missing while active = never expires
+    entitlementCheckedAt: v.optional(v.float64()),
   })
     .index("by_clerkId", ["clerkId"])
     .index("by_email", ["email"]),
@@ -23,7 +29,7 @@ export default defineSchema({
   // ── Workouts ──────────────────────────────────────────
   workouts: defineTable({
     userId: v.id("users"),
-    localId: v.string(),                   // original AsyncStorage ID
+    localId: v.string(),                   // client-generated ID (stable across devices)
     name: v.string(),
     startTime: v.float64(),
     endTime: v.optional(v.float64()),
@@ -35,7 +41,7 @@ export default defineSchema({
   })
     .index("by_userId", ["userId"])
     .index("by_userId_startTime", ["userId", "startTime"])
-    .index("by_localId", ["localId"]),
+    .index("by_userId_localId", ["userId", "localId"]),
 
   // ── Exercise Logs (child of Workout) ──────────────────
   exerciseLogs: defineTable({
@@ -49,6 +55,7 @@ export default defineSchema({
     order: v.float64(),
   })
     .index("by_workoutId", ["workoutId"])
+    .index("by_userId", ["userId"])
     .index("by_userId_exerciseId", ["userId", "exerciseId"]),
 
   // ── Sets (child of ExerciseLog) ───────────────────────
@@ -67,7 +74,8 @@ export default defineSchema({
     ),
     order: v.float64(),
   })
-    .index("by_exerciseLogId", ["exerciseLogId"]),
+    .index("by_exerciseLogId", ["exerciseLogId"])
+    .index("by_userId", ["userId"]),
 
   // ── Custom Exercises ──────────────────────────────────
   customExercises: defineTable({
@@ -81,9 +89,11 @@ export default defineSchema({
     ),
     muscleGroup: v.string(),
   })
-    .index("by_userId", ["userId"]),
+    .index("by_userId", ["userId"])
+    .index("by_userId_localId", ["userId", "localId"]),
 
   // ── Personal Records ──────────────────────────────────
+  // Natural key: (userId, workoutLocalId, exerciseId, type)
   personalRecords: defineTable({
     userId: v.id("users"),
     exerciseId: v.string(),
@@ -99,11 +109,14 @@ export default defineSchema({
     workoutLocalId: v.string(),
   })
     .index("by_userId", ["userId"])
-    .index("by_userId_exerciseId", ["userId", "exerciseId"]),
+    .index("by_userId_exerciseId", ["userId", "exerciseId"])
+    .index("by_userId_workoutLocalId", ["userId", "workoutLocalId"]),
 
   // ── Body Measurements ─────────────────────────────────
   bodyMeasurements: defineTable({
     userId: v.id("users"),
+    // Client-generated ID. Missing on rows created before sync v2.
+    localId: v.optional(v.string()),
     date: v.float64(),
     neck: v.optional(v.float64()),
     chest: v.optional(v.float64()),
@@ -114,5 +127,6 @@ export default defineSchema({
     calves: v.optional(v.float64()),
   })
     .index("by_userId", ["userId"])
-    .index("by_userId_date", ["userId", "date"]),
+    .index("by_userId_date", ["userId", "date"])
+    .index("by_userId_localId", ["userId", "localId"]),
 });

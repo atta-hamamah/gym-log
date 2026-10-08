@@ -1,81 +1,151 @@
 import { v } from "convex/values";
-import { mutation, query } from "./_generated/server";
+import {
+  mutation,
+  query,
+  internalMutation,
+  internalQuery,
+  type QueryCtx,
+  type MutationCtx,
+  type ActionCtx,
+} from "./_generated/server";
+import { internal } from "./_generated/api";
+import type { Doc, Id } from "./_generated/dataModel";
+
+// ── Auth helpers (shared by other modules) ──────────────
 
 /**
- * Create a new user profile after Clerk signup.
+ * The signed-in user's profile row, or null when signed out / not created yet.
+ * Identity always comes from the Clerk token — never from client arguments.
  */
-export const createUser = mutation({
-  args: {
-    clerkId: v.string(),
-    name: v.string(),
-    email: v.string(),
-    dateOfBirth: v.optional(v.string()),
-    gender: v.optional(v.union(v.literal("male"), v.literal("female"), v.literal("other"))),
-    weight: v.optional(v.float64()),
-    bodyFat: v.optional(v.float64()),
-    height: v.optional(v.float64()),
-    goal: v.optional(v.string()),
-    unitPreference: v.optional(v.union(v.literal("metric"), v.literal("imperial"))),
+export async function getCurrentUser(ctx: QueryCtx | MutationCtx): Promise<Doc<"users"> | null> {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) return null;
+  return await ctx.db
+    .query("users")
+    .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+    .first();
+}
+
+export async function requireCurrentUser(ctx: QueryCtx | MutationCtx): Promise<Doc<"users">> {
+  const user = await getCurrentUser(ctx);
+  if (!user) throw new Error("Unauthenticated or user profile missing");
+  return user;
+}
+
+/** Same as requireCurrentUser, for actions (which have no direct db access). */
+export async function requireUserInAction(ctx: ActionCtx): Promise<Doc<"users">> {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) throw new Error("Unauthenticated");
+  const user: Doc<"users"> | null = await ctx.runQuery(internal.users.getByClerkId, {
+    clerkId: identity.subject,
+  });
+  if (!user) throw new Error("User profile missing");
+  return user;
+}
+
+/** Tables that hold per-user data, children first. */
+const HISTORY_TABLES = ["sets", "exerciseLogs", "workouts", "personalRecords"] as const;
+const ALL_DATA_TABLES = [...HISTORY_TABLES, "customExercises", "bodyMeasurements"] as const;
+type UserDataTable = (typeof ALL_DATA_TABLES)[number];
+
+export type WipeScope = "history" | "all";
+
+export function tablesForScope(scope: WipeScope): readonly UserDataTable[] {
+  return scope === "all" ? ALL_DATA_TABLES : HISTORY_TABLES;
+}
+
+/**
+ * Delete up to `budget` documents of a user's data.
+ * Only documents created before `before` are removed (when given), so data
+ * pushed after a wipe was requested survives.
+ * Returns true when nothing is left to delete.
+ */
+export async function deleteUserDocs(
+  ctx: MutationCtx,
+  userId: Id<"users">,
+  tables: readonly UserDataTable[],
+  budget: number,
+  before?: number,
+): Promise<boolean> {
+  let remaining = budget;
+  for (const table of tables) {
+    while (remaining > 0) {
+      // Every user-data table has a by_userId index (_creationTime is implicitly appended).
+      const docs = await (ctx.db.query(table) as any)
+        .withIndex("by_userId", (q: any) =>
+          before === undefined
+            ? q.eq("userId", userId)
+            : q.eq("userId", userId).lt("_creationTime", before)
+        )
+        .take(Math.min(remaining, 200));
+      if (docs.length === 0) break;
+      for (const doc of docs) {
+        await ctx.db.delete(doc._id);
+      }
+      remaining -= docs.length;
+    }
+    if (remaining <= 0) return false;
+  }
+  return true;
+}
+
+export async function bumpDataVersion(ctx: MutationCtx, user: Doc<"users">) {
+  await ctx.db.patch(user._id, { dataVersion: (user.dataVersion ?? 0) + 1 });
+}
+
+// ── Public API ───────────────────────────────────────────
+
+/** The signed-in user's profile (null if signed out or not created yet). */
+export const me = query({
+  args: {},
+  handler: async (ctx) => {
+    return await getCurrentUser(ctx);
   },
-  handler: async (ctx, args) => {
-    // Check if user already exists
+});
+
+/**
+ * Create the profile row for the signed-in Clerk user if it doesn't exist.
+ * Idempotent — safe to call on every sign-in / sync.
+ */
+export const ensureUser = mutation({
+  args: {
+    name: v.optional(v.string()),
+    email: v.optional(v.string()),
+  },
+  handler: async (ctx, args): Promise<Id<"users">> => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) throw new Error("Unauthenticated");
+
     const existing = await ctx.db
       .query("users")
-      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
+      .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
       .first();
 
+    const name = (identity.name || args.name || "").trim();
+    const email = (identity.email || args.email || "").trim();
+
     if (existing) {
+      const patch: Partial<Doc<"users">> = {};
+      if (!existing.name && name) patch.name = name;
+      if (!existing.email && email) patch.email = email;
+      if (Object.keys(patch).length > 0) await ctx.db.patch(existing._id, patch);
       return existing._id;
     }
 
-    const userId = await ctx.db.insert("users", {
-      clerkId: args.clerkId,
-      name: args.name,
-      email: args.email,
-      dateOfBirth: args.dateOfBirth,
-      gender: args.gender,
-      weight: args.weight,
-      bodyFat: args.bodyFat,
-      height: args.height,
-      goal: args.goal,
-      unitPreference: args.unitPreference,
+    return await ctx.db.insert("users", {
+      clerkId: identity.subject,
+      name,
+      email,
       createdAt: Date.now(),
       migrationComplete: false,
+      dataVersion: 0,
     });
-
-    return userId;
   },
 });
 
-/**
- * Get user by their Clerk ID.
- */
-export const getUserByClerkId = query({
-  args: { clerkId: v.string() },
-  handler: async (ctx, args) => {
-    return await ctx.db
-      .query("users")
-      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
-      .first();
-  },
-});
-
-/**
- * Get user by their Convex document ID.
- */
-export const getUserById = query({
-  args: { userId: v.id("users") },
-  handler: async (ctx, args) => {
-    return await ctx.db.get(args.userId);
-  },
-});
-
-/**
- * Update user profile fields.
- */
-export const updateUserProfile = mutation({
+/** Update the signed-in user's profile fields. */
+export const updateProfile = mutation({
   args: {
-    userId: v.id("users"),
     name: v.optional(v.string()),
     dateOfBirth: v.optional(v.string()),
     gender: v.optional(v.union(v.literal("male"), v.literal("female"), v.literal("other"))),
@@ -86,96 +156,55 @@ export const updateUserProfile = mutation({
     unitPreference: v.optional(v.union(v.literal("metric"), v.literal("imperial"))),
   },
   handler: async (ctx, args) => {
-    const { userId, ...updates } = args;
-    // Remove undefined values
+    const user = await requireCurrentUser(ctx);
     const cleaned = Object.fromEntries(
-      Object.entries(updates).filter(([_, v]) => v !== undefined)
+      Object.entries(args).filter(([_, value]) => value !== undefined)
     );
-    await ctx.db.patch(userId, cleaned);
+    if (Object.keys(cleaned).length > 0) {
+      await ctx.db.patch(user._id, cleaned);
+    }
   },
 });
 
 /**
- * Mark user migration as complete.
+ * Delete the signed-in user's profile and (asynchronously) all their data.
+ * The profile row is removed immediately so the account stops resolving.
  */
-export const markMigrationComplete = mutation({
+export const deleteAccount = mutation({
+  args: {},
+  handler: async (ctx): Promise<void> => {
+    const user = await getCurrentUser(ctx);
+    if (!user) return;
+    await ctx.db.delete(user._id);
+    await ctx.scheduler.runAfter(0, internal.users.purgeUserData, { userId: user._id });
+  },
+});
+
+// ── Internal ─────────────────────────────────────────────
+
+export const purgeUserData = internalMutation({
+  args: { userId: v.id("users") },
+  handler: async (ctx, args): Promise<void> => {
+    const done = await deleteUserDocs(ctx, args.userId, ALL_DATA_TABLES, 2000);
+    if (!done) {
+      await ctx.scheduler.runAfter(0, internal.users.purgeUserData, { userId: args.userId });
+    }
+  },
+});
+
+export const getById = internalQuery({
   args: { userId: v.id("users") },
   handler: async (ctx, args) => {
-    await ctx.db.patch(args.userId, { migrationComplete: true });
+    return await ctx.db.get(args.userId);
   },
 });
 
-/**
- * Delete a user and all their associated data
- */
-export const deleteUser = mutation({
+export const getByClerkId = internalQuery({
   args: { clerkId: v.string() },
   handler: async (ctx, args) => {
-    // 1. Find the user
-    const user = await ctx.db
+    return await ctx.db
       .query("users")
       .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
       .first();
-
-    if (!user) return;
-
-    const userId = user._id;
-
-    // 2. Delete all sets associated with the user
-    const sets = await ctx.db
-      .query("sets")
-      .filter((q) => q.eq(q.field("userId"), userId))
-      .collect();
-    for (const set of sets) {
-      await ctx.db.delete(set._id);
-    }
-
-    // 3. Delete all exercise logs
-    const exerciseLogs = await ctx.db
-      .query("exerciseLogs")
-      .filter((q) => q.eq(q.field("userId"), userId))
-      .collect();
-    for (const log of exerciseLogs) {
-      await ctx.db.delete(log._id);
-    }
-
-    // 4. Delete all workouts
-    const workouts = await ctx.db
-      .query("workouts")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .collect();
-    for (const workout of workouts) {
-      await ctx.db.delete(workout._id);
-    }
-
-    // 5. Delete custom exercises
-    const customExercises = await ctx.db
-      .query("customExercises")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .collect();
-    for (const ce of customExercises) {
-      await ctx.db.delete(ce._id);
-    }
-
-    // 6. Delete personal records
-    const prs = await ctx.db
-      .query("personalRecords")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .collect();
-    for (const pr of prs) {
-      await ctx.db.delete(pr._id);
-    }
-
-    // 7. Delete body measurements
-    const measurements = await ctx.db
-      .query("bodyMeasurements")
-      .withIndex("by_userId", (q) => q.eq("userId", userId))
-      .collect();
-    for (const m of measurements) {
-      await ctx.db.delete(m._id);
-    }
-
-    // 8. Delete the user profile itself
-    await ctx.db.delete(userId);
   },
 });

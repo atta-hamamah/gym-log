@@ -7,12 +7,15 @@ import {
   Animated,
   Easing,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { Button } from '../components/Button';
 import { useSubscription } from '../context/SubscriptionContext';
-import { useAuth } from '@clerk/clerk-expo';
+import { useAuth, useUser } from '@clerk/clerk-expo';
+import { useConvexAuth, useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 import { borderRadius, spacing } from '../theme/colors';
 import { useTranslation } from 'react-i18next';
 import {
@@ -47,8 +50,20 @@ export const AIGateScreen = ({ navigation }: any) => {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const styles = createStyles(colors);
-  const { isAISubscriber, purchaseAISubscription } = useSubscription();
+  const {
+    isAISubscriber,
+    hasAIEntitlement,
+    hasEverSubscribedAI,
+    needsAccount,
+    identityReady,
+    purchaseAISubscription,
+    refreshSubscriptionState,
+  } = useSubscription();
   const { isSignedIn } = useAuth();
+  const { user } = useUser();
+  const email = user?.primaryEmailAddress?.emailAddress;
+  const { isAuthenticated: convexAuthenticated } = useConvexAuth();
+  const profile = useQuery(api.users.me, isAISubscriber && convexAuthenticated ? {} : 'skip');
   const [subscribing, setSubscribing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -162,41 +177,99 @@ export const AIGateScreen = ({ navigation }: any) => {
     const result = await purchaseAISubscription();
 
     if (result.success) {
-      // After purchase, user needs to create a Clerk account to use AI
-      navigation.navigate('AIOnboarding');
-    } else if (result.error) {
+      // Signed in: the purchase is already on the account → finish setup.
+      // Not signed in: the account is created right after paying.
+      navigation.navigate('AIOnboarding', isSignedIn ? undefined : { mode: 'signup' });
+    } else if (result.alreadyOwned) {
+      setError(t('aiGate.alreadyOwned'));
+    } else if (result.error && !result.cancelled) {
       setError(result.error);
     }
 
     setSubscribing(false);
-  }, [purchaseAISubscription, navigation]);
+  }, [purchaseAISubscription, navigation, isSignedIn, t]);
 
   const handleSignIn = useCallback(() => {
     navigation.navigate('AIOnboarding', { mode: 'signin' });
   }, [navigation]);
 
-  // If already subscribed but not signed in to Clerk — needs to complete onboarding
-  if (isAISubscriber && !isSignedIn) {
-    return (
-      <ScreenLayout>
-        <View style={styles.readyContainer}>
-          <View style={styles.readyIcon}>
-            <Sparkles color={colors.primary} size={48} />
-          </View>
-          <Typography variant="h2" align="center" style={{ marginTop: 20 }}>
-            {t('aiGate.almostReady')}
-          </Typography>
-          <Typography variant="body" color={colors.textSecondary} align="center" style={{ marginTop: 8 }}>
-            {t('aiGate.needAccount')}
-          </Typography>
-          <Button
-            title={t('aiGate.setupAccount')}
-            onPress={() => navigation.navigate('AIOnboarding')}
-            size="large"
-            style={{ marginTop: 24, width: '100%' }}
-          />
-        </View>
-      </ScreenLayout>
+  const renderStatus = (
+    icon: React.ReactNode,
+    title: string,
+    message: string,
+    actions?: React.ReactNode,
+  ) => (
+    <ScreenLayout>
+      <View style={styles.readyContainer}>
+        <View style={styles.readyIcon}>{icon}</View>
+        <Typography variant="h2" align="center" style={{ marginTop: 20 }}>
+          {title}
+        </Typography>
+        <Typography variant="body" color={colors.textSecondary} align="center" style={{ marginTop: 8 }}>
+          {message}
+        </Typography>
+        {actions}
+      </View>
+    </ScreenLayout>
+  );
+
+  // Signed in with an active subscription, still linking it to the account
+  if (isSignedIn && hasAIEntitlement && !identityReady) {
+    return renderStatus(
+      <ActivityIndicator size="large" color={colors.primary} />,
+      t('aiOnboarding.linkingTitle'),
+      t('aiGate.connecting'),
+      <Button
+        title={t('aiGate.retry')}
+        variant="outline"
+        onPress={() => refreshSubscriptionState()}
+        style={{ marginTop: 24, width: '100%' }}
+      />,
+    );
+  }
+
+  // Subscribed + signed in: the AI coach needs the profile first
+  if (isAISubscriber) {
+    if (profile === undefined) {
+      return renderStatus(
+        <ActivityIndicator size="large" color={colors.primary} />,
+        t('aiOnboarding.linkingTitle'),
+        t('aiGate.connecting'),
+      );
+    }
+    return renderStatus(
+      <Sparkles color={colors.primary} size={48} />,
+      t('aiGate.finishSetupTitle'),
+      t('aiGate.finishSetupMessage'),
+      <Button
+        title={t('aiGate.finishSetup')}
+        onPress={() => navigation.navigate('AIOnboarding')}
+        size="large"
+        style={{ marginTop: 24, width: '100%' }}
+      />,
+    );
+  }
+
+  // Paid but no account yet — registration opens only after payment
+  if (needsAccount) {
+    return renderStatus(
+      <Sparkles color={colors.primary} size={48} />,
+      t('aiGate.almostReady'),
+      t('aiGate.needAccount'),
+      <>
+        <Button
+          title={t('aiGate.createAccount')}
+          onPress={() => navigation.navigate('AIOnboarding', { mode: 'signup' })}
+          size="large"
+          style={{ marginTop: 24, width: '100%' }}
+        />
+        <Button
+          title={t('aiGate.haveAccountSignIn')}
+          variant="ghost"
+          onPress={handleSignIn}
+          style={{ marginTop: 8, width: '100%' }}
+        />
+      </>,
     );
   }
 
@@ -463,7 +536,9 @@ export const AIGateScreen = ({ navigation }: any) => {
                       variant="label"
                       style={styles.subscribeText}
                     >
-                      {subscribing ? t('subscription.processing') : t('aiGate.subscribe')}
+                      {subscribing
+                        ? t('subscription.processing')
+                        : hasEverSubscribedAI ? t('aiGate.resubscribe') : t('aiGate.subscribe')}
                     </Typography>
                   </View>
                 </TouchableOpacity>
@@ -485,16 +560,22 @@ export const AIGateScreen = ({ navigation }: any) => {
               </View>
             )}
 
-            <TouchableOpacity
-              onPress={handleSignIn}
-              disabled={subscribing}
-              style={styles.signInButton}
-              activeOpacity={0.7}
-            >
-              <Typography variant="bodySmall" color={colors.primary} style={styles.signInText}>
-                {t('aiGate.alreadyHaveAccount', 'Already have an account? Sign in')}
+            {isSignedIn ? (
+              <Typography variant="caption" color={colors.textMuted} align="center" style={styles.signInButton}>
+                {t('account.signedInAs', { email })}
               </Typography>
-            </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                onPress={handleSignIn}
+                disabled={subscribing}
+                style={styles.signInButton}
+                activeOpacity={0.7}
+              >
+                <Typography variant="bodySmall" color={colors.primary} style={styles.signInText}>
+                  {t('aiGate.alreadyHaveAccount', 'Already have an account? Sign in')}
+                </Typography>
+              </TouchableOpacity>
+            )}
           </Animated.View>
         </ScrollView>
       </Animated.View>

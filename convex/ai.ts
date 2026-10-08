@@ -2,7 +2,9 @@
 
 import { v } from "convex/values";
 import { action } from "./_generated/server";
-import { api } from "./_generated/api";
+import { internal } from "./_generated/api";
+import { requireUserInAction } from "./users";
+import { requireAIAccess } from "./entitlements";
 import OpenAI from "openai";
 
 // ══════════════════════════════════════════════════════════
@@ -64,7 +66,6 @@ Reply with ONLY the single word: SIMPLE or COMPLEX`,
  */
 export const chat = action({
   args: {
-    userId: v.id("users"),
     message: v.string(),
     conversationHistory: v.array(
       v.object({
@@ -78,14 +79,15 @@ export const chat = action({
       apiKey: process.env.OPENAI_API_KEY,
     });
 
-    // ── 1. Fetch user profile ──
-    const user = await ctx.runQuery(api.users.getUserById, { userId: args.userId });
-    if (!user) throw new Error("User not found");
+    // ── 1. Resolve the signed-in user's profile ──
+    const user = await requireUserInAction(ctx);
+    await requireAIAccess(ctx, user);
+    const userId = user._id;
 
     // ── 2. Fetch recent workouts (last 1 year, capped at 100) ──
     const oneYearAgo = Date.now() - 365 * 24 * 60 * 60 * 1000;
-    const workouts = await ctx.runQuery(api.workouts.getWorkoutsByUser, {
-      userId: args.userId,
+    const workouts = await ctx.runQuery(internal.workouts.getWorkoutsByUser, {
+      userId,
       limit: 100,
       sinceTimestamp: oneYearAgo,
     });
@@ -93,13 +95,13 @@ export const chat = action({
     // ── 3. Fetch exercise details for the 20 most recent workouts ──
     const workoutSummaries = await Promise.all(
       workouts.slice(0, 20).map(async (workout: any) => {
-        const exerciseLogs = await ctx.runQuery(api.workouts.getExerciseLogsByWorkout, {
+        const exerciseLogs = await ctx.runQuery(internal.workouts.getExerciseLogsByWorkout, {
           workoutId: workout._id,
         });
 
         const exerciseSummaries = await Promise.all(
           exerciseLogs.map(async (log: any) => {
-            const sets = await ctx.runQuery(api.workouts.getSetsByExerciseLog, {
+            const sets = await ctx.runQuery(internal.workouts.getSetsByExerciseLog, {
               exerciseLogId: log._id,
             });
             const normalSets = sets.filter((s: any) => s.type === "normal");
@@ -132,13 +134,13 @@ export const chat = action({
     );
 
     // ── 4. Fetch yearly aggregate stats (computed server-side) ──
-    const yearlyStats = await ctx.runQuery(api.aiHelpers.getYearlyStats, { userId: args.userId });
+    const yearlyStats = await ctx.runQuery(internal.aiHelpers.getYearlyStats, { userId });
 
     // ── 5. Fetch personal records ──
-    const prs = await ctx.runQuery(api.aiHelpers.getPersonalRecords, { userId: args.userId });
+    const prs = await ctx.runQuery(internal.aiHelpers.getPersonalRecords, { userId });
 
     // ── 6. Fetch body measurements ──
-    const measurements = await ctx.runQuery(api.aiHelpers.getBodyMeasurements, { userId: args.userId });
+    const measurements = await ctx.runQuery(internal.aiHelpers.getBodyMeasurements, { userId });
 
     // ── 7. Build user context ──
     const age = user.dateOfBirth
@@ -264,9 +266,12 @@ export const generateWorkoutAura = action({
       apiKey: process.env.OPENAI_API_KEY,
     });
 
-    const details: any = await ctx.runQuery(api.workouts.getWorkoutDetailsForAura, {
+    const owner = await requireUserInAction(ctx);
+    await requireAIAccess(ctx, owner);
+    const details: any = await ctx.runQuery(internal.workouts.getWorkoutDetailsForAura, {
       workoutId: args.workoutId,
     });
+    if (details.workout.userId !== owner._id) throw new Error("Workout not found");
 
     const durationMin: number | null = details.workout.endTime && details.workout.startTime
       ? Math.round((details.workout.endTime - details.workout.startTime) / 60000)
@@ -297,10 +302,10 @@ export const generateWorkoutAura = action({
     // For the default (coach) mode, fetch recent workout history & user profile
     if (characterMode === "default") {
       try {
-        const userId = details.workout.userId;
+        const user = owner;
+        const userId = owner._id;
         if (userId) {
-          // Fetch user profile for their fitness goal
-          const user = await ctx.runQuery(api.users.getUserById, { userId });
+          // Include the user's fitness goal from their profile
           if (user?.goal) {
             userGoalContext = `\nUser's Fitness Goal: ${user.goal}`;
           }
@@ -310,7 +315,7 @@ export const generateWorkoutAura = action({
 
           // Fetch last 7 days of workouts for comparison
           const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-          const recentWorkouts = await ctx.runQuery(api.workouts.getWorkoutsByUser, {
+          const recentWorkouts = await ctx.runQuery(internal.workouts.getWorkoutsByUser, {
             userId,
             limit: 10,
             sinceTimestamp: oneWeekAgo,
@@ -325,7 +330,7 @@ export const generateWorkoutAura = action({
             const pastSummaries = await Promise.all(
               pastWorkouts.slice(0, 5).map(async (w: any) => {
                 const wDetails: any = await ctx.runQuery(
-                  api.workouts.getWorkoutDetailsForAura,
+                  internal.workouts.getWorkoutDetailsForAura,
                   { workoutId: w._id }
                 );
                 const dur = w.endTime && w.startTime
@@ -413,7 +418,7 @@ Do NOT wrap it in markdown block quotes. Just raw JSON.
       const auraDescription = parsed.auraDescription || "We couldn't analyze this workout, but we respect the grind.";
 
       // Update the workout in the DB
-      await ctx.runMutation(api.workouts.updateWorkoutAura, {
+      await ctx.runMutation(internal.workouts.updateWorkoutAura, {
         workoutId: args.workoutId,
         auraTitle,
         auraDescription,

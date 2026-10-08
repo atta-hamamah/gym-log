@@ -352,7 +352,16 @@
       "kevinVibe": "Sarcasme paresseux",
       "coachName": "Coach",
       "coachVibe": "Analyse réelle"
-    }
+    },
+    "resubscribe": "Se réabonner au Coach IA",
+    "createAccount": "Créer mon compte",
+    "haveAccountSignIn": "J'ai déjà un compte",
+    "finishSetupTitle": "Une dernière étape",
+    "finishSetupMessage": "Parlez-nous un peu de vous pour que votre Coach IA personnalise ses conseils.",
+    "finishSetup": "Compléter le profil",
+    "connecting": "Connexion à votre compte…",
+    "alreadyOwned": "Ce compte Google Play a déjà un abonnement Coach IA. Connectez-vous avec le compte utilisé, ou touchez Restaurer les achats dans Réglages.",
+    "retry": "Réessayer"
   },
   "aiOnboarding": {
     "createAccount": "Créez votre compte",
@@ -386,7 +395,30 @@
     "migratedMeasurements": "{{count}} mesures synchronisées",
     "startChatting": "Discutez avec l'IA 💬",
     "fitnessGoal": "Quel est votre objectif fitness ?",
-    "goalPlaceholder": "ex. Gagner du muscle, perdre du gras, devenir plus fort..."
+    "goalPlaceholder": "ex. Gagner du muscle, perdre du gras, devenir plus fort...",
+    "signupAfterPurchase": "Nouveau sur RepAI ? Abonnez-vous d'abord au Coach IA — vous créerez votre compte juste après.",
+    "emailTaken": "Cet e-mail a déjà un compte. Connectez-vous plutôt.",
+    "linkingTitle": "Vérification de votre abonnement…",
+    "linkErrorTitle": "Connexion impossible",
+    "linkErrorDesc": "Vérifiez votre connexion internet et réessayez. Vos séances sont en sécurité sur cet appareil.",
+    "inactiveTitle": "Vous êtes connecté",
+    "inactiveDesc": "Le Coach IA n'est pas actif sur ce compte. Vos séances restent sur cet appareil.",
+    "inactiveLifetime": "Vos fonctionnalités Pro restent débloquées à vie.",
+    "inactiveCloudNote": "Abonnez-vous pour utiliser le Coach IA et synchroniser votre sauvegarde cloud.",
+    "subscribe": "S'abonner au Coach IA",
+    "syncError": "La synchronisation n'a pas abouti. Vos données sont en sécurité sur cet appareil.",
+    "uploadedCount": "Sauvegardé dans le cloud : {{count}}",
+    "downloadedCount": "Séances restaurées depuis le cloud : {{count}}",
+    "syncingDesc": "Sauvegarde de cet appareil et restauration de votre historique cloud…",
+    "uploading": "Envoi {{done}} / {{total}}",
+    "downloading": "Téléchargement {{done}} / {{total}}",
+    "secondFactorTitle": "Confirmez que c'est vous",
+    "secondFactorEmail": "Pour votre sécurité, nous avons envoyé un code à {{target}}.",
+    "secondFactorPhone": "Nous avons envoyé un code par SMS au {{target}}.",
+    "secondFactorTotp": "Saisissez le code de votre application d'authentification.",
+    "secondFactorBackup": "Saisissez un de vos codes de secours.",
+    "resendCode": "Renvoyer le code",
+    "unsupportedSignIn": "Ce compte nécessite une méthode de connexion que l'app ne prend pas encore en charge. Contactez le support."
   },
   "settings": {
     "title": "Réglages",
@@ -460,7 +492,8 @@
     "suggestion1": "Quel est mon meilleur développé couché ?",
     "suggestion2": "Combien de fois me suis-je entraîné cette semaine ?",
     "suggestion3": "Est-ce que je surentraîne un muscle ?",
-    "suggestion4": "Suggère un entraînement pour aujourd'hui"
+    "suggestion4": "Suggère un entraînement pour aujourd'hui",
+    "subscriptionRequired": "Votre abonnement Coach IA n'est plus actif. Renouvelez-le pour continuer à discuter."
   },
   "aura": {
     "consulting": "Consultation de l'oracle de la muscu...",
@@ -497,5 +530,40 @@
     "commentDesc": "Ajoutez une note pour votre coach AI (optionnel)",
     "commentPlaceholder": "ex. Je suis fatigué aujourd'hui, focus sur le haut du corps...",
     "generate": "Générer"
+  },
+  "account": {
+    "title": "Compte et synchronisation",
+    "signedInAs": "Connecté en tant que {{email}}",
+    "signOut": "Se déconnecter",
+    "signOutTitle": "Se déconnecter ?",
+    "signOutMessage": "Vos séances restent sur cet appareil. Le Coach IA et la synchronisation cloud s'arrêtent jusqu'à votre prochaine connexion.",
+    "signOutPending": "Pas encore sauvegardé : {{count}} modifications. Elles restent sur cet appareil et seront envoyées à votre prochaine connexion avec un abonnement Coach IA actif.",
+    "syncing": "Synchronisation…",
+    "syncedAt": "Synchro cloud active · Dernière synchro {{time}}",
+    "syncWaiting": "Synchro cloud active · En attente de la première synchro",
+    "syncNow": "Synchroniser",
+    "syncError": "La synchronisation n'a pas abouti. Vos données sont en sécurité sur cet appareil et elle sera relancée automatiquement.",
+    "syncPaused": "Synchro cloud en pause — le Coach IA n'est pas actif. Vos séances sont enregistrées sur cet appareil.",
+    "pendingChanges": "En attente d'envoi : {{count}}",
+    "conflictTitle": "Séances d'un autre compte",
+    "conflictMessage": "Cet appareil contient des séances d'un autre compte ({{email}}). Les déplacer vers ce compte, ou les retirer de cet appareil ?",
+    "conflictMerge": "Déplacer vers ce compte",
+    "conflictReplace": "Retirer de cet appareil",
+    "conflictReplaceConfirm": "Les retirer n'affecte que cet appareil — l'autre compte garde sa sauvegarde cloud.",
+    "needsAccountTitle": "Terminez la configuration du Coach IA",
+    "needsAccountMessage": "Votre abonnement Coach IA est actif. Créez votre compte pour commencer à l'utiliser et sauvegarder vos séances.",
+    "needsAccountHint": "Touchez pour créer votre compte",
+    "createAccount": "Créer un compte",
+    "restorePurchases": "Restaurer les achats",
+    "deleteAccountMessage": "Cela supprime définitivement votre compte et toutes vos données d'entraînement, sur cet appareil et dans le cloud. Cela N'ANNULE PAS votre abonnement Google Play — annulez-le d'abord dans Gérer l'abonnement.",
+    "deleteSuccess": "Votre compte et vos données ont été supprimés.",
+    "syncNotVerified": "Impossible de confirmer votre abonnement Coach IA auprès du serveur. Vos données sont en sécurité sur cet appareil — nous réessaierons bientôt."
+  },
+  "plan": {
+    "aiRenews": "Renouvellement le {{date}}",
+    "aiEnds": "Actif jusqu'au {{date}} · ne sera pas renouvelé",
+    "aiBillingIssue": "Problème de paiement — mettez à jour votre moyen de paiement dans Google Play pour garder le Coach IA.",
+    "proFromAI": "Inclus à vie avec votre abonnement Coach IA.",
+    "resubscribeAI": "Se réabonner au Coach IA"
   }
 }

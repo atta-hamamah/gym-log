@@ -352,7 +352,16 @@
       "kevinVibe": "Sarcasmo perezoso",
       "coachName": "Coach",
       "coachVibe": "Análisis real"
-    }
+    },
+    "resubscribe": "Volver a suscribirse al Coach IA",
+    "createAccount": "Crear mi cuenta",
+    "haveAccountSignIn": "Ya tengo una cuenta",
+    "finishSetupTitle": "Un último paso",
+    "finishSetupMessage": "Cuéntanos un poco sobre ti para que tu Coach IA personalice sus consejos.",
+    "finishSetup": "Completar perfil",
+    "connecting": "Conectando con tu cuenta…",
+    "alreadyOwned": "Esta cuenta de Google Play ya tiene una suscripción al Coach IA. Inicia sesión con la cuenta que usaste o toca Restaurar compras en Ajustes.",
+    "retry": "Reintentar"
   },
   "aiOnboarding": {
     "createAccount": "Crea tu cuenta",
@@ -386,7 +395,30 @@
     "migratedMeasurements": "{{count}} mediciones sincronizadas",
     "startChatting": "Chatea con tu IA 💬",
     "fitnessGoal": "¿Cuál es tu objetivo fitness?",
-    "goalPlaceholder": "ej. Ganar músculo, perder grasa, ser más fuerte..."
+    "goalPlaceholder": "ej. Ganar músculo, perder grasa, ser más fuerte...",
+    "signupAfterPurchase": "¿Nuevo en RepAI? Suscríbete primero al Coach IA y crearás tu cuenta justo después.",
+    "emailTaken": "Este correo ya tiene una cuenta. Inicia sesión.",
+    "linkingTitle": "Comprobando tu suscripción…",
+    "linkErrorTitle": "No se pudo conectar",
+    "linkErrorDesc": "Revisa tu conexión a internet e inténtalo de nuevo. Tus entrenamientos están a salvo en este dispositivo.",
+    "inactiveTitle": "Has iniciado sesión",
+    "inactiveDesc": "El Coach IA no está activo en esta cuenta. Tus entrenamientos se quedan en este dispositivo.",
+    "inactiveLifetime": "Tus funciones Pro siguen desbloqueadas de por vida.",
+    "inactiveCloudNote": "Suscríbete para usar el Coach IA y sincronizar con tu copia en la nube.",
+    "subscribe": "Suscribirse al Coach IA",
+    "syncError": "La sincronización no terminó. Tus datos están a salvo en este dispositivo.",
+    "uploadedCount": "Respaldado en la nube: {{count}}",
+    "downloadedCount": "Entrenamientos restaurados de la nube: {{count}}",
+    "syncingDesc": "Respaldando este dispositivo y restaurando tu historial de la nube…",
+    "uploading": "Subiendo {{done}} / {{total}}",
+    "downloading": "Descargando {{done}} / {{total}}",
+    "secondFactorTitle": "Confirma que eres tú",
+    "secondFactorEmail": "Por tu seguridad, enviamos un código a {{target}}.",
+    "secondFactorPhone": "Enviamos un código por SMS a {{target}}.",
+    "secondFactorTotp": "Introduce el código de tu app de autenticación.",
+    "secondFactorBackup": "Introduce uno de tus códigos de respaldo.",
+    "resendCode": "Reenviar código",
+    "unsupportedSignIn": "Esta cuenta necesita un método de inicio de sesión que la app aún no admite. Contacta con soporte."
   },
   "settings": {
     "title": "Ajustes",
@@ -460,7 +492,8 @@
     "suggestion1": "¿Cuál fue mi mejor press de banca?",
     "suggestion2": "¿Cuántas veces entrené esta semana?",
     "suggestion3": "¿Estoy sobreentrenando algún músculo?",
-    "suggestion4": "Sugiere un entrenamiento para hoy"
+    "suggestion4": "Sugiere un entrenamiento para hoy",
+    "subscriptionRequired": "Tu suscripción al Coach IA ya no está activa. Renuévala para seguir chateando."
   },
   "aura": {
     "consulting": "Consultando al oráculo del gimnasio...",
@@ -497,5 +530,40 @@
     "commentDesc": "Agrega una nota para tu coach AI (opcional)",
     "commentPlaceholder": "ej. Estoy cansado hoy, enfócate en el tren superior...",
     "generate": "Generar"
+  },
+  "account": {
+    "title": "Cuenta y sincronización",
+    "signedInAs": "Sesión iniciada como {{email}}",
+    "signOut": "Cerrar sesión",
+    "signOutTitle": "¿Cerrar sesión?",
+    "signOutMessage": "Tus entrenamientos se quedan en este dispositivo. El Coach IA y la sincronización en la nube se detienen hasta que vuelvas a iniciar sesión.",
+    "signOutPending": "Sin respaldar todavía: {{count}} cambios. Se quedan en este dispositivo y se subirán la próxima vez que inicies sesión con una suscripción activa al Coach IA.",
+    "syncing": "Sincronizando…",
+    "syncedAt": "Sincronización activa · Última vez {{time}}",
+    "syncWaiting": "Sincronización activa · Esperando la primera sincronización",
+    "syncNow": "Sincronizar ahora",
+    "syncError": "La sincronización no terminó. Tus datos están a salvo en este dispositivo y se reintentará automáticamente.",
+    "syncPaused": "Sincronización en pausa: el Coach IA no está activo. Tus entrenamientos se guardan en este dispositivo.",
+    "pendingChanges": "Pendientes de subir: {{count}}",
+    "conflictTitle": "Entrenamientos de otra cuenta",
+    "conflictMessage": "Este dispositivo tiene entrenamientos de otra cuenta ({{email}}). ¿Moverlos a esta cuenta o quitarlos de este dispositivo?",
+    "conflictMerge": "Mover a esta cuenta",
+    "conflictReplace": "Quitar de este dispositivo",
+    "conflictReplaceConfirm": "Quitarlos solo afecta a este dispositivo: la otra cuenta conserva su copia en la nube.",
+    "needsAccountTitle": "Termina de configurar el Coach IA",
+    "needsAccountMessage": "Tu suscripción al Coach IA está activa. Crea tu cuenta para empezar a usarlo y respaldar tus entrenamientos.",
+    "needsAccountHint": "Toca para crear tu cuenta",
+    "createAccount": "Crear cuenta",
+    "restorePurchases": "Restaurar compras",
+    "deleteAccountMessage": "Esto elimina permanentemente tu cuenta y todos tus datos de entrenamiento, en este dispositivo y en la nube. NO cancela tu suscripción de Google Play: cancélala primero en Gestionar suscripción.",
+    "deleteSuccess": "Tu cuenta y tus datos se han eliminado.",
+    "syncNotVerified": "No pudimos confirmar tu suscripción al Coach IA con el servidor. Tus datos están a salvo en este dispositivo; lo intentaremos de nuevo en breve."
+  },
+  "plan": {
+    "aiRenews": "Se renueva el {{date}}",
+    "aiEnds": "Activo hasta el {{date}} · no se renovará",
+    "aiBillingIssue": "Problema con el pago: actualiza tu método de pago en Google Play para mantener el Coach IA.",
+    "proFromAI": "Incluido de por vida con tu suscripción al Coach IA.",
+    "resubscribeAI": "Volver a suscribirse al Coach IA"
   }
 }

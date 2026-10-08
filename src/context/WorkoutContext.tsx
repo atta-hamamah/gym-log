@@ -4,9 +4,7 @@ import { StorageService } from '../services/storage';
 import { generateId } from '../utils/generateId';
 import { EXERCISES } from '../constants/exercises';
 import { detectPRs, createPRRecords } from '../utils/prDetection';
-import { useMutation, useConvexAuth } from 'convex/react';
-import { api } from '../../convex/_generated/api';
-import { useSubscription } from './SubscriptionContext';
+import { useCloudSync } from './CloudSyncContext';
 
 interface WorkoutContextType {
     workouts: WorkoutSession[];
@@ -43,7 +41,10 @@ interface WorkoutContextType {
     refreshData: () => Promise<void>;
     updateUserStats: (stats: Partial<UserStats>) => Promise<void>;
     deleteWorkout: (id: string) => Promise<void>;
+    /** Delete all workouts and PRs (cloud too, when linked to an account) */
     clearAllWorkouts: () => Promise<void>;
+    /** Delete all workouts, PRs, measurements, custom exercises and body stats */
+    clearAllData: () => Promise<void>;
     clearDetectedPRs: () => void;
 }
 
@@ -59,39 +60,30 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [personalRecords, setPersonalRecords] = useState<PersonalRecord[]>([]);
     const [bodyMeasurements, setBodyMeasurements] = useState<BodyMeasurement[]>([]);
 
-    const { isAuthenticated } = useConvexAuth();
-    const { isAISubscriber } = useSubscription();
+    // Local storage is the source the UI reads. Cloud sync (when the AI
+    // subscription is active) runs in the background via CloudSyncContext:
+    // every local write below is queued for upload by the storage layer.
+    const { pushWorkoutNow } = useCloudSync();
 
-    // ── Unified cloud sync check ──
-    // Sync to Convex when:
-    //   1. User has an active AI subscription (RevenueCat)
-    //   2. Convex has a valid auth token (Clerk session is active)
-    const shouldSyncToCloud = isAISubscriber && isAuthenticated;
-
-    // ── Convex mutations for cloud sync ──────────────────
-    const cloudSaveWorkout = useMutation(api.liveSync.saveWorkout);
-    const cloudDeleteWorkout = useMutation(api.liveSync.deleteWorkout);
-    const cloudSavePRs = useMutation(api.liveSync.savePersonalRecords);
-    const cloudSaveBodyMeasurement = useMutation(api.liveSync.saveBodyMeasurement);
-    const cloudDeleteBodyMeasurement = useMutation(api.liveSync.deleteBodyMeasurement);
-    const cloudDeleteAllData = useMutation(api.liveSync.deleteAllWorkoutData);
+    const loadCollections = useCallback(async () => {
+        const [loadedWorkouts, loadedExercises, loadedStats, loadedPRs, loadedMeasurements] = await Promise.all([
+            StorageService.getWorkouts(),
+            StorageService.getExercises(),
+            StorageService.getUserStats(),
+            StorageService.getPersonalRecords(),
+            StorageService.getBodyMeasurements(),
+        ]);
+        setWorkouts(loadedWorkouts);
+        setExercises(loadedExercises);
+        setUserStats(loadedStats);
+        setPersonalRecords(loadedPRs);
+        setBodyMeasurements(loadedMeasurements);
+    }, []);
 
     const refreshData = useCallback(async () => {
         setLoading(true);
         try {
-            const [loadedWorkouts, loadedExercises, loadedStats, loadedPRs, loadedMeasurements] = await Promise.all([
-                StorageService.getWorkouts(),
-                StorageService.getExercises(),
-                StorageService.getUserStats(),
-                StorageService.getPersonalRecords(),
-                StorageService.getBodyMeasurements(),
-            ]);
-            setWorkouts(loadedWorkouts);
-            setExercises(loadedExercises);
-            setUserStats(loadedStats);
-            setPersonalRecords(loadedPRs);
-            setBodyMeasurements(loadedMeasurements);
-
+            await loadCollections();
             const savedSession = await StorageService.getCurrentWorkout();
             if (savedSession) {
                 setCurrentWorkout(savedSession);
@@ -101,11 +93,21 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [loadCollections]);
 
     useEffect(() => {
         refreshData();
     }, [refreshData]);
+
+    // Cloud sync replaced local data (pull from another device, account switch)
+    // → reload silently. The in-progress workout is never touched by sync.
+    useEffect(() => {
+        return StorageService.onDataChange(source => {
+            if (source === 'remote') {
+                loadCollections().catch(e => console.error('Error reloading synced data:', e));
+            }
+        });
+    }, [loadCollections]);
 
     useEffect(() => {
         if (currentWorkout) {
@@ -127,8 +129,6 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const finishWorkout = useCallback(async (notes?: string, mood?: number): Promise<string | null> => {
         if (!currentWorkout) return null;
 
-        let convexWorkoutId: string | null = null;
-
         const completedSession: WorkoutSession = {
             ...currentWorkout,
             endTime: Date.now(),
@@ -143,76 +143,23 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
             await StorageService.addPersonalRecords(prRecords);
             setPersonalRecords(prev => [...prev, ...prRecords]);
             setLastDetectedPRs(detected);
-
-            // ── Cloud sync PRs ──
-            if (shouldSyncToCloud) {
-                try {
-                    await cloudSavePRs({
-                        records: prRecords.map(pr => ({
-                            exerciseId: pr.exerciseId,
-                            exerciseName: pr.exerciseName,
-                            type: pr.type,
-                            value: pr.value,
-                            reps: pr.reps,
-                            date: pr.date,
-                            workoutLocalId: pr.workoutId,
-                        })),
-                    });
-                } catch (e) {
-                    console.warn('[WorkoutContext] Cloud PR save failed:', e);
-                }
-            }
         } else {
             setLastDetectedPRs([]);
         }
         // ─────────────────────
 
-        // Always save locally (acts as cache for AI subscribers)
+        // Saved locally first and queued for upload — never lost if the upload fails.
         await StorageService.saveWorkout(completedSession);
-        setWorkouts(prev => [completedSession, ...prev]);
+        setWorkouts(prev => [completedSession, ...prev.filter(w => w.id !== completedSession.id)]);
 
-        // ── Cloud sync workout ──
-        console.log('[WorkoutContext] Cloud sync check:', { isAISubscriber, isAuthenticated, shouldSyncToCloud });
-        if (shouldSyncToCloud) {
-            try {
-                console.log('[WorkoutContext] ✅ Syncing workout to Convex...');
-                const cloudId = await cloudSaveWorkout({
-                    localId: completedSession.id,
-                    name: completedSession.name,
-                    startTime: completedSession.startTime,
-                    endTime: completedSession.endTime,
-                    notes: completedSession.notes,
-                    bodyWeight: completedSession.bodyWeight,
-                    mood: completedSession.mood,
-                    exercises: completedSession.exercises.map(ex => ({
-                        localId: ex.id,
-                        exerciseId: ex.exerciseId,
-                        exerciseName: ex.exerciseName,
-                        notes: ex.notes,
-                        supersetGroupId: ex.supersetGroupId,
-                        sets: ex.sets.map(s => ({
-                            weight: s.weight,
-                            reps: s.reps,
-                            rpe: s.rpe,
-                            completed: s.completed,
-                            type: s.type,
-                        })),
-                    })),
-                });
-                convexWorkoutId = cloudId as string;
-                console.log('[WorkoutContext] ✅ Workout synced successfully! Convex ID:', convexWorkoutId);
-            } catch (e) {
-                console.warn('[WorkoutContext] Cloud workout save failed:', e);
-            }
-        } else {
-            console.log('[WorkoutContext] ⏭️ Skipping cloud sync (not live or not authenticated)');
-        }
+        // When cloud sync is active, upload now to get the cloud ID the AI summary needs.
+        const convexWorkoutId = await pushWorkoutNow(completedSession.id);
 
         setCurrentWorkout(null);
         await StorageService.saveCurrentWorkout(null);
 
         return convexWorkoutId;
-    }, [currentWorkout, workouts, shouldSyncToCloud, cloudSaveWorkout, cloudSavePRs]);
+    }, [currentWorkout, workouts, pushWorkoutNow]);
 
     const cancelWorkout = useCallback(async () => {
         setCurrentWorkout(null);
@@ -365,41 +312,27 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }, [userStats]);
 
     const deleteWorkout = useCallback(async (id: string) => {
+        // The storage layer records the delete so it reaches the cloud on the next sync.
         await StorageService.deleteWorkout(id);
         setWorkouts(prev => prev.filter(w => w.id !== id));
-
-        // ── Cloud sync delete ──
-        if (shouldSyncToCloud) {
-            try {
-                await cloudDeleteWorkout({ localId: id });
-            } catch (e) {
-                console.warn('[WorkoutContext] Cloud workout delete failed:', e);
-            }
-        }
-    }, [shouldSyncToCloud, cloudDeleteWorkout]);
+    }, []);
 
     const clearDetectedPRs = useCallback(() => {
         setLastDetectedPRs([]);
     }, []);
 
     const clearAllWorkouts = useCallback(async () => {
-        // Clear local storage
-        await StorageService.setAllWorkouts([]);
-        await StorageService.savePersonalRecords([]);
-        await StorageService.saveCurrentWorkout(null);
+        await StorageService.clearWorkoutHistory();
         setWorkouts([]);
         setPersonalRecords([]);
         setCurrentWorkout(null);
+    }, []);
 
-        // Cloud sync delete all
-        if (shouldSyncToCloud) {
-            try {
-                await cloudDeleteAllData({});
-            } catch (e) {
-                console.warn('[WorkoutContext] Cloud delete all failed:', e);
-            }
-        }
-    }, [shouldSyncToCloud, cloudDeleteAllData]);
+    const clearAllData = useCallback(async () => {
+        await StorageService.clearAllUserData();
+        setCurrentWorkout(null);
+        await loadCollections();
+    }, [loadCollections]);
 
     // ── Exercise notes ───────────────────────────────────
     const updateExerciseNotes = useCallback((exerciseLogId: string, notes: string) => {
@@ -426,43 +359,15 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
     // ── Body measurements ────────────────────────────────
     const addBodyMeasurement = useCallback(async (measurement: BodyMeasurement) => {
         await StorageService.saveBodyMeasurement(measurement);
-        setBodyMeasurements(prev => [measurement, ...prev].sort((a, b) => b.date - a.date));
-
-        // ── Cloud sync body measurement ──
-        if (shouldSyncToCloud) {
-            try {
-                await cloudSaveBodyMeasurement({
-                    localId: measurement.id,
-                    date: measurement.date,
-                    neck: measurement.neck,
-                    chest: measurement.chest,
-                    waist: measurement.waist,
-                    hips: measurement.hips,
-                    biceps: measurement.biceps,
-                    thighs: measurement.thighs,
-                    calves: measurement.calves,
-                });
-            } catch (e) {
-                console.warn('[WorkoutContext] Cloud measurement save failed:', e);
-            }
-        }
-    }, [shouldSyncToCloud, cloudSaveBodyMeasurement]);
+        setBodyMeasurements(prev =>
+            [measurement, ...prev.filter(m => m.id !== measurement.id)].sort((a, b) => b.date - a.date)
+        );
+    }, []);
 
     const deleteBodyMeasurement = useCallback(async (id: string) => {
-        // Find the measurement to get its date for cloud deletion
-        const measurement = bodyMeasurements.find(m => m.id === id);
         await StorageService.deleteBodyMeasurement(id);
         setBodyMeasurements(prev => prev.filter(m => m.id !== id));
-
-        // ── Cloud sync delete ──
-        if (shouldSyncToCloud && measurement) {
-            try {
-                await cloudDeleteBodyMeasurement({ date: measurement.date });
-            } catch (e) {
-                console.warn('[WorkoutContext] Cloud measurement delete failed:', e);
-            }
-        }
-    }, [shouldSyncToCloud, bodyMeasurements, cloudDeleteBodyMeasurement]);
+    }, []);
     // ─────────────────────────────────────────────────────
 
     return (
@@ -495,6 +400,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 updateUserStats,
                 deleteWorkout,
                 clearAllWorkouts,
+                clearAllData,
                 clearDetectedPRs,
             }}
         >

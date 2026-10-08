@@ -352,7 +352,16 @@
       "kevinVibe": "Lazy sarcasm",
       "coachName": "Coach",
       "coachVibe": "Real analysis"
-    }
+    },
+    "resubscribe": "Resubscribe to AI Coach",
+    "createAccount": "Create My Account",
+    "haveAccountSignIn": "I already have an account",
+    "finishSetupTitle": "One Last Step",
+    "finishSetupMessage": "Tell us a little about yourself so your AI coach can tailor its advice.",
+    "finishSetup": "Complete Profile",
+    "connecting": "Connecting to your account…",
+    "alreadyOwned": "This Google Play account already has an AI Coach subscription. Sign in to the account you used, or tap Restore Purchases in Settings.",
+    "retry": "Retry"
   },
   "aiOnboarding": {
     "createAccount": "Create Your Account",
@@ -386,7 +395,30 @@
     "migratedMeasurements": "{{count}} measurements synced",
     "startChatting": "Start Chatting with AI 💬",
     "fitnessGoal": "What's your fitness goal?",
-    "goalPlaceholder": "e.g. Build muscle, lose fat, get stronger..."
+    "goalPlaceholder": "e.g. Build muscle, lose fat, get stronger...",
+    "signupAfterPurchase": "New to RepAI? Subscribe to AI Coach first — you'll create your account right after.",
+    "emailTaken": "This email already has an account. Sign in instead.",
+    "linkingTitle": "Checking your subscription…",
+    "linkErrorTitle": "Couldn't Connect",
+    "linkErrorDesc": "Check your internet connection and try again. Your workouts are safe on this device.",
+    "inactiveTitle": "You're Signed In",
+    "inactiveDesc": "AI Coach isn't active on this account. Your workouts stay on this device.",
+    "inactiveLifetime": "Your Pro features stay unlocked for life.",
+    "inactiveCloudNote": "Subscribe to use AI Coach and sync with your cloud backup.",
+    "subscribe": "Subscribe to AI Coach",
+    "syncError": "Sync didn't finish. Your data is safe on this device.",
+    "uploadedCount": "Backed up to the cloud: {{count}}",
+    "downloadedCount": "Workouts restored from the cloud: {{count}}",
+    "syncingDesc": "Backing up this device and restoring your cloud history…",
+    "uploading": "Uploading {{done}} / {{total}}",
+    "downloading": "Downloading {{done}} / {{total}}",
+    "secondFactorTitle": "Confirm It's You",
+    "secondFactorEmail": "For your security, we sent a code to {{target}}.",
+    "secondFactorPhone": "We sent a code by SMS to {{target}}.",
+    "secondFactorTotp": "Enter the code from your authenticator app.",
+    "secondFactorBackup": "Enter one of your backup codes.",
+    "resendCode": "Resend code",
+    "unsupportedSignIn": "This account needs a sign-in method the app doesn't support yet. Please contact support."
   },
   "settings": {
     "title": "Settings",
@@ -460,7 +492,8 @@
     "suggestion1": "What was my best bench press?",
     "suggestion2": "How many times did I train this week?",
     "suggestion3": "Am I overtraining any muscle?",
-    "suggestion4": "Suggest a workout for today"
+    "suggestion4": "Suggest a workout for today",
+    "subscriptionRequired": "Your AI Coach subscription is no longer active. Renew it to keep chatting."
   },
   "aura": {
     "consulting": "Consulting the iron oracle...",
@@ -497,5 +530,40 @@
     "commentDesc": "Add a note for your AI coach (optional)",
     "commentPlaceholder": "e.g. I feel tired today, focus on upper body...",
     "generate": "Generate"
+  },
+  "account": {
+    "title": "Account & Sync",
+    "signedInAs": "Signed in as {{email}}",
+    "signOut": "Sign Out",
+    "signOutTitle": "Sign Out?",
+    "signOutMessage": "Your workouts stay on this device. AI Coach and cloud sync stop until you sign in again.",
+    "signOutPending": "Not backed up yet: {{count}} changes. They stay on this device and upload the next time you sign in with an active AI Coach subscription.",
+    "syncing": "Syncing…",
+    "syncedAt": "Cloud sync on · Last synced {{time}}",
+    "syncWaiting": "Cloud sync on · Waiting for first sync",
+    "syncNow": "Sync Now",
+    "syncError": "Sync didn't finish. Your data is safe on this device and will retry automatically.",
+    "syncPaused": "Cloud sync paused — AI Coach isn't active. Your workouts are saved on this device.",
+    "pendingChanges": "Waiting to upload: {{count}}",
+    "conflictTitle": "Workouts From Another Account",
+    "conflictMessage": "This device has workouts from another account ({{email}}). Move them into this account, or remove them from this device?",
+    "conflictMerge": "Move to This Account",
+    "conflictReplace": "Remove From This Device",
+    "conflictReplaceConfirm": "Removing only affects this device — the other account keeps its cloud backup.",
+    "needsAccountTitle": "Finish Setting Up AI Coach",
+    "needsAccountMessage": "Your AI Coach subscription is active. Create your account to start using it and back up your workouts.",
+    "needsAccountHint": "Tap to create your account",
+    "createAccount": "Create Account",
+    "restorePurchases": "Restore Purchases",
+    "deleteAccountMessage": "This permanently deletes your account and all your workout data, on this device and in the cloud. It does NOT cancel your Google Play subscription — cancel it in Manage Subscription first.",
+    "deleteSuccess": "Your account and data have been deleted.",
+    "syncNotVerified": "Couldn't confirm your AI Coach subscription with the server. Your data is safe on this device — we'll try again shortly."
+  },
+  "plan": {
+    "aiRenews": "Renews on {{date}}",
+    "aiEnds": "Active until {{date}} · won't renew",
+    "aiBillingIssue": "Payment problem — update your payment method in Google Play to keep AI Coach.",
+    "proFromAI": "Included for life with your AI Coach subscription.",
+    "resubscribeAI": "Resubscribe to AI Coach"
   }
 }

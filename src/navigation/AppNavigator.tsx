@@ -19,7 +19,9 @@ import { AIChatScreen } from '../screens/AIChatScreen';
 import WorkoutAuraScreen from '../screens/WorkoutAuraScreen';
 import { AIWorkoutPreviewScreen } from '../screens/AIWorkoutPreviewScreen';
 import { useSubscription } from '../context/SubscriptionContext';
-import { useAuth } from '@clerk/clerk-expo';
+import { useConvexAuth, useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
+import { isProfileComplete } from '../utils/profile';
 import { useTheme } from '../context/ThemeContext';
 import { Home, History, TrendingUp, Settings, BookOpen, Sparkles } from 'lucide-react-native';
 import { RootStackParamList, TabParamList } from '../types';
@@ -115,14 +117,16 @@ const TabNavigator = () => {
 // ── AI Tab: renders gate or chat inline (no modal overlay) ──
 const AITabScreen = (props: any) => {
     const { isAISubscriber } = useSubscription();
-    const { isSignedIn } = useAuth();
+    const { isAuthenticated } = useConvexAuth();
+    // Skip until Convex is authenticated, so "not loaded" isn't mistaken for "no profile"
+    const profile = useQuery(api.users.me, isAISubscriber && isAuthenticated ? {} : 'skip');
 
-    // Subscribed + signed in → show chat directly as tab content
-    if (isAISubscriber && isSignedIn) {
+    // Active subscription linked to the signed-in account, profile complete → chat
+    if (isAISubscriber && isProfileComplete(profile)) {
         return <AIChatScreen {...props} />;
     }
 
-    // Otherwise show the gate/paywall
+    // Otherwise the gate shows whatever step is missing (subscribe, account, profile)
     return <AIGateScreen {...props} />;
 };
 

@@ -2,7 +2,9 @@
 
 import { v } from "convex/values";
 import { action } from "./_generated/server";
-import { api } from "./_generated/api";
+import { internal } from "./_generated/api";
+import { requireUserInAction } from "./users";
+import { requireAIAccess } from "./entitlements";
 import OpenAI from "openai";
 
 // ── Exercise catalog (core 42 exercises) ─────────────────
@@ -62,7 +64,6 @@ const CORE_EXERCISES = [
  */
 export const generateWorkout = action({
   args: {
-    userId: v.id("users"),
     userComment: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -70,14 +71,15 @@ export const generateWorkout = action({
       apiKey: process.env.OPENAI_API_KEY,
     });
 
-    // ── 1. Fetch user profile ──
-    const user = await ctx.runQuery(api.users.getUserById, { userId: args.userId });
-    if (!user) throw new Error("User not found");
+    // ── 1. Resolve the signed-in user's profile ──
+    const user = await requireUserInAction(ctx);
+    await requireAIAccess(ctx, user);
+    const userId = user._id;
 
     // ── 2. Fetch recent workouts (last 30 days, capped at 30) ──
     const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
-    const workouts = await ctx.runQuery(api.workouts.getWorkoutsByUser, {
-      userId: args.userId,
+    const workouts = await ctx.runQuery(internal.workouts.getWorkoutsByUser, {
+      userId,
       limit: 30,
       sinceTimestamp: thirtyDaysAgo,
     });
@@ -85,13 +87,13 @@ export const generateWorkout = action({
     // ── 3. Fetch exercise details for the 15 most recent workouts ──
     const workoutSummaries = await Promise.all(
       workouts.slice(0, 15).map(async (workout: any) => {
-        const exerciseLogs = await ctx.runQuery(api.workouts.getExerciseLogsByWorkout, {
+        const exerciseLogs = await ctx.runQuery(internal.workouts.getExerciseLogsByWorkout, {
           workoutId: workout._id,
         });
 
         const exerciseSummaries = await Promise.all(
           exerciseLogs.map(async (log: any) => {
-            const sets = await ctx.runQuery(api.workouts.getSetsByExerciseLog, {
+            const sets = await ctx.runQuery(internal.workouts.getSetsByExerciseLog, {
               exerciseLogId: log._id,
             });
             const normalSets = sets.filter((s: any) => s.type === "normal");
@@ -126,15 +128,15 @@ export const generateWorkout = action({
     );
 
     // ── 4. Fetch user's custom exercises from Convex ──
-    const customExercises = await ctx.runQuery(api.aiHelpers.getCustomExercises, {
-      userId: args.userId,
+    const customExercises = await ctx.runQuery(internal.aiHelpers.getCustomExercises, {
+      userId,
     });
 
     // ── 5. Fetch yearly stats ──
-    const yearlyStats = await ctx.runQuery(api.aiHelpers.getYearlyStats, { userId: args.userId });
+    const yearlyStats = await ctx.runQuery(internal.aiHelpers.getYearlyStats, { userId });
 
     // ── 6. Fetch personal records ──
-    const prs = await ctx.runQuery(api.aiHelpers.getPersonalRecords, { userId: args.userId });
+    const prs = await ctx.runQuery(internal.aiHelpers.getPersonalRecords, { userId });
 
     // ── 7. Build the exercise catalog string ──
     const catalogLines = CORE_EXERCISES.map(
