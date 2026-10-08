@@ -51,6 +51,16 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 };
 
+/** Renders its subtree with the dark palette whatever the user's theme (for always-dark surfaces such as share cards). */
+export const ForceDarkTheme: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const parent = useTheme();
+  const value = useMemo(
+    () => ({ ...parent, themeMode: 'dark' as const, isDark: true, colors: darkColors }),
+    [parent]
+  );
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+};
+
 export const useTheme = (): ThemeContextValue => {
   const context = useContext(ThemeContext);
   if (!context) {

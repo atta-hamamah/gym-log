@@ -2,9 +2,10 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { Typography } from './Typography';
 import { useSubscription } from '../context/SubscriptionContext';
-import { borderRadius } from '../theme/colors';
+import { borderRadius, ThemeColors } from '../theme/colors';
 import { useTranslation } from 'react-i18next';
-import { Clock, ChevronRight, Crown, Sparkles } from 'lucide-react-native';
+import { Clock, Crown, Sparkles } from 'lucide-react-native';
+import { ForwardChevron } from './DirectionalIcons';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
 
@@ -40,7 +41,7 @@ export const TrialBanner: React.FC<TrialBannerProps> = ({ onPress }) => {
           </Typography>
         </View>
 
-        <ChevronRight color={colors.textMuted} size={18} />
+        <ForwardChevron color={colors.textMuted} size={18} />
       </TouchableOpacity>
     );
   }
@@ -71,7 +72,7 @@ export const TrialBanner: React.FC<TrialBannerProps> = ({ onPress }) => {
           </Typography>
         </View>
 
-        <ChevronRight color={colors.textMuted} size={18} />
+        <ForwardChevron color={colors.textMuted} size={18} />
       </TouchableOpacity>
     );
   }
@@ -97,7 +98,7 @@ export const TrialBanner: React.FC<TrialBannerProps> = ({ onPress }) => {
           </Typography>
         </View>
 
-        <ChevronRight color={colors.textMuted} size={18} />
+        <ForwardChevron color={colors.textMuted} size={18} />
       </TouchableOpacity>
     );
   }
@@ -106,40 +107,40 @@ export const TrialBanner: React.FC<TrialBannerProps> = ({ onPress }) => {
   return null;
 };
 
-const createStyles = (colors: any) => StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surfaceLight,
-    borderRadius: borderRadius.m,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.l,
     paddingVertical: 12,
-    paddingHorizontal: 16,
-    marginBottom: 16,
+    paddingHorizontal: 14,
+    marginBottom: 14,
     borderWidth: 1,
-    borderColor: colors.primary + '30',
+    borderColor: colors.border,
   },
   containerUrgent: {
-    borderColor: colors.warning + '50',
-    backgroundColor: colors.warning + '08',
+    backgroundColor: colors.warningSoft,
+    borderColor: 'transparent',
   },
   containerUpgrade: {
-    borderColor: colors.primary + '40',
-    backgroundColor: colors.primary + '08',
+    backgroundColor: colors.primarySoft,
+    borderColor: 'transparent',
   },
   iconCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.primary + '15',
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: colors.primarySoft,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   iconCircleUrgent: {
-    backgroundColor: colors.warning + '15',
+    backgroundColor: colors.surface,
   },
   iconCircleUpgrade: {
-    backgroundColor: colors.primary + '20',
+    backgroundColor: colors.surface,
   },
   textContainer: {
     flex: 1,

@@ -3,10 +3,14 @@ import { ScrollView, Dimensions, View, TouchableOpacity, Modal, StyleSheet } fro
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { ProgressChart } from '../components/ProgressChart';
-import { StatBadge } from '../components/StatBadge';
+import { StatTile } from '../components/StatTile';
+import { ScreenHeader } from '../components/ScreenHeader';
+import { SegmentedControl } from '../components/SegmentedControl';
+import { Trophy, TrendingUp, ArrowUpRight, Percent, Dumbbell, Weight, Layers, Clock, BarChart3, Check, LineChart } from 'lucide-react-native';
+import { ForwardChevron } from '../components/DirectionalIcons';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
-import { borderRadius, spacing } from '../theme/colors';
+import { borderRadius, spacing, ThemeColors } from '../theme/colors';
 import { useWorkout } from '../context/WorkoutContext';
 import { format, startOfWeek, subWeeks, isAfter } from 'date-fns';
 import { Exercise, WorkoutSession, ExerciseLog, Set as WorkoutSet } from '../types';
@@ -225,17 +229,6 @@ export const ProgressScreen = () => {
         bestSet: weightUnit,
     };
 
-    const barColors = [
-        colors.primary,
-        colors.secondary,
-        colors.accent,
-        colors.success,
-        colors.warning,
-        colors.primaryLight,
-        colors.secondaryLight,
-        colors.accentLight,
-    ];
-
     const formatVolume = (v: number): string => {
         if (v >= 1000000) return `${(v / 1000000).toFixed(1)}M`;
         if (v >= 1000) return `${(v / 1000).toFixed(1)}k`;
@@ -244,47 +237,38 @@ export const ProgressScreen = () => {
 
     return (
         <ScreenLayout>
-            <View style={styles.headerRow}>
-                <Typography variant="h1">{t('progress.title')}</Typography>
-                <Button
-                    title={selectedExercise ? t('progress.change') : t('progress.selectExercise')}
-                    variant={selectedExercise ? 'outline' : 'secondary'}
-                    size="small"
-                    onPress={() => setModalVisible(true)}
-                />
-            </View>
+            <ScreenHeader
+                title={t('progress.title')}
+                right={
+                    <Button
+                        title={selectedExercise ? t('progress.change') : t('progress.selectExercise')}
+                        variant={selectedExercise ? 'outline' : 'secondary'}
+                        size="small"
+                        onPress={() => setModalVisible(true)}
+                    />
+                }
+            />
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 24 }}>
                 {selectedExercise ? (
                     <View>
                         {/* Exercise Title */}
                         <View style={styles.exerciseHeader}>
-                            <Typography variant="h2" color={colors.primary}>
+                            <Typography variant="h2">
                                 {getExerciseName(selectedExercise.id, t, selectedExercise.name)}
                             </Typography>
-                            <Typography variant="caption" style={{ marginTop: 2 }}>
-                                {getMuscleGroupName(selectedExercise.muscleGroup, t)} • {metricLabel[metric]}
+                            <Typography variant="caption" color={colors.textSecondary} style={{ marginTop: 2 }}>
+                                {getMuscleGroupName(selectedExercise.muscleGroup, t)} · {metricLabel[metric]}
                             </Typography>
                         </View>
 
                         {/* Metric Toggle */}
-                        <View style={styles.metricRow}>
-                            {(['maxWeight', 'totalVolume', 'bestSet'] as Metric[]).map(m => (
-                                <TouchableOpacity
-                                    key={m}
-                                    style={[styles.metricChip, metric === m && styles.metricChipActive]}
-                                    onPress={() => setMetric(m)}
-                                >
-                                    <Typography
-                                        variant="caption"
-                                        color={metric === m ? colors.black : colors.textSecondary}
-                                        style={{ fontWeight: metric === m ? '700' : '500', fontSize: 11 }}
-                                    >
-                                        {metricLabel[m]}
-                                    </Typography>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
+                        <SegmentedControl
+                            value={metric}
+                            onChange={setMetric}
+                            options={(['maxWeight', 'totalVolume', 'bestSet'] as Metric[]).map(m => ({ value: m, label: metricLabel[m] }))}
+                            style={styles.metricRow}
+                        />
 
                         {/* Chart */}
                         <ProgressChart
@@ -297,26 +281,26 @@ export const ProgressScreen = () => {
                         {/* Stats Grid */}
                         {stats && (
                             <View style={styles.statsGrid}>
-                                <Card style={styles.statCard} variant="glass">
-                                    <StatBadge value={stats.max} label={t('progress.allTimePR')} color={colors.primary} />
-                                </Card>
-                                <Card style={styles.statCard} variant="glass">
-                                    <StatBadge value={stats.latest} label={t('progress.latest')} color={colors.secondary} />
-                                </Card>
-                                <Card style={styles.statCard} variant="glass">
-                                    <StatBadge
+                                <View style={styles.statsRow}>
+                                    <StatTile value={stats.max} label={t('progress.allTimePR')} icon={c => <Trophy color={c} size={16} />} tone="accent" />
+                                    <StatTile value={stats.latest} label={t('progress.latest')} icon={c => <TrendingUp color={c} size={16} />} tone="primary" />
+                                </View>
+                                <View style={styles.statsRow}>
+                                    <StatTile
                                         value={`${stats.improvement >= 0 ? '+' : ''}${stats.improvement}`}
                                         label={t('progress.changeLabel')}
-                                        color={stats.improvement >= 0 ? colors.success : colors.error}
+                                        icon={c => <ArrowUpRight color={c} size={16} />}
+                                        tone={stats.improvement >= 0 ? 'success' : 'danger'}
+                                        valueColor={stats.improvement >= 0 ? colors.success : colors.error}
                                     />
-                                </Card>
-                                <Card style={styles.statCard} variant="glass">
-                                    <StatBadge
+                                    <StatTile
                                         value={`${stats.improvementPct >= 0 ? '+' : ''}${stats.improvementPct}%`}
                                         label={t('progress.growth')}
-                                        color={stats.improvementPct >= 0 ? colors.success : colors.error}
+                                        icon={c => <Percent color={c} size={16} />}
+                                        tone={stats.improvementPct >= 0 ? 'success' : 'danger'}
+                                        valueColor={stats.improvementPct >= 0 ? colors.success : colors.error}
                                     />
-                                </Card>
+                                </View>
                             </View>
                         )}
 
@@ -332,34 +316,14 @@ export const ProgressScreen = () => {
                             {t('progress.overviewTitle')}
                         </Typography>
                         <View style={styles.statsGrid}>
-                            <Card style={styles.statCard} variant="glass">
-                                <StatBadge
-                                    value={overviewStats.totalWorkouts}
-                                    label={t('progress.totalWorkouts')}
-                                    color={colors.primary}
-                                />
-                            </Card>
-                            <Card style={styles.statCard} variant="glass">
-                                <StatBadge
-                                    value={formatVolume(Math.round(displayWeight(overviewStats.totalVolume)))}
-                                    label={t('progress.totalVolumeAll')}
-                                    color={colors.secondary}
-                                />
-                            </Card>
-                            <Card style={styles.statCard} variant="glass">
-                                <StatBadge
-                                    value={overviewStats.totalSets}
-                                    label={t('progress.totalSets')}
-                                    color={colors.accent}
-                                />
-                            </Card>
-                            <Card style={styles.statCard} variant="glass">
-                                <StatBadge
-                                    value={overviewStats.avgDuration > 0 ? `${overviewStats.avgDuration}m` : '—'}
-                                    label={t('progress.avgDuration')}
-                                    color={colors.success}
-                                />
-                            </Card>
+                            <View style={styles.statsRow}>
+                                <StatTile value={overviewStats.totalWorkouts} label={t('progress.totalWorkouts')} icon={c => <Dumbbell color={c} size={16} />} tone="primary" />
+                                <StatTile value={formatVolume(Math.round(displayWeight(overviewStats.totalVolume)))} label={t('progress.totalVolumeAll')} icon={c => <Weight color={c} size={16} />} tone="success" />
+                            </View>
+                            <View style={styles.statsRow}>
+                                <StatTile value={overviewStats.totalSets} label={t('progress.totalSets')} icon={c => <Layers color={c} size={16} />} tone="secondary" />
+                                <StatTile value={overviewStats.avgDuration > 0 ? `${overviewStats.avgDuration}m` : '—'} label={t('progress.avgDuration')} icon={c => <Clock color={c} size={16} />} tone="accent" />
+                            </View>
                         </View>
 
                         {/* Weekly Volume Chart */}
@@ -373,8 +337,7 @@ export const ProgressScreen = () => {
                                     width={screenWidth - 40}
                                     height={200}
                                     unit={weightUnit}
-                                    color={colors.secondary}
-                                    gradientTo={colors.primary}
+                                    color={colors.primary}
                                 />
                             </View>
                         )}
@@ -391,7 +354,6 @@ export const ProgressScreen = () => {
                                     height={180}
                                     unit=""
                                     color={colors.accent}
-                                    gradientTo={colors.warning}
                                 />
                             </View>
                         )}
@@ -419,7 +381,8 @@ export const ProgressScreen = () => {
                                                         styles.bar,
                                                         {
                                                             width: `${Math.max(item.pct, 4)}%`,
-                                                            backgroundColor: barColors[index % barColors.length],
+                                                            backgroundColor: colors.primary,
+                                                            opacity: 1 - Math.min(index, 6) * 0.1,
                                                         },
                                                     ]}
                                                 />
@@ -436,18 +399,26 @@ export const ProgressScreen = () => {
                             onPress={() => setModalVisible(true)}
                             activeOpacity={0.7}
                         >
-                            <Typography variant="body" color={colors.primary} style={{ fontWeight: '600' }}>
-                                📊 {t('progress.drillDown')}
-                            </Typography>
-                            <Typography variant="caption" color={colors.textMuted} style={{ marginTop: 4 }}>
-                                {t('progress.drillDownHint')}
-                            </Typography>
+                            <View style={styles.hintIcon}>
+                                <BarChart3 color={colors.primary} size={18} />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Typography variant="body" bold>
+                                    {t('progress.drillDown')}
+                                </Typography>
+                                <Typography variant="caption" color={colors.textSecondary} style={{ marginTop: 2 }}>
+                                    {t('progress.drillDownHint')}
+                                </Typography>
+                            </View>
+                            <ForwardChevron color={colors.textMuted} size={18} />
                         </TouchableOpacity>
                     </View>
                 ) : (
                     <View style={styles.emptyState}>
-                        <Typography variant="number" style={{ fontSize: 52, marginBottom: 12 }}>📈</Typography>
-                        <Typography variant="h3" color={colors.textMuted} align="center" style={{ marginBottom: 8 }}>
+                        <View style={styles.emptyIcon}>
+                            <LineChart color={colors.primary} size={26} />
+                        </View>
+                        <Typography variant="h3" align="center" style={{ marginBottom: 6 }}>
                             {t('progress.trackYourGains')}
                         </Typography>
                         <Typography variant="body" color={colors.textMuted} align="center" style={{ marginBottom: 24 }}>
@@ -502,13 +473,12 @@ export const ProgressScreen = () => {
                                         }}
                                         activeOpacity={0.6}
                                     >
-                                        <View style={styles.exDot} />
                                         <View style={{ flex: 1 }}>
-                                            <Typography variant="body" bold>{getExerciseName(ex.id, t, ex.name)}</Typography>
-                                            <Typography variant="caption" style={{ fontSize: 12 }}>{getMuscleGroupName(ex.muscleGroup, t)}</Typography>
+                                            <Typography variant="body" bold color={selectedExercise?.id === ex.id ? colors.primary : colors.text}>{getExerciseName(ex.id, t, ex.name)}</Typography>
+                                            <Typography variant="caption" color={colors.textSecondary} style={{ fontSize: 12 }}>{getMuscleGroupName(ex.muscleGroup, t)}</Typography>
                                         </View>
                                         {selectedExercise?.id === ex.id && (
-                                            <Typography variant="body" color={colors.primary}>✓</Typography>
+                                            <Check color={colors.primary} size={18} />
                                         )}
                                     </TouchableOpacity>
                                 ))}
@@ -521,82 +491,77 @@ export const ProgressScreen = () => {
     );
 };
 
-const createStyles = (colors: any) => StyleSheet.create({
-    headerRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 16,
-    },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
     exerciseHeader: {
         marginBottom: 12,
     },
     metricRow: {
-        flexDirection: 'row',
-        marginBottom: 16,
-        gap: 6,
-    },
-    metricChip: {
-        paddingHorizontal: 14,
-        paddingVertical: 6,
-        borderRadius: borderRadius.full,
-        backgroundColor: colors.surfaceLight,
-        borderWidth: 1,
-        borderColor: colors.border,
-    },
-    metricChipActive: {
-        backgroundColor: colors.primary,
-        borderColor: colors.primary,
+        marginBottom: 14,
     },
     statsGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
-        marginTop: 4,
+        gap: 10,
+        marginTop: 12,
     },
-    statCard: {
-        flex: 1,
-        minWidth: '45%',
-        alignItems: 'center',
-        paddingVertical: 16,
-        marginBottom: 0,
+    statsRow: {
+        flexDirection: 'row',
+        gap: 10,
     },
     emptyState: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        paddingTop: 60,
+        paddingTop: 70,
+        paddingHorizontal: 12,
+    },
+    emptyIcon: {
+        width: 60,
+        height: 60,
+        borderRadius: 20,
+        backgroundColor: colors.primarySoft,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 16,
     },
     // ── Muscle group breakdown bars ──
     muscleRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 10,
+        marginVertical: 6,
     },
     muscleLabel: {
-        width: 90,
+        width: 92,
         marginRight: 10,
     },
     barContainer: {
         flex: 1,
-        height: 14,
-        borderRadius: 7,
+        height: 8,
+        borderRadius: 4,
         backgroundColor: colors.surfaceLight,
         overflow: 'hidden',
     },
     bar: {
         height: '100%',
-        borderRadius: 7,
+        borderRadius: 4,
     },
     // ── Drill-down hint ──
     hintCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
         marginTop: 20,
-        padding: 16,
+        padding: 14,
         borderRadius: borderRadius.l,
         borderWidth: 1,
-        borderColor: colors.primary + '30',
-        backgroundColor: colors.primary + '08',
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
+    },
+    hintIcon: {
+        width: 38,
+        height: 38,
+        borderRadius: 11,
+        backgroundColor: colors.primarySoft,
         alignItems: 'center',
+        justifyContent: 'center',
     },
     // ── Modal styles ──
     modalOverlay: {
@@ -612,34 +577,30 @@ const createStyles = (colors: any) => StyleSheet.create({
         maxHeight: '70%',
     },
     modalHandle: {
-        width: 40,
+        width: 38,
         height: 4,
         borderRadius: 2,
-        backgroundColor: colors.textMuted,
+        backgroundColor: colors.border,
         alignSelf: 'center',
-        marginBottom: 16,
+        marginBottom: 14,
     },
     modalHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: 10,
     },
     exerciseItem: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: spacing.m,
-        borderBottomWidth: 1,
+        paddingVertical: 12,
+        paddingHorizontal: 4,
+        borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: colors.border,
     },
     exerciseItemActive: {
-        backgroundColor: colors.primary + '10',
-    },
-    exDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        backgroundColor: colors.secondary,
-        marginRight: 12,
+        backgroundColor: colors.primarySoft,
+        borderRadius: borderRadius.m,
+        paddingHorizontal: 10,
     },
 });

@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, StyleSheet, TouchableOpacity, Animated, Vibration } from 'react-native';
 import { Typography } from './Typography';
-import { borderRadius } from '../theme/colors';
+import { Button } from './Button';
+import { borderRadius, ThemeColors } from '../theme/colors';
+import { Check, Timer } from 'lucide-react-native';
+import { SkipAhead } from './DirectionalIcons';
 import { useAudioPlayer } from 'expo-audio';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
@@ -17,8 +20,8 @@ interface RestTimerProps {
 
 export const RestTimer: React.FC<RestTimerProps> = ({ visible, defaultDuration, onDismiss, onTimeChange }) => {
     const { t } = useTranslation();
-    const { colors } = useTheme();
-    const styles = createStyles(colors);
+    const { colors, isDark } = useTheme();
+    const styles = createStyles(colors, isDark);
     const [remaining, setRemaining] = useState(defaultDuration);
     const [totalDuration, setTotalDuration] = useState(defaultDuration);
     const [isRunning, setIsRunning] = useState(false);
@@ -172,13 +175,11 @@ export const RestTimer: React.FC<RestTimerProps> = ({ visible, defaultDuration, 
             <View style={styles.content}>
                 {/* Timer Display */}
                 <View style={styles.timerSection}>
-                    <Typography
-                        variant="h2"
-                        color={isFinished ? colors.success : colors.text}
-                        style={styles.timerText}
-                    >
-                        {isFinished ? '✓' : '⏱'}
-                    </Typography>
+                    <View style={[styles.timerIcon, { backgroundColor: isFinished ? colors.successSoft : colors.primarySoft }]}>
+                        {isFinished
+                            ? <Check color={colors.success} size={20} strokeWidth={2.6} />
+                            : <Timer color={colors.primary} size={20} />}
+                    </View>
                     <View>
                         <Typography
                             variant="number"
@@ -187,7 +188,7 @@ export const RestTimer: React.FC<RestTimerProps> = ({ visible, defaultDuration, 
                         >
                             {formatTime(remaining)}
                         </Typography>
-                        <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 10 }}>
+                        <Typography variant="caption" color={colors.textMuted} style={styles.statusText}>
                             {isFinished ? t('restTimer.restComplete') : t('restTimer.resting')}
                         </Typography>
                     </View>
@@ -195,73 +196,65 @@ export const RestTimer: React.FC<RestTimerProps> = ({ visible, defaultDuration, 
 
                 {/* Quick Actions */}
                 <View style={styles.actions}>
-                    {/* +30s button */}
-                    <TouchableOpacity
-                        style={styles.actionBtn}
+                    <Button
+                        title="+30s"
+                        variant="secondary"
+                        size="small"
                         onPress={() => handleAddTime(30)}
-                        activeOpacity={0.7}
-                    >
-                        <Typography variant="caption" color={colors.primary} bold style={{ fontSize: 11 }}>
-                            +30s
-                        </Typography>
-                    </TouchableOpacity>
-
-                    {/* Skip / Dismiss */}
-                    <TouchableOpacity
-                        style={[styles.actionBtn, styles.skipBtn]}
+                    />
+                    <Button
+                        title={isFinished ? t('restTimer.dismiss') : t('restTimer.skip')}
+                        variant={isFinished ? 'primary' : 'outline'}
+                        size="small"
                         onPress={handleDismiss}
-                        activeOpacity={0.7}
-                    >
-                        <Typography variant="caption" color={colors.text} bold style={{ fontSize: 11 }}>
-                            {isFinished ? t('restTimer.dismiss') : t('restTimer.skip')}
-                        </Typography>
-                    </TouchableOpacity>
+                        iconRight={isFinished ? undefined : c => <SkipAhead color={c} size={14} />}
+                    />
                 </View>
             </View>
 
             {/* Duration presets (compact) */}
             <View style={styles.presetsRow}>
-                {REST_PRESETS.map(d => (
-                    <TouchableOpacity
-                        key={d}
-                        style={[
-                            styles.presetChip,
-                            totalDuration === d && !isFinished && styles.presetChipActive,
-                        ]}
-                        onPress={() => handleDurationChange(d)}
-                        activeOpacity={0.7}
-                    >
-                        <Typography
-                            variant="caption"
-                            color={totalDuration === d && !isFinished ? colors.black : colors.textMuted}
-                            style={{ fontSize: 10, fontWeight: totalDuration === d ? '700' : '500' }}
+                {REST_PRESETS.map(d => {
+                    const active = totalDuration === d && !isFinished;
+                    return (
+                        <TouchableOpacity
+                            key={d}
+                            style={[styles.presetChip, active && styles.presetChipActive]}
+                            onPress={() => handleDurationChange(d)}
+                            activeOpacity={0.7}
                         >
-                            {d >= 60 ? `${d / 60}m` : `${d}s`}
-                        </Typography>
-                    </TouchableOpacity>
-                ))}
+                            <Typography
+                                variant="caption"
+                                color={active ? colors.primary : colors.textSecondary}
+                                style={[styles.presetText, active && styles.presetTextActive]}
+                            >
+                                {d >= 60 ? `${d / 60}m` : `${d}s`}
+                            </Typography>
+                        </TouchableOpacity>
+                    );
+                })}
             </View>
         </Animated.View>
     );
 };
 
-const createStyles = (colors: any) => StyleSheet.create({
+const createStyles = (colors: ThemeColors, isDark: boolean) => StyleSheet.create({
     container: {
         position: 'absolute',
         bottom: 0,
         left: 0,
         right: 0,
-        backgroundColor: colors.surface,
-        borderTopLeftRadius: borderRadius.l,
-        borderTopRightRadius: borderRadius.l,
-        borderTopWidth: 1,
+        backgroundColor: isDark ? colors.surfaceLight : colors.surface,
+        borderTopLeftRadius: 22,
+        borderTopRightRadius: 22,
+        borderTopWidth: StyleSheet.hairlineWidth,
         borderTopColor: colors.border,
         overflow: 'hidden',
-        elevation: 10,
+        elevation: 12,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: -4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
+        shadowOffset: { width: 0, height: -6 },
+        shadowOpacity: isDark ? 0.35 : 0.08,
+        shadowRadius: 16,
     },
     progressTrack: {
         height: 3,
@@ -277,54 +270,60 @@ const createStyles = (colors: any) => StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 16,
-        paddingVertical: 12,
+        paddingTop: 14,
+        paddingBottom: 10,
     },
     timerSection: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 10,
+        gap: 12,
     },
-    timerText: {
-        fontSize: 20,
+    timerIcon: {
+        width: 42,
+        height: 42,
+        borderRadius: 13,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     timeDisplay: {
         fontSize: 28,
-        fontWeight: '800',
-        letterSpacing: -1,
+        lineHeight: 32,
+        fontWeight: '700',
+        letterSpacing: -0.8,
+    },
+    statusText: {
+        fontSize: 11.5,
     },
     actions: {
         flexDirection: 'row',
         gap: 8,
     },
-    actionBtn: {
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: borderRadius.s,
-        backgroundColor: colors.primary + '15',
-        borderWidth: 1,
-        borderColor: colors.primary + '30',
-    },
-    skipBtn: {
-        backgroundColor: colors.surfaceLight,
-        borderColor: colors.border,
-    },
     presetsRow: {
         flexDirection: 'row',
-        justifyContent: 'center',
+        justifyContent: 'space-between',
         gap: 6,
-        paddingBottom: 12,
+        paddingBottom: 14,
         paddingHorizontal: 16,
     },
     presetChip: {
-        paddingHorizontal: 12,
-        paddingVertical: 4,
+        flex: 1,
+        alignItems: 'center',
+        paddingVertical: 6,
         borderRadius: borderRadius.full,
-        backgroundColor: colors.surfaceLight,
+        backgroundColor: isDark ? colors.surfaceElevated : colors.surfaceLight,
         borderWidth: 1,
-        borderColor: colors.border,
+        borderColor: 'transparent',
     },
     presetChipActive: {
-        backgroundColor: colors.primary,
+        backgroundColor: colors.primarySoft,
         borderColor: colors.primary,
+    },
+    presetText: {
+        fontSize: 12,
+        fontWeight: '500',
+        fontVariant: ['tabular-nums'],
+    },
+    presetTextActive: {
+        fontWeight: '700',
     },
 });

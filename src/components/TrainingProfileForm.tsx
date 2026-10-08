@@ -1,8 +1,9 @@
 import React from 'react';
-import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Typography } from './Typography';
-import { borderRadius } from '../theme/colors';
+import { Chip } from './Chip';
+import { borderRadius, ThemeColors } from '../theme/colors';
 import { useTheme } from '../context/ThemeContext';
 import { ALL_EQUIPMENT, EQUIPMENT_PRESETS } from '../constants/exerciseCatalog';
 import { Equipment, ExperienceLevel, TrainingProfile } from '../types';
@@ -37,16 +38,7 @@ export const TrainingProfileForm: React.FC<Props> = ({ value, onChange }) => {
   };
 
   const chip = (key: string, label: string, active: boolean, onPress: () => void) => (
-    <TouchableOpacity
-      key={key}
-      style={[styles.chip, active && { backgroundColor: colors.primary, borderColor: colors.primary }]}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
-      <Typography variant="caption" color={active ? colors.black : colors.textSecondary} bold={active} style={{ fontSize: 12 }}>
-        {label}
-      </Typography>
-    </TouchableOpacity>
+    <Chip key={key} size="small" label={label} selected={active} onPress={onPress} style={styles.chip} />
   );
 
   return (
@@ -93,7 +85,7 @@ export const TrainingProfileForm: React.FC<Props> = ({ value, onChange }) => {
   );
 };
 
-const createStyles = (colors: any) => StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   label: {
     marginTop: 16,
     marginBottom: 8,
@@ -104,12 +96,8 @@ const createStyles = (colors: any) => StyleSheet.create({
     gap: 6,
   },
   chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.surfaceLight,
-    borderWidth: 1,
-    borderColor: colors.border,
+    minWidth: 36,
+    justifyContent: 'center',
   },
   input: {
     minHeight: 64,

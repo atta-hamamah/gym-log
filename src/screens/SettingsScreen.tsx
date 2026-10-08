@@ -20,7 +20,13 @@ import { generateId } from '../utils/generateId';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-import { Crown, Sparkles, CreditCard, LogOut, Sun, Moon, Target, Ruler, Cloud, CloudOff, RefreshCw, AlertTriangle, UserCircle, Dumbbell } from 'lucide-react-native';
+import { Crown, Sparkles, CreditCard, LogOut, LogIn, Sun, Moon, Target, Ruler, Cloud, CloudOff, RefreshCw, AlertTriangle, Dumbbell, Globe, Scale, Download, Trash2, UserX, ChevronDown, ChevronUp } from 'lucide-react-native';
+import { ForwardChevron } from '../components/DirectionalIcons';
+import { formatDate } from '../utils/dates';
+import { ListGroup, ListRow } from '../components/ListRow';
+import { Chip } from '../components/Chip';
+import { SegmentedControl } from '../components/SegmentedControl';
+import { ScreenHeader } from '../components/ScreenHeader';
 import { useTheme } from '../context/ThemeContext';
 import { useUnits, UnitSystem } from '../context/UnitsContext';
 
@@ -397,54 +403,54 @@ export const SettingsScreen = ({ navigation }: any) => {
         }
     };
 
-    const formatDate = (ms: number) => format(ms, 'MMM d, yyyy');
+    const formatPlanDate = (ms: number) => formatDate(ms, 'MMM d, yyyy');
     const aiStatusLine = aiBillingIssue
         ? t('plan.aiBillingIssue')
         : aiExpiresAt
             ? (aiWillRenew
-                ? t('plan.aiRenews', { date: formatDate(aiExpiresAt) })
-                : t('plan.aiEnds', { date: formatDate(aiExpiresAt) }))
+                ? t('plan.aiRenews', { date: formatPlanDate(aiExpiresAt) })
+                : t('plan.aiEnds', { date: formatPlanDate(aiExpiresAt) }))
             : null;
 
-    const renderRestoreRow = () => (
-        <TouchableOpacity
-            style={styles.manageRow}
+    const restoreRow = (
+        <ListRow
+            title={restoring ? t('subscription.processing') : t('account.restorePurchases')}
+            icon={c => <RefreshCw color={c} size={17} />}
+            iconTone="neutral"
             onPress={handleRestore}
             disabled={restoring}
-            activeOpacity={0.7}
-        >
-            <RefreshCw color={colors.textSecondary} size={18} />
-            <Typography variant="body" color={colors.text} style={{ flex: 1, marginLeft: 12 }}>
-                {restoring ? t('subscription.processing') : t('account.restorePurchases')}
-            </Typography>
-        </TouchableOpacity>
+            showChevron={false}
+        />
     );
+
+    const planBadge = (tone: 'primary' | 'success' | 'secondary', icon: React.ReactNode, label: string) => {
+        const toneColor = tone === 'success' ? colors.success : tone === 'secondary' ? colors.secondary : colors.primary;
+        const toneSoft = tone === 'success' ? colors.successSoft : tone === 'secondary' ? colors.secondarySoft : colors.primarySoft;
+        return (
+            <View style={[styles.planBadge, { backgroundColor: toneSoft }]}>
+                {icon}
+                <Typography variant="bodySmall" bold color={toneColor}>{label}</Typography>
+            </View>
+        );
+    };
 
     // ── Plan card: what the user has paid for ──
     const renderSubscriptionCard = () => {
         if (needsAccount) {
             // ── Paid for AI, no account yet ──
             return (
-                <Card style={styles.aiCard}>
-                    <View style={styles.tierHeader}>
-                        <View style={styles.tierBadgeAI}>
-                            <Sparkles color={colors.primary} size={16} />
-                            <Typography variant="body" bold color={colors.primary} style={{ marginLeft: 8 }}>
-                                {t('settings.aiActive')}
-                            </Typography>
-                        </View>
-                    </View>
-                    <Typography variant="body" bold style={{ marginTop: 12 }}>
+                <Card style={styles.planCard}>
+                    {planBadge('secondary', <Sparkles color={colors.secondary} size={15} />, t('settings.aiActive'))}
+                    <Typography variant="h3" style={{ marginTop: 14 }}>
                         {t('account.needsAccountTitle')}
                     </Typography>
-                    <Typography variant="caption" color={colors.textSecondary} style={{ marginTop: 4 }}>
+                    <Typography variant="bodySmall" color={colors.textSecondary} style={{ marginTop: 4 }}>
                         {t('account.needsAccountMessage')}
                     </Typography>
                     <Button
                         title={t('account.createAccount')}
                         onPress={() => navigation.navigate('AIOnboarding', { mode: 'signup' })}
-                        size="medium"
-                        style={{ marginTop: 12 }}
+                        style={{ marginTop: 16 }}
                     />
                     <Button
                         title={t('aiGate.haveAccountSignIn')}
@@ -458,212 +464,159 @@ export const SettingsScreen = ({ navigation }: any) => {
 
         if (isAISubscriber) {
             // ── AI Subscriber ──
+            const goalValue = fitnessGoal !== null ? fitnessGoal : (convexUser?.goal || '');
+            const goalChanged = fitnessGoal !== null && fitnessGoal !== (convexUser?.goal || '');
             return (
-                <Card style={styles.aiCard}>
-                    <View style={styles.tierHeader}>
-                        <View style={styles.tierBadgeAI}>
-                            <Sparkles color={colors.primary} size={16} />
-                            <Typography variant="body" bold color={colors.primary} style={{ marginLeft: 8 }}>
-                                {t('settings.aiActive')}
-                            </Typography>
-                        </View>
-                    </View>
-
-                    <Typography variant="caption" color={colors.textSecondary} style={{ marginTop: 8 }}>
-                        {t('settings.aiActiveDesc')}
-                    </Typography>
-                    {aiStatusLine && (
-                        <View style={styles.statusLine}>
-                            {aiBillingIssue && <AlertTriangle color={colors.warning} size={14} />}
-                            <Typography
-                                variant="caption"
-                                color={aiBillingIssue ? colors.warning : colors.textMuted}
-                                style={{ marginLeft: aiBillingIssue ? 6 : 0, flex: 1 }}
-                            >
-                                {aiStatusLine}
-                            </Typography>
-                        </View>
-                    )}
-
-                    {/* Fitness Goal Editor */}
-                    <View style={styles.goalSection}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                            <Target color={colors.primary} size={16} />
-                            <Typography variant="label" color={colors.text} style={{ marginLeft: 8 }}>
-                                {t('settings.fitnessGoal', 'Fitness Goal')}
-                            </Typography>
-                        </View>
-                        <TextInput
-                            style={styles.goalInput}
-                            value={fitnessGoal !== null ? fitnessGoal : (convexUser?.goal || '')}
-                            onChangeText={setFitnessGoal}
-                            placeholder={t('aiOnboarding.goalPlaceholder', 'e.g. Build muscle, lose fat, get stronger...')}
-                            placeholderTextColor={colors.textMuted}
-                            multiline
-                            numberOfLines={2}
-                            maxLength={200}
-                            textAlignVertical="top"
-                        />
-                        {fitnessGoal !== null && fitnessGoal !== (convexUser?.goal || '') && (
-                            <TouchableOpacity
-                                style={styles.saveGoalButton}
-                                onPress={async () => {
-                                    if (convexUser?._id) {
-                                        await updateProfile({ goal: fitnessGoal.trim() });
-                                        setFitnessGoal(null);
-                                        showModal(
-                                            t('settings.saved'),
-                                            t('settings.goalSaved', 'Your fitness goal has been updated. RepAI will tailor advice to this goal.'),
-                                            undefined,
-                                            'success'
-                                        );
-                                    }
-                                }}
-                                activeOpacity={0.7}
-                            >
-                                <Typography variant="bodySmall" color={colors.primary} bold>
-                                    {t('settings.saveGoal', 'Save Goal')}
-                                </Typography>
-                            </TouchableOpacity>
-                        )}
-                    </View>
-
-                    {/* Training profile (experience, schedule, equipment, limitations) */}
-                    <TouchableOpacity
-                        style={styles.manageRow}
-                        onPress={() => setTrainingDraft(trainingProfileOf(convexUser))}
-                        activeOpacity={0.7}
-                    >
-                        <Dumbbell color={colors.textSecondary} size={18} />
-                        <View style={{ flex: 1, marginLeft: 12 }}>
-                            <Typography variant="body" color={colors.text}>
-                                {t('trainingProfile.title')}
-                            </Typography>
-                            <Typography variant="caption" color={colors.textMuted}>
-                                {t('trainingProfile.subtitle')}
-                            </Typography>
-                        </View>
-                        <Typography variant="caption" color={colors.textMuted}>›</Typography>
-                    </TouchableOpacity>
-
-                    {/* Manage Subscription */}
-                    <TouchableOpacity
-                        style={styles.manageRow}
-                        onPress={openManageSubscription}
-                        activeOpacity={0.7}
-                    >
-                        <CreditCard color={colors.textSecondary} size={18} />
-                        <Typography variant="body" color={colors.text} style={{ flex: 1, marginLeft: 12 }}>
-                            {t('settings.manageSubscription')}
+                <>
+                    <Card style={styles.planCard}>
+                        {planBadge('secondary', <Sparkles color={colors.secondary} size={15} />, t('settings.aiActive'))}
+                        <Typography variant="bodySmall" color={colors.textSecondary} style={{ marginTop: 12 }}>
+                            {t('settings.aiActiveDesc')}
                         </Typography>
-                        <Typography variant="caption" color={colors.textMuted}>›</Typography>
-                    </TouchableOpacity>
-                </Card>
+                        {aiStatusLine && (
+                            <View style={styles.statusLine}>
+                                {aiBillingIssue && <AlertTriangle color={colors.warning} size={14} />}
+                                <Typography variant="caption" color={aiBillingIssue ? colors.warning : colors.textMuted} style={{ flex: 1 }}>
+                                    {aiStatusLine}
+                                </Typography>
+                            </View>
+                        )}
+
+                        {/* Fitness goal editor */}
+                        <View style={styles.goalSection}>
+                            <View style={styles.goalLabelRow}>
+                                <Target color={colors.textMuted} size={14} />
+                                <Typography variant="label">{t('settings.fitnessGoal', 'Fitness Goal')}</Typography>
+                            </View>
+                            <TextInput
+                                style={styles.goalInput}
+                                value={goalValue}
+                                onChangeText={setFitnessGoal}
+                                placeholder={t('aiOnboarding.goalPlaceholder', 'e.g. Build muscle, lose fat, get stronger...')}
+                                placeholderTextColor={colors.textMuted}
+                                multiline
+                                numberOfLines={2}
+                                maxLength={200}
+                                textAlignVertical="top"
+                            />
+                            {goalChanged && (
+                                <Button
+                                    title={t('settings.saveGoal', 'Save Goal')}
+                                    variant="secondary"
+                                    size="small"
+                                    style={{ alignSelf: 'flex-end', marginTop: 10 }}
+                                    onPress={async () => {
+                                        if (convexUser?._id) {
+                                            await updateProfile({ goal: fitnessGoal!.trim() });
+                                            setFitnessGoal(null);
+                                            showModal(
+                                                t('settings.saved'),
+                                                t('settings.goalSaved', 'Your fitness goal has been updated. RepAI will tailor advice to this goal.'),
+                                                undefined,
+                                                'success'
+                                            );
+                                        }
+                                    }}
+                                />
+                            )}
+                        </View>
+                    </Card>
+
+                    <ListGroup>
+                        <ListRow
+                            title={t('trainingProfile.title')}
+                            subtitle={t('trainingProfile.subtitle')}
+                            icon={c => <Dumbbell color={c} size={17} />}
+                            iconTone="secondary"
+                            onPress={() => setTrainingDraft(trainingProfileOf(convexUser))}
+                        />
+                        <ListRow
+                            title={t('settings.manageSubscription')}
+                            icon={c => <CreditCard color={c} size={17} />}
+                            iconTone="neutral"
+                            onPress={openManageSubscription}
+                        />
+                    </ListGroup>
+                </>
             );
         }
 
         if (hasLifetimePro) {
             // ── Pro forever: one-time purchase, or included with a past AI subscription ──
             return (
-                <Card style={styles.premiumCard}>
-                    <View style={styles.tierHeader}>
-                        <View style={styles.tierBadgePro}>
-                            <Crown color={colors.success} size={16} />
-                            <Typography variant="body" bold color={colors.success} style={{ marginLeft: 8 }}>
-                                {t('subscription.premiumActive')}
+                <>
+                    <Card style={styles.planCard}>
+                        {planBadge('success', <Crown color={colors.success} size={15} />, t('subscription.premiumActive'))}
+                        {hasEverSubscribedAI && (
+                            <Typography variant="bodySmall" color={colors.textSecondary} style={{ marginTop: 12 }}>
+                                {t('plan.proFromAI')}
                             </Typography>
-                        </View>
-                    </View>
-                    {hasEverSubscribedAI && (
-                        <Typography variant="caption" color={colors.textSecondary} style={{ marginTop: 8 }}>
-                            {t('plan.proFromAI')}
-                        </Typography>
-                    )}
-
-                    {/* Upsell to AI */}
-                    <TouchableOpacity
-                        style={styles.upgradeRow}
-                        onPress={() => navigation.navigate('AI')}
-                        activeOpacity={0.7}
-                    >
-                        <View style={styles.upgradeIconCircle}>
-                            <Sparkles color={colors.primary} size={18} />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                            <Typography variant="body" bold>
-                                {hasEverSubscribedAI ? t('plan.resubscribeAI') : t('settings.upgradeToAI')}
-                            </Typography>
-                            <Typography variant="caption" color={colors.textSecondary}>
-                                {t('settings.upgradeToAIDesc')}
-                            </Typography>
-                        </View>
-                        <Typography variant="body" color={colors.primary}>›</Typography>
-                    </TouchableOpacity>
-                    {renderRestoreRow()}
-                </Card>
+                        )}
+                        {/* Upsell to AI */}
+                        <TouchableOpacity style={styles.upgradeRow} onPress={() => navigation.navigate('AI')} activeOpacity={0.75}>
+                            <View style={styles.upgradeIcon}>
+                                <Sparkles color={colors.secondary} size={18} />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Typography variant="body" bold>
+                                    {hasEverSubscribedAI ? t('plan.resubscribeAI') : t('settings.upgradeToAI')}
+                                </Typography>
+                                <Typography variant="caption" color={colors.textSecondary}>
+                                    {t('settings.upgradeToAIDesc')}
+                                </Typography>
+                            </View>
+                            <ForwardChevron color={colors.secondary} size={18} />
+                        </TouchableOpacity>
+                    </Card>
+                    <ListGroup>{restoreRow}</ListGroup>
+                </>
             );
         }
 
         // ── Pro Trial / Free ──
         return (
-            <Card>
-                <Typography variant="h3" style={{ marginBottom: 4 }}>{t('subscription.statusTitle')}</Typography>
-
-                {tier === 'pro_trial' ? (
-                    <View>
-                        <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 12 }}>
-                            {t('subscription.proTrialBanner', { days: trialDaysRemaining, defaultValue: '{{days}} days of Pro remaining' })}
-                        </Typography>
-                        <View style={styles.trialProgressBar}>
-                            <View style={[styles.trialProgressFill, { width: `${(trialDaysRemaining / TRIAL_DURATION_DAYS) * 100}%` }]} />
+            <>
+                <Card style={styles.planCard}>
+                    <Typography variant="h3">{t('subscription.statusTitle')}</Typography>
+                    {tier === 'pro_trial' ? (
+                        <View>
+                            <Typography variant="bodySmall" color={colors.textSecondary} style={{ marginTop: 4, marginBottom: 12 }}>
+                                {t('subscription.proTrialBanner', { days: trialDaysRemaining, defaultValue: '{{days}} days of Pro remaining' })}
+                            </Typography>
+                            <View style={styles.trialProgressBar}>
+                                <View style={[styles.trialProgressFill, { width: `${(trialDaysRemaining / TRIAL_DURATION_DAYS) * 100}%` }]} />
+                            </View>
                         </View>
-                        <Button
-                            title={t('subscription.unlockForever')}
-                            onPress={handlePurchasePro}
-                            size="medium"
-                            style={{ marginTop: 12 }}
-                        />
-                    </View>
-                ) : (
-                    <View>
-                        <Typography variant="caption" color={colors.error} style={{ marginBottom: 12 }}>
+                    ) : (
+                        <Typography variant="bodySmall" color={colors.error} style={{ marginTop: 4 }}>
                             {t('subscription.trialExpired')}
                         </Typography>
-                        <Button
-                            title={t('subscription.unlockForever')}
-                            onPress={handlePurchasePro}
-                            size="medium"
-                        />
-                    </View>
-                )}
-
-                {renderRestoreRow()}
-            </Card>
+                    )}
+                    <Button
+                        title={t('subscription.unlockForever')}
+                        onPress={handlePurchasePro}
+                        icon={c => <Crown color={c} size={17} />}
+                        style={{ marginTop: 16 }}
+                    />
+                </Card>
+                <ListGroup>{restoreRow}</ListGroup>
+            </>
         );
     };
 
-    // ── Account card: who is signed in and how the data syncs ──
+    // ── Account: who is signed in and how the data syncs ──
     const renderAccountCard = () => {
         if (!isSignedIn) {
             // The plan card already asks AI subscribers without an account to create one.
             if (needsAccount) return null;
             return (
-                <Card>
-                    <View style={styles.tierHeader}>
-                        <UserCircle color={colors.textSecondary} size={18} />
-                        <Typography variant="h3" style={{ marginLeft: 8 }}>{t('account.title')}</Typography>
-                    </View>
-                    <TouchableOpacity
-                        style={styles.manageRow}
+                <ListGroup title={t('account.title')}>
+                    <ListRow
+                        title={t('aiGate.alreadyHaveAccount')}
+                        icon={c => <LogIn color={c} size={17} />}
                         onPress={() => navigation.navigate('AIOnboarding', { mode: 'signin' })}
-                        activeOpacity={0.7}
-                    >
-                        <Typography variant="body" color={colors.primary} style={{ flex: 1 }}>
-                            {t('aiGate.alreadyHaveAccount')}
-                        </Typography>
-                        <Typography variant="caption" color={colors.textMuted}>›</Typography>
-                    </TouchableOpacity>
-                </Card>
+                    />
+                </ListGroup>
             );
         }
 
@@ -691,80 +644,76 @@ export const SettingsScreen = ({ navigation }: any) => {
                 : t('account.syncError');
         } else {
             syncText = lastSyncedAt
-                ? t('account.syncedAt', { time: format(lastSyncedAt, 'MMM d, HH:mm') })
+                ? t('account.syncedAt', { time: formatDate(lastSyncedAt, 'MMM d, HH:mm') })
                 : t('account.syncWaiting');
         }
 
+        const email = user?.primaryEmailAddress?.emailAddress ?? '';
         return (
-            <Card>
-                <View style={styles.tierHeader}>
-                    <UserCircle color={colors.textSecondary} size={18} />
-                    <Typography variant="h3" style={{ marginLeft: 8 }}>{t('account.title')}</Typography>
-                </View>
-                <Typography variant="caption" color={colors.textSecondary} style={{ marginTop: 6 }}>
-                    {t('account.signedInAs', { email: user?.primaryEmailAddress?.emailAddress ?? '' })}
-                </Typography>
-
-                <View style={[styles.statusLine, { marginTop: 12 }]}>
-                    <SyncIcon color={syncColor} size={16} />
-                    <Typography variant="caption" color={syncColor} style={{ marginLeft: 8, flex: 1 }}>
-                        {syncText}
-                    </Typography>
-                </View>
-                {pendingChanges > 0 && !conflict && (
-                    <Typography variant="caption" color={colors.textMuted} style={{ marginTop: 4, marginLeft: 24 }}>
-                        {t('account.pendingChanges', { count: pendingChanges })}
-                    </Typography>
-                )}
-
-                {conflict && (
-                    <View style={{ marginTop: 12 }}>
-                        <Button
-                            title={t('account.conflictMerge')}
-                            onPress={() => handleResolveConflict('merge')}
-                            size="small"
-                        />
-                        <Button
-                            title={t('account.conflictReplace')}
-                            variant="outline"
-                            onPress={() => handleResolveConflict('replace')}
-                            size="small"
-                            style={{ marginTop: 8 }}
-                        />
-                    </View>
-                )}
-
-                {cloudSyncActive && !conflict && syncStatus !== 'syncing' && (
-                    <TouchableOpacity
-                        style={styles.manageRow}
-                        onPress={() => syncNow()}
-                        activeOpacity={0.7}
-                    >
-                        <RefreshCw color={colors.textSecondary} size={18} />
-                        <Typography variant="body" color={colors.text} style={{ flex: 1, marginLeft: 12 }}>
-                            {t('account.syncNow')}
+            <ListGroup title={t('account.title')}>
+                <View style={styles.accountRow}>
+                    <View style={styles.avatar}>
+                        <Typography variant="body" bold color={colors.primary}>
+                            {(user?.firstName || email || '?').charAt(0).toUpperCase()}
                         </Typography>
-                    </TouchableOpacity>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <Typography variant="body" bold numberOfLines={1}>
+                            {user?.fullName || email}
+                        </Typography>
+                        {!!user?.fullName && (
+                            <Typography variant="caption" color={colors.textSecondary} numberOfLines={1}>{email}</Typography>
+                        )}
+                        <View style={[styles.statusLine, { marginTop: 6 }]}>
+                            <SyncIcon color={syncColor} size={13} />
+                            <Typography variant="caption" color={syncColor} style={{ flex: 1 }}>
+                                {syncText}
+                            </Typography>
+                        </View>
+                        {pendingChanges > 0 && !conflict && (
+                            <Typography variant="caption" color={colors.textMuted} style={{ marginTop: 2 }}>
+                                {t('account.pendingChanges', { count: pendingChanges })}
+                            </Typography>
+                        )}
+                        {conflict && (
+                            <View style={{ marginTop: 12, gap: 8 }}>
+                                <Button title={t('account.conflictMerge')} onPress={() => handleResolveConflict('merge')} size="small" />
+                                <Button title={t('account.conflictReplace')} variant="outline" onPress={() => handleResolveConflict('replace')} size="small" />
+                            </View>
+                        )}
+                    </View>
+                </View>
+                {cloudSyncActive && !conflict && syncStatus !== 'syncing' && (
+                    <ListRow
+                        title={t('account.syncNow')}
+                        icon={c => <RefreshCw color={c} size={17} />}
+                        iconTone="neutral"
+                        onPress={() => syncNow()}
+                        showChevron={false}
+                    />
                 )}
-
-                <TouchableOpacity
-                    style={styles.manageRow}
+                <ListRow
+                    title={t('account.signOut')}
+                    icon={c => <LogOut color={c} size={17} />}
                     onPress={handleSignOut}
-                    activeOpacity={0.7}
-                >
-                    <LogOut color={colors.error} size={18} />
-                    <Typography variant="body" color={colors.error} style={{ flex: 1, marginLeft: 12 }}>
-                        {t('account.signOut')}
-                    </Typography>
-                </TouchableOpacity>
-            </Card>
+                    destructive
+                />
+            </ListGroup>
         );
+    };
+
+    const expandIcon = (open: boolean) =>
+        open ? <ChevronUp color={colors.textMuted} size={18} /> : <ChevronDown color={colors.textMuted} size={18} />;
+
+    const formatVolume = (kg: number) => {
+        const v = displayWeight(kg);
+        return v > 9999 ? `${(v / 1000).toFixed(0)}k` : `${Math.round(v)}`;
     };
 
     return (
         <ScreenLayout>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
-                <Typography variant="h1" style={{ marginBottom: 24 }}>{t('settings.title')}</Typography>
+                <ScreenHeader title={t('settings.title')} />
 
                 {/* Subscription / Plan Status */}
                 {renderSubscriptionCard()}
@@ -772,377 +721,284 @@ export const SettingsScreen = ({ navigation }: any) => {
                 {/* Account & Cloud Sync */}
                 {renderAccountCard()}
 
-                {/* Language Selector */}
-                <Card>
-                    <TouchableOpacity
+                {/* Preferences */}
+                <ListGroup title={t('settings.preferences', 'Preferences')}>
+                    <ListRow
+                        title={t('settings.language')}
+                        icon={c => <Globe color={c} size={17} />}
+                        value={LANGUAGE_LABELS[currentLang] ?? currentLang}
                         onPress={() => setShowLanguage(!showLanguage)}
-                        activeOpacity={0.7}
-                        style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
-                    >
-                        <View>
-                            <Typography variant="h3">{t('settings.language')}</Typography>
-                            <Typography variant="caption" style={{ marginTop: 2 }}>
-                                {t('settings.languageDescription')}
-                            </Typography>
-                        </View>
-                        <Typography variant="body" color={colors.textMuted}>
-                            {showLanguage ? '▲' : '▼'}
-                        </Typography>
-                    </TouchableOpacity>
-
+                        right={
+                            <View style={styles.trailing}>
+                                <Typography variant="bodySmall" color={colors.textSecondary}>
+                                    {LANGUAGE_LABELS[currentLang] ?? currentLang}
+                                </Typography>
+                                {expandIcon(showLanguage)}
+                            </View>
+                        }
+                    />
                     {showLanguage && (
-                        <View style={{ marginTop: 16 }}>
-                            <View style={styles.languageGrid}>
+                        <View style={styles.rowBody}>
+                            <View style={styles.chipWrap}>
                                 {(Object.keys(LANGUAGE_LABELS) as SupportedLanguage[]).map(lang => (
-                                    <TouchableOpacity
+                                    <Chip
                                         key={lang}
-                                        style={[
-                                            styles.languageChip,
-                                            currentLang === lang && styles.languageChipActive,
-                                        ]}
+                                        label={LANGUAGE_LABELS[lang]}
+                                        selected={currentLang === lang}
                                         onPress={() => handleChangeLanguage(lang)}
-                                        activeOpacity={0.7}
-                                    >
-                                        <Typography
-                                            variant="bodySmall"
-                                            color={currentLang === lang ? colors.black : colors.textSecondary}
-                                            bold={currentLang === lang}
-                                        >
-                                            {LANGUAGE_LABELS[lang]}
-                                        </Typography>
-                                    </TouchableOpacity>
+                                    />
                                 ))}
                             </View>
                         </View>
                     )}
-                </Card>
-
-                {/* Theme Selector */}
-                <Card>
-                    <Typography variant="h3" style={{ marginBottom: 4 }}>{t('settings.theme')}</Typography>
-                    <Typography variant="caption" style={{ marginBottom: 16 }}>
-                        {t('settings.themeDescription')}
-                    </Typography>
-                    <View style={styles.themeSegment}>
-                        <TouchableOpacity
-                            style={[styles.themeOption, themeMode === 'dark' && styles.themeOptionActive]}
-                            onPress={() => setThemeMode('dark')}
-                            activeOpacity={0.85}
-                        >
-                            <View style={styles.themeOptionInner}>
-                                <Moon color={themeMode === 'dark' ? colors.black : colors.textSecondary} size={15} />
-                                <Typography
-                                    variant="bodySmall"
-                                    color={themeMode === 'dark' ? colors.black : colors.textSecondary}
-                                    bold={themeMode === 'dark'}
-                                    style={{ marginLeft: 6 }}
-                                >
-                                    {t('settings.darkMode')}
-                                </Typography>
-                            </View>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.themeOption, themeMode === 'light' && styles.themeOptionActive]}
-                            onPress={() => setThemeMode('light')}
-                            activeOpacity={0.85}
-                        >
-                            <View style={styles.themeOptionInner}>
-                                <Sun color={themeMode === 'light' ? colors.black : colors.textSecondary} size={15} />
-                                <Typography
-                                    variant="bodySmall"
-                                    color={themeMode === 'light' ? colors.black : colors.textSecondary}
-                                    bold={themeMode === 'light'}
-                                    style={{ marginLeft: 6 }}
-                                >
-                                    {t('settings.lightMode')}
-                                </Typography>
-                            </View>
-                        </TouchableOpacity>
-                    </View>
-                </Card>
-
-                {/* Units */}
-                <Card>
-                    <Typography variant="h3" style={{ marginBottom: 4 }}>{t('settings.units')}</Typography>
-                    <Typography variant="caption" style={{ marginBottom: 16 }}>
-                        {t('settings.unitsDescription')}
-                    </Typography>
-                    <View style={styles.themeSegment}>
-                        <TouchableOpacity
-                            style={[styles.themeOption, unitSystem === 'metric' && styles.themeOptionActive]}
-                            onPress={async () => {
-                                await setUnitSystem('metric');
-                                if (convexUser?._id) {
-                                    await updateProfile({ unitPreference: 'metric' });
-                                }
-                            }}
-                            activeOpacity={0.85}
-                        >
-                            <View style={styles.themeOptionInner}>
-                                <Ruler color={unitSystem === 'metric' ? colors.black : colors.textSecondary} size={15} />
-                                <Typography
-                                    variant="bodySmall"
-                                    color={unitSystem === 'metric' ? colors.black : colors.textSecondary}
-                                    bold={unitSystem === 'metric'}
-                                    style={{ marginLeft: 6 }}
-                                >
-                                    {t('settings.metric')}
-                                </Typography>
-                            </View>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[styles.themeOption, unitSystem === 'imperial' && styles.themeOptionActive]}
-                            onPress={async () => {
-                                await setUnitSystem('imperial');
-                                if (convexUser?._id) {
-                                    await updateProfile({ unitPreference: 'imperial' });
-                                }
-                            }}
-                            activeOpacity={0.85}
-                        >
-                            <View style={styles.themeOptionInner}>
-                                <Ruler color={unitSystem === 'imperial' ? colors.black : colors.textSecondary} size={15} />
-                                <Typography
-                                    variant="bodySmall"
-                                    color={unitSystem === 'imperial' ? colors.black : colors.textSecondary}
-                                    bold={unitSystem === 'imperial'}
-                                    style={{ marginLeft: 6 }}
-                                >
-                                    {t('settings.imperial')}
-                                </Typography>
-                            </View>
-                        </TouchableOpacity>
-                    </View>
-                </Card>
-
-                {/* Body Stats */}
-                <Card>
-                    <TouchableOpacity
-                        onPress={() => setShowBodyStats(!showBodyStats)}
-                        activeOpacity={0.7}
-                        style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
-                    >
-                        <View>
-                            <Typography variant="h3">{t('settings.bodyStats')}</Typography>
-                            <Typography variant="caption" style={{ marginTop: 2 }}>
-                                {userStats?.weight ? `${displayWeight(userStats.weight)} ${weightUnit}` : t('settings.saveStats')}
-                            </Typography>
+                    <View style={styles.rowBody}>
+                        <View style={styles.segmentLabel}>
+                            <Typography variant="body">{t('settings.theme')}</Typography>
                         </View>
-                        <Typography variant="body" color={colors.textMuted}>
-                            {showBodyStats ? '▲' : '▼'}
-                        </Typography>
-                    </TouchableOpacity>
+                        <SegmentedControl
+                            value={themeMode}
+                            onChange={setThemeMode}
+                            options={[
+                                { value: 'dark', label: t('settings.darkMode'), icon: c => <Moon color={c} size={15} /> },
+                                { value: 'light', label: t('settings.lightMode'), icon: c => <Sun color={c} size={15} /> },
+                            ]}
+                        />
+                    </View>
+                    <View style={styles.rowBody}>
+                        <View style={styles.segmentLabel}>
+                            <Typography variant="body">{t('settings.units')}</Typography>
+                        </View>
+                        <SegmentedControl
+                            value={unitSystem}
+                            onChange={async (system: UnitSystem) => {
+                                await setUnitSystem(system);
+                                if (convexUser?._id) {
+                                    await updateProfile({ unitPreference: system });
+                                }
+                            }}
+                            options={[
+                                { value: 'metric', label: t('settings.metric') },
+                                { value: 'imperial', label: t('settings.imperial') },
+                            ]}
+                        />
+                    </View>
+                </ListGroup>
 
+                {/* Body */}
+                <ListGroup title={t('settings.body', 'Body')}>
+                    <ListRow
+                        title={t('settings.bodyStats')}
+                        icon={c => <Scale color={c} size={17} />}
+                        iconTone="accent"
+                        onPress={() => setShowBodyStats(!showBodyStats)}
+                        right={
+                            <View style={styles.trailing}>
+                                <Typography variant="bodySmall" color={colors.textSecondary}>
+                                    {userStats?.weight ? `${displayWeight(userStats.weight)} ${weightUnit}` : ''}
+                                </Typography>
+                                {expandIcon(showBodyStats)}
+                            </View>
+                        }
+                    />
                     {showBodyStats && (
-                        <View style={{ marginTop: 16 }}>
-                            <View style={styles.inputContainer}>
-                                <Typography variant="label" style={styles.inputLabel}>
-                                    {t('settings.weight')} ({weightUnit})
-                                </Typography>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder={unitSystem === 'metric' ? 'e.g. 75' : 'e.g. 165'}
-                                    keyboardType="numeric"
-                                    placeholderTextColor={colors.textSecondary}
-                                    value={weight}
-                                    onChangeText={setWeight}
-                                />
+                        <View style={styles.rowBody}>
+                            <View style={styles.fieldRow}>
+                                <View style={styles.field}>
+                                    <Typography variant="label" style={styles.fieldLabel}>
+                                        {t('settings.weight')} ({weightUnit})
+                                    </Typography>
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder={unitSystem === 'metric' ? '75' : '165'}
+                                        keyboardType="numeric"
+                                        placeholderTextColor={colors.textMuted}
+                                        value={weight}
+                                        onChangeText={setWeight}
+                                    />
+                                </View>
+                                <View style={styles.field}>
+                                    <Typography variant="label" style={styles.fieldLabel}>
+                                        {t('settings.height')} ({lengthUnit})
+                                    </Typography>
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder={unitSystem === 'metric' ? '180' : '71'}
+                                        keyboardType="numeric"
+                                        placeholderTextColor={colors.textMuted}
+                                        value={height}
+                                        onChangeText={setHeight}
+                                    />
+                                </View>
+                                <View style={styles.field}>
+                                    <Typography variant="label" style={styles.fieldLabel}>{t('settings.bodyFatPercent')}</Typography>
+                                    <TextInput
+                                        style={styles.input}
+                                        placeholder="15"
+                                        keyboardType="numeric"
+                                        placeholderTextColor={colors.textMuted}
+                                        value={bodyFat}
+                                        onChangeText={setBodyFat}
+                                    />
+                                </View>
                             </View>
-
-                            <View style={styles.inputContainer}>
-                                <Typography variant="label" style={styles.inputLabel}>
-                                    {t('settings.height')} ({lengthUnit})
-                                </Typography>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder={unitSystem === 'metric' ? 'e.g. 180' : 'e.g. 71'}
-                                    keyboardType="numeric"
-                                    placeholderTextColor={colors.textSecondary}
-                                    value={height}
-                                    onChangeText={setHeight}
-                                />
-                            </View>
-
-                            <View style={styles.inputContainer}>
-                                <Typography variant="label" style={styles.inputLabel}>{t('settings.bodyFatPercent')}</Typography>
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="e.g. 15"
-                                    keyboardType="numeric"
-                                    placeholderTextColor={colors.textSecondary}
-                                    value={bodyFat}
-                                    onChangeText={setBodyFat}
-                                />
-                            </View>
-
                             {userStats?.lastUpdated && (
-                                <Typography variant="caption" style={{ marginBottom: 12 }}>
-                                    {t('settings.lastUpdated', { date: format(userStats.lastUpdated, 'MMM dd, yyyy') })}
+                                <Typography variant="caption" color={colors.textMuted} style={{ marginTop: 10 }}>
+                                    {t('settings.lastUpdated', { date: formatDate(userStats.lastUpdated, 'MMM dd, yyyy') })}
                                 </Typography>
                             )}
-
-                            <Button title={t('settings.saveStats')} onPress={handleSaveStats} />
+                            <Button title={t('settings.saveStats')} onPress={handleSaveStats} variant="secondary" style={{ marginTop: 12 }} />
                         </View>
                     )}
-                </Card>
+                    <ProFeatureGate feature="bodyMeasurements">
+                        <ListRow
+                            title={t('measurements.title')}
+                            subtitle={t('measurements.subtitle')}
+                            icon={c => <Ruler color={c} size={17} />}
+                            iconTone="accent"
+                            onPress={() => setShowMeasurements(!showMeasurements)}
+                            right={expandIcon(showMeasurements)}
+                        />
+                        {showMeasurements && (
+                            <View style={styles.rowBody}>
+                                <View style={styles.measureGrid}>
+                                    {MEASUREMENT_FIELDS.map(field => (
+                                        <View key={field.key} style={styles.measureItem}>
+                                            <Typography variant="label" style={styles.fieldLabel}>
+                                                {field.label}
+                                            </Typography>
+                                            <TextInput
+                                                style={[styles.input, { textAlign: 'center' }]}
+                                                placeholder={lengthUnit}
+                                                keyboardType="numeric"
+                                                placeholderTextColor={colors.textMuted}
+                                                value={field.state}
+                                                onChangeText={field.setter}
+                                            />
+                                        </View>
+                                    ))}
+                                </View>
 
-                {/* Lifetime Stats */}
-                <Card>
-                    <Typography variant="h3" style={{ marginBottom: 12 }}>{t('settings.lifetimeStats')}</Typography>
-                    <View style={styles.lifetimeRow}>
-                        <View style={styles.lifetimeStat}>
-                            <Typography variant="h2" color={colors.primary}>{totalWorkouts}</Typography>
-                            <Typography variant="caption">{t('home.workouts')}</Typography>
-                        </View>
-                        <View style={styles.lifetimeStat}>
-                            <Typography variant="h2" color={colors.success}>{totalSets}</Typography>
-                            <Typography variant="caption">{t('common.sets')}</Typography>
-                        </View>
-                        <View style={styles.lifetimeStat}>
-                            <Typography variant="h2" color={colors.warning}>
-                                {displayWeight(totalVolume) > 9999
-                                    ? `${(displayWeight(totalVolume) / 1000).toFixed(0)}k`
-                                    : Math.round(displayWeight(totalVolume))}
-                            </Typography>
-                            <Typography variant="caption">{weightUnit} {t('settings.totalLabel')}</Typography>
-                        </View>
-                    </View>
-                </Card>
+                                <Button
+                                    title={t('measurements.save')}
+                                    onPress={handleSaveMeasurements}
+                                    variant="secondary"
+                                    style={{ marginTop: 12 }}
+                                />
 
-                {/* Body Measurements */}
-                <ProFeatureGate feature="bodyMeasurements">
-                <Card>
-                    <TouchableOpacity
-                        onPress={() => setShowMeasurements(!showMeasurements)}
-                        activeOpacity={0.7}
-                        style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
-                    >
-                        <View>
-                            <Typography variant="h3">{t('measurements.title')}</Typography>
-                            <Typography variant="caption" style={{ marginTop: 2 }}>
-                                {t('measurements.subtitle')}
-                            </Typography>
-                        </View>
-                        <Typography variant="body" color={colors.textMuted}>
-                            {showMeasurements ? '▲' : '▼'}
-                        </Typography>
-                    </TouchableOpacity>
-
-                    {showMeasurements && (
-                        <View style={{ marginTop: 16 }}>
-                            <View style={styles.measureGrid}>
-                                {MEASUREMENT_FIELDS.map(field => (
-                                    <View key={field.key} style={styles.measureItem}>
-                                        <Typography variant="caption" style={{ marginBottom: 4, fontSize: 10 }}>
-                                            {field.label}
-                                        </Typography>
-                                        <TextInput
-                                            style={styles.measureInput}
-                                            placeholder={lengthUnit}
-                                            keyboardType="numeric"
-                                            placeholderTextColor={colors.textMuted}
-                                            value={field.state}
-                                            onChangeText={field.setter}
-                                        />
-                                    </View>
-                                ))}
-                            </View>
-
-                            <Button
-                                title={t('measurements.save')}
-                                onPress={handleSaveMeasurements}
-                                size="small"
-                                style={{ marginTop: 12 }}
-                            />
-
-                            {/* Mini History */}
-                            {bodyMeasurements.length > 0 && (
-                                <View style={{ marginTop: 16 }}>
-                                    <Typography variant="label" style={{ marginBottom: 8 }}>
-                                        {t('measurements.history')}
-                                    </Typography>
-                                    {bodyMeasurements.slice(0, 5).map((m, i) => {
-                                        const prev = bodyMeasurements[i + 1];
-                                        return (
-                                            <View key={m.id} style={styles.measureHistoryRow}>
-                                                <Typography variant="caption" color={colors.textSecondary} style={{ width: 72, fontSize: 10 }}>
-                                                    {format(m.date, 'MMM dd')}
-                                                </Typography>
-                                                <View style={styles.measureHistoryValues}>
-                                                    {MEASUREMENT_FIELDS.map(f => {
-                                                        const val = m[f.key];
-                                                        const prevVal = prev?.[f.key];
-                                                        if (!val) return null;
-                                                        const diff = prevVal ? val - prevVal : 0;
-                                                        return (
-                                                            <View key={f.key} style={styles.measureHistoryChip}>
-                                                                <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 8 }}>
-                                                                    {f.label}
-                                                                </Typography>
-                                                                <Typography variant="caption" bold style={{ fontSize: 11 }}>
-                                                                    {displayLength(val)}
+                                {/* Mini history: one column per tracked measurement */}
+                                {bodyMeasurements.length > 0 && (() => {
+                                    const recent = bodyMeasurements.slice(0, 5);
+                                    const cols = MEASUREMENT_FIELDS.filter(field => recent.some(m => m[field.key]));
+                                    return (
+                                        <View style={styles.measureTable}>
+                                            <Typography variant="label" style={{ marginBottom: 8 }}>
+                                                {t('measurements.history')}
+                                            </Typography>
+                                            <View style={styles.measureTableHead}>
+                                                <View style={styles.measureDateCol} />
+                                                {cols.map(field => (
+                                                    <Typography
+                                                        key={field.key}
+                                                        variant="label"
+                                                        numberOfLines={1}
+                                                        adjustsFontSizeToFit
+                                                        minimumFontScale={0.7}
+                                                        style={styles.measureCell}
+                                                    >
+                                                        {field.label}
+                                                    </Typography>
+                                                ))}
+                                            </View>
+                                            {recent.map((m, i) => {
+                                                const prev = bodyMeasurements[i + 1];
+                                                return (
+                                                    <View key={m.id} style={[styles.measureTableRow, i === recent.length - 1 && styles.measureTableRowLast]}>
+                                                        <Typography variant="caption" color={colors.textSecondary} style={styles.measureDateCol}>
+                                                            {formatDate(m.date, 'MMM dd')}
+                                                        </Typography>
+                                                        {cols.map(field => {
+                                                            const val = m[field.key];
+                                                            const prevVal = prev?.[field.key];
+                                                            const diff = val && prevVal ? val - prevVal : 0;
+                                                            return (
+                                                                <View key={field.key} style={styles.measureCell}>
+                                                                    <Typography variant="bodySmall" bold color={val ? colors.text : colors.textMuted} style={styles.measureValue}>
+                                                                        {val ? displayLength(val) : '—'}
+                                                                    </Typography>
                                                                     {diff !== 0 && (
                                                                         <Typography
                                                                             variant="caption"
-                                                                            color={diff > 0 ? colors.error : colors.success}
-                                                                            style={{ fontSize: 9 }}
+                                                                            color={diff > 0 ? colors.warning : colors.success}
+                                                                            style={styles.measureDelta}
                                                                         >
-                                                                            {' '}{diff > 0 ? '↑' : '↓'}{Math.abs(displayLength(diff)).toFixed(1)}
+                                                                            {diff > 0 ? '↑' : '↓'}{Math.abs(displayLength(diff)).toFixed(1)}
                                                                         </Typography>
                                                                     )}
-                                                                </Typography>
-                                                            </View>
-                                                        );
-                                                    })}
-                                                </View>
-                                            </View>
-                                        );
-                                    })}
-                                </View>
-                            )}
+                                                                </View>
+                                                            );
+                                                        })}
+                                                    </View>
+                                                );
+                                            })}
+                                        </View>
+                                    );
+                                })()}
+                            </View>
+                        )}
+                    </ProFeatureGate>
+                </ListGroup>
+
+                {/* Lifetime Stats */}
+                <ListGroup title={t('settings.lifetimeStats')}>
+                    <View style={styles.lifetimeRow}>
+                        <View style={styles.lifetimeStat}>
+                            <Typography variant="h2" style={styles.statValue}>{totalWorkouts}</Typography>
+                            <Typography variant="caption" color={colors.textMuted}>{t('home.workouts')}</Typography>
                         </View>
-                    )}
-                </Card>
-                </ProFeatureGate>
+                        <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+                        <View style={styles.lifetimeStat}>
+                            <Typography variant="h2" style={styles.statValue}>{totalSets}</Typography>
+                            <Typography variant="caption" color={colors.textMuted}>{t('common.sets')}</Typography>
+                        </View>
+                        <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+                        <View style={styles.lifetimeStat}>
+                            <Typography variant="h2" style={styles.statValue}>{formatVolume(totalVolume)}</Typography>
+                            <Typography variant="caption" color={colors.textMuted}>{weightUnit} {t('settings.totalLabel')}</Typography>
+                        </View>
+                    </View>
+                </ListGroup>
 
                 {/* Data Management */}
-                <Card>
-                    <Typography variant="h3" style={{ marginBottom: 4 }}>{t('settings.dataManagement')}</Typography>
-                    <Typography variant="caption" style={{ marginBottom: 16 }}>
-                        {t('settings.dataManagementDescription')}
-                    </Typography>
-
-                    <ProFeatureGate feature="csvExport" inline>
-                    <Button
-                        title={t('settings.exportCSV')}
-                        onPress={handleExportCSV}
-                        variant="secondary"
-                        style={{ marginBottom: 12 }}
-                    />
+                <ListGroup title={t('settings.dataManagement')} footer={t('settings.dataManagementDescription')}>
+                    <ProFeatureGate feature="csvExport">
+                        <ListRow
+                            title={t('settings.exportCSV')}
+                            icon={c => <Download color={c} size={17} />}
+                            onPress={handleExportCSV}
+                            showChevron={false}
+                        />
                     </ProFeatureGate>
-
-                    <Button
+                    <ListRow
                         title={t('settings.clearAllData')}
+                        icon={c => <Trash2 color={c} size={17} />}
                         onPress={handleReset}
-                        variant="outline"
-                        style={{ borderColor: colors.error, marginBottom: 12 }}
+                        destructive
                     />
-
                     {isSignedIn && (
-                        <Button
+                        <ListRow
                             title={t('settings.deleteAccount', 'Delete Account')}
+                            icon={c => <UserX color={c} size={17} />}
                             onPress={handleDeleteAccount}
-                            variant="outline"
-                            style={{ borderColor: colors.error, backgroundColor: colors.error + '10' }}
+                            destructive
                         />
                     )}
-                </Card>
+                </ListGroup>
 
                 <View style={styles.footer}>
-                    <Typography variant="caption" style={{ textAlign: 'center' }}>
+                    <Typography variant="caption" color={colors.textMuted} align="center">
                         {t('settings.version')}
                     </Typography>
-                    <Typography variant="caption" style={{ textAlign: 'center', marginTop: 4 }}>
+                    <Typography variant="caption" color={colors.textMuted} align="center" style={{ marginTop: 2 }}>
                         {isAISubscriber
                             ? t('settings.aiTagline')
                             : isPro
@@ -1164,7 +1020,7 @@ export const SettingsScreen = ({ navigation }: any) => {
                     <View style={styles.trainingCard}>
                         <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
                             <Typography variant="h2">{t('trainingProfile.title')}</Typography>
-                            <Typography variant="caption" color={colors.textSecondary} style={{ marginTop: 4 }}>
+                            <Typography variant="bodySmall" color={colors.textSecondary} style={{ marginTop: 4 }}>
                                 {t('trainingProfile.description')}
                             </Typography>
                             {trainingDraft && (
@@ -1173,7 +1029,7 @@ export const SettingsScreen = ({ navigation }: any) => {
                             <View style={{ flexDirection: 'row', gap: 10, marginTop: 20 }}>
                                 <Button
                                     title={t('common.cancel')}
-                                    variant="ghost"
+                                    variant="outline"
                                     onPress={() => setTrainingDraft(null)}
                                     style={{ flex: 1 }}
                                 />
@@ -1218,159 +1074,62 @@ export const SettingsScreen = ({ navigation }: any) => {
 };
 
 const createStyles = (colors: ThemeColors) => StyleSheet.create({
-    inputContainer: {
+    planCard: {
+        padding: 18,
+        marginBottom: 12,
+    },
+    planBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 16,
-    },
-    inputLabel: {
-        width: 90,
-    },
-    input: {
-        flex: 1,
-        height: 40,
-        backgroundColor: colors.surfaceLight,
-        borderRadius: borderRadius.s,
+        alignSelf: 'flex-start',
+        gap: 6,
+        paddingVertical: 6,
         paddingHorizontal: 12,
-        color: colors.text,
-    },
-    lifetimeRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-around',
-    },
-    lifetimeStat: {
-        alignItems: 'center',
-    },
-    languageGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
-    },
-    languageChip: {
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: borderRadius.m,
-        backgroundColor: colors.surfaceLight,
-        borderWidth: 1,
-        borderColor: colors.border,
-        minWidth: '45%',
-        alignItems: 'center',
-    },
-    languageChipActive: {
-        backgroundColor: colors.primary,
-        borderColor: colors.primary,
-    },
-    themeSegment: {
-        flexDirection: 'row',
-        gap: 8,
-        backgroundColor: colors.surfaceLight,
-        borderRadius: borderRadius.l,
-        padding: 6,
-        borderWidth: 1,
-        borderColor: colors.border,
-    },
-    themeOption: {
-        flex: 1,
-        paddingVertical: 12,
-        paddingHorizontal: 10,
-        borderRadius: borderRadius.m,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    themeOptionInner: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    themeOptionActive: {
-        backgroundColor: colors.primary,
-        borderWidth: 1,
-        borderColor: colors.primaryLight,
-        shadowColor: colors.primary,
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.22,
-        shadowRadius: 10,
-        elevation: 5,
-    },
-    footer: {
-        marginTop: 24,
-        paddingVertical: 16,
-    },
-    // ── Subscription card styles ──────────────────────────
-    premiumCard: {
-        borderWidth: 1,
-        borderColor: colors.success + '40',
-    },
-    aiCard: {
-        borderWidth: 1,
-        borderColor: colors.primary + '40',
-    },
-    tierHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    tierBadgePro: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 8,
-        paddingHorizontal: 14,
-        backgroundColor: colors.success + '12',
-        borderRadius: borderRadius.m,
-    },
-    tierBadgeAI: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 8,
-        paddingHorizontal: 14,
-        backgroundColor: colors.primary + '12',
-        borderRadius: borderRadius.m,
-    },
-    upgradeRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: 16,
-        paddingVertical: 12,
-        paddingHorizontal: 12,
-        backgroundColor: colors.primary + '08',
-        borderRadius: borderRadius.m,
-        borderWidth: 1,
-        borderColor: colors.primary + '20',
-    },
-    upgradeIconCircle: {
-        width: 40,
-        height: 40,
-        borderRadius: 12,
-        backgroundColor: colors.primary + '15',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 12,
-    },
-    trainingOverlay: {
-        flex: 1,
-        backgroundColor: colors.overlay,
-        justifyContent: 'center',
-        paddingHorizontal: 16,
-    },
-    trainingCard: {
-        maxHeight: '90%',
-        backgroundColor: colors.surfaceElevated,
-        borderRadius: borderRadius.l,
-        padding: 20,
-        borderWidth: 1,
-        borderColor: colors.border,
-    },
-    manageRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 14,
-        borderTopWidth: 1,
-        borderTopColor: colors.border + '30',
-        marginTop: 8,
+        borderRadius: borderRadius.full,
     },
     statusLine: {
         flexDirection: 'row',
         alignItems: 'center',
+        gap: 6,
         marginTop: 8,
+    },
+    goalSection: {
+        marginTop: 16,
+        paddingTop: 16,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: colors.border,
+    },
+    goalLabelRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        marginBottom: 8,
+    },
+    goalInput: {
+        backgroundColor: colors.surfaceLight,
+        borderRadius: borderRadius.m,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        fontSize: 15,
+        color: colors.text,
+        minHeight: 64,
+    },
+    upgradeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        marginTop: 16,
+        padding: 12,
+        backgroundColor: colors.secondarySoft,
+        borderRadius: borderRadius.m,
+    },
+    upgradeIcon: {
+        width: 38,
+        height: 38,
+        borderRadius: 11,
+        backgroundColor: colors.surface,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     trialProgressBar: {
         height: 6,
@@ -1383,71 +1142,134 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         backgroundColor: colors.primary,
         borderRadius: 3,
     },
+    accountRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 12,
+        padding: 14,
+    },
+    avatar: {
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        backgroundColor: colors.primarySoft,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    trailing: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    rowBody: {
+        paddingHorizontal: 14,
+        paddingVertical: 14,
+    },
+    segmentLabel: {
+        marginBottom: 10,
+    },
+    chipWrap: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        gap: 8,
+    },
+    fieldRow: {
+        flexDirection: 'row',
+        gap: 10,
+    },
+    field: {
+        flex: 1,
+    },
+    fieldLabel: {
+        marginBottom: 6,
+    },
+    input: {
+        height: 44,
+        backgroundColor: colors.surfaceLight,
+        borderRadius: borderRadius.m,
+        paddingHorizontal: 12,
+        color: colors.text,
+        fontSize: 15,
+    },
+    lifetimeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 18,
+    },
+    lifetimeStat: {
+        flex: 1,
+        alignItems: 'center',
+    },
+    statValue: {
+        fontVariant: ['tabular-nums'],
+    },
+    statDivider: {
+        width: StyleSheet.hairlineWidth,
+        alignSelf: 'stretch',
+    },
+    footer: {
+        marginTop: 8,
+        paddingVertical: 16,
+    },
+    trainingOverlay: {
+        flex: 1,
+        backgroundColor: colors.overlay,
+        justifyContent: 'center',
+        paddingHorizontal: 16,
+    },
+    trainingCard: {
+        maxHeight: '90%',
+        backgroundColor: colors.surface,
+        borderRadius: borderRadius.xl,
+        padding: 20,
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
     // ── Measurement styles ────────────────────────────────
     measureGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: 8,
+        gap: 10,
     },
     measureItem: {
         width: '30%',
         flexGrow: 1,
     },
-    measureInput: {
-        height: 38,
-        backgroundColor: colors.surfaceLight,
-        borderRadius: borderRadius.s,
-        paddingHorizontal: 10,
-        color: colors.text,
-        textAlign: 'center',
-        fontSize: 14,
-        borderWidth: 1,
-        borderColor: colors.border,
+    measureTable: {
+        marginTop: 20,
     },
-    measureHistoryRow: {
+    measureTableHead: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 6,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.border + '30',
+        paddingBottom: 6,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: colors.border,
     },
-    measureHistoryValues: {
-        flex: 1,
+    measureTableRow: {
         flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 6,
-    },
-    measureHistoryChip: {
         alignItems: 'center',
-        paddingHorizontal: 6,
-        paddingVertical: 2,
-        backgroundColor: colors.surfaceLight,
-        borderRadius: borderRadius.xs,
-    },
-    // ── Goal editing styles ───────────────────────────────
-    goalSection: {
-        marginTop: 16,
-        paddingTop: 12,
-        borderTopWidth: 1,
-        borderTopColor: colors.border + '30',
-    },
-    goalInput: {
-        backgroundColor: colors.surfaceLight,
-        borderRadius: borderRadius.m,
-        paddingHorizontal: 14,
-        paddingVertical: 10,
-        fontSize: 14,
-        color: colors.text,
-        borderWidth: 1,
-        borderColor: colors.border,
-        minHeight: 60,
-    },
-    saveGoalButton: {
-        alignSelf: 'flex-end',
-        marginTop: 8,
-        paddingHorizontal: 16,
         paddingVertical: 8,
-        backgroundColor: colors.primary + '15',
-        borderRadius: borderRadius.m,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: colors.border,
+    },
+    measureTableRowLast: {
+        borderBottomWidth: 0,
+        paddingBottom: 2,
+    },
+    measureDateCol: {
+        width: 52,
+    },
+    measureCell: {
+        flex: 1,
+        alignItems: 'center',
+        textAlign: 'center',
+    },
+    measureValue: {
+        fontVariant: ['tabular-nums'],
+    },
+    measureDelta: {
+        fontSize: 10.5,
+        lineHeight: 13,
+        fontVariant: ['tabular-nums'],
     },
 });

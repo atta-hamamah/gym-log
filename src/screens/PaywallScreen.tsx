@@ -5,10 +5,11 @@ import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { useSubscription } from '../context/SubscriptionContext';
-import { borderRadius } from '../theme/colors';
+import { IconButton } from '../components/IconButton';
+import { borderRadius, ThemeColors } from '../theme/colors';
 import { getStoreProducts, type BillingProduct } from '../services/billing';
 import { useTranslation } from 'react-i18next';
-import { Check, Dumbbell, TrendingUp, Trophy, BookOpen, FileSpreadsheet, Zap } from 'lucide-react-native';
+import { Check, Dumbbell, TrendingUp, Trophy, BookOpen, FileSpreadsheet, Zap, X } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 
 const FEATURES = [
@@ -73,6 +74,15 @@ export const PaywallScreen = ({ navigation }: any) => {
 
   return (
     <ScreenLayout>
+      {navigation.canGoBack() && (
+        <View style={styles.closeRow}>
+          <IconButton
+            icon={c => <X color={c} size={20} />}
+            onPress={() => navigation.goBack()}
+            accessibilityLabel={t('common.close', 'Close')}
+          />
+        </View>
+      )}
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
@@ -80,7 +90,7 @@ export const PaywallScreen = ({ navigation }: any) => {
         {/* App Branding */}
         <View style={styles.brandingSection}>
           <View style={styles.iconWrapper}>
-            <Zap color={colors.primary} size={48} />
+            <Zap color={colors.primary} size={40} strokeWidth={2.2} />
           </View>
           <Typography 
             variant="h1" 
@@ -107,14 +117,14 @@ export const PaywallScreen = ({ navigation }: any) => {
           {FEATURES.map((feature, index) => {
             const IconComponent = feature.icon;
             return (
-              <View key={index} style={styles.featureRow}>
-                <View style={styles.featureCheck}>
-                  <Check color={colors.success} size={16} />
+              <View key={index} style={[styles.featureRow, index === FEATURES.length - 1 && styles.featureRowLast]}>
+                <View style={styles.featureIcon}>
+                  <IconComponent color={colors.primary} size={17} />
                 </View>
-                <IconComponent color={colors.textSecondary} size={18} style={{ marginRight: 12 }} />
                 <Typography variant="body" style={{ flex: 1 }}>
                   {t(feature.labelKey)}
                 </Typography>
+                <Check color={colors.success} size={18} strokeWidth={2.5} />
               </View>
             );
           })}
@@ -131,7 +141,6 @@ export const PaywallScreen = ({ navigation }: any) => {
             size="large"
             fullWidth
             disabled={purchasing}
-            style={styles.purchaseButton}
           />
 
           <Typography variant="caption" color={colors.textMuted} align="center" style={{ marginTop: 8 }}>
@@ -160,7 +169,11 @@ export const PaywallScreen = ({ navigation }: any) => {
   );
 };
 
-const createStyles = (colors: any) => StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+  closeRow: {
+    alignItems: 'flex-end',
+    paddingTop: 4,
+  },
   scrollContent: {
     paddingBottom: 40,
     flexGrow: 1,
@@ -172,57 +185,52 @@ const createStyles = (colors: any) => StyleSheet.create({
     paddingTop: 20,
   },
   iconWrapper: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: colors.surfaceLight,
+    width: 80,
+    height: 80,
+    borderRadius: 26,
+    backgroundColor: colors.primarySoft,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
-    borderWidth: 2,
-    borderColor: colors.primary + '40',
+    marginBottom: 18,
   },
   appTitle: {
-    marginBottom: 8,
+    marginBottom: 6,
     fontSize: 28,
   },
   featuresCard: {
     marginBottom: 24,
-    paddingVertical: 20,
-    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 8,
+    paddingHorizontal: 18,
   },
   featureRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border + '30',
+    gap: 12,
+    paddingVertical: 11,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
   },
-  featureCheck: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: colors.success + '15',
+  featureRowLast: {
+    borderBottomWidth: 0,
+  },
+  featureIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: colors.primarySoft,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
   ctaSection: {
     alignItems: 'center',
     paddingHorizontal: 4,
   },
-  purchaseButton: {
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
-  },
   errorContainer: {
     marginTop: 12,
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: colors.error + '15',
-    borderRadius: borderRadius.s,
+    paddingVertical: 10,
+    backgroundColor: colors.errorSoft,
+    borderRadius: borderRadius.m,
   },
 });

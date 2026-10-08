@@ -22,7 +22,8 @@
     "all": "सभी",
     "rpe": "RPE",
     "finish": "समाप्त",
-    "continue": "जारी रखें"
+    "continue": "जारी रखें",
+    "animationNotAvailable": "एनिमेशन उपलब्ध नहीं है"
   },
   "tabs": {
     "dashboard": "डैशबोर्ड",
@@ -35,8 +36,8 @@
   "home": {
     "title": "RepAI",
     "subtitle": "हर रेप गिनो। हर रिकॉर्ड तोड़ो।",
-    "workoutActive": "💪 वर्कआउट चालू",
-    "readyToLift": "🏋️ तैयार हो?",
+    "workoutActive": "वर्कआउट चालू",
+    "readyToLift": "तैयार हो?",
     "activeDescription": "\"{{name}}\" — {{count}} अभ्यास",
     "inactiveDescription": "अपनी प्रगति ट्रैक करने के लिए नया सत्र शुरू करें।",
     "resumeWorkout": "जारी रखें",
@@ -51,8 +52,8 @@
     "newWorkout": "नया वर्कआउट",
     "giveSessionName": "अपने सत्र को नाम दें",
     "namePlaceholder": "जैसे Push Day, Leg Day...",
-    "letsGo": "चलो शुरू करें! 🔥",
-    "generateWithAI": "AI कोच से बनाएं ✨",
+    "letsGo": "चलो शुरू करें!",
+    "generateWithAI": "AI कोच से बनाएं",
     "aiSubscriptionOnly": "केवल AI सदस्यता"
   },
   "programs": {
@@ -78,7 +79,13 @@
       "hypertrophy": "मांसपेशी वृद्धि",
       "general": "सामान्य",
       "fat_loss": "वसा हानि"
-    }
+    },
+    "dayN": "दिन {{n}}",
+    "durationOngoing": "लगातार",
+    "durationWeeks_one": "{{count}} सप्ताह",
+    "durationWeeks_other": "{{count}} सप्ताह",
+    "durationCycles_one": "{{count}} सप्ताह के चक्र",
+    "durationCycles_other": "{{count}} सप्ताह के चक्र"
   },
   "history": {
     "title": "इतिहास",
@@ -88,7 +95,7 @@
     "deleteMessage": "यह क्रिया पूर्ववत नहीं की जा सकती।",
     "noWorkoutsYet": "अभी तक कोई वर्कआउट नहीं",
     "noWorkoutsDescription": "अपना इतिहास देखने के लिए\nएक सत्र पूरा करें.",
-    "clearAllTitle": "⚠️ सारा इतिहास हटाएं?",
+    "clearAllTitle": "सारा इतिहास हटाएं?",
     "clearAllMessage": "यह सभी वर्कआउट इतिहास को स्थायी रूप से हटा देगा। यह पूर्ववत नहीं किया जा सकता।",
     "clearAllCloudMessage": "यह इस डिवाइस और क्लाउड से सभी वर्कआउट इतिहास को स्थायी रूप से हटा देगा। यह पूर्ववत नहीं किया जा सकता।",
     "clearAllConfirm": "हाँ, सारा इतिहास हटाएं",
@@ -103,12 +110,12 @@
     "emptyWorkoutMessage": "समाप्त करने से पहले कम से कम एक अभ्यास जोड़ें।",
     "finishTitle": "वर्कआउट समाप्त करें?",
     "finishMessage": "इस सत्र को अपने इतिहास में सहेजें।",
-    "finishConfirm": "समाप्त ✓",
+    "finishConfirm": "समाप्त",
     "cancelTitle": "वर्कआउट रद्द करें?",
     "cancelMessage": "सारी प्रगति खो जाएगी।",
     "discard": "हटाएं",
     "noExercises": "अभी तक कोई अभ्यास नहीं जोड़ा गया।\nशुरू करने के लिए नीचे बटन दबाएं।",
-    "addExercise": "+ अभ्यास जोड़ें",
+    "addExercise": "अभ्यास जोड़ें",
     "sessionNotes": "सत्र नोट्स...",
     "cancelWorkout": "वर्कआउट रद्द करें",
     "remove": "हटाएं",
@@ -142,7 +149,7 @@
     "history": "हाल के रिकॉर्ड",
     "error": "डेटा गायब",
     "errorEmpty": "कम से कम एक माप दर्ज करें।",
-    "saved": "✅ सहेजा गया",
+    "saved": "सहेजा गया",
     "savedMessage": "माप सफलतापूर्वक दर्ज किए गए।",
     "neck": "गर्दन",
     "chest": "छाती",
@@ -181,7 +188,7 @@
   "exerciseList": {
     "selectExercise": "अभ्यास चुनें",
     "searchPlaceholder": "अभ्यास खोजें...",
-    "new": "+ नया",
+    "new": "नया",
     "noResults": "\"{{query}}\" के लिए कोई अभ्यास नहीं मिला।",
     "customExercise": "कस्टम अभ्यास",
     "addToLibrary": "अपना खुद का अभ्यास लाइब्रेरी में जोड़ें",
@@ -189,7 +196,9 @@
     "muscleGroupPlaceholder": "मांसपेशी समूह (जैसे छाती, पीठ)",
     "addAndSelect": "जोड़ें और चुनें",
     "error": "त्रुटि",
-    "errorMessage": "कृपया नाम और मांसपेशी समूह दर्ज करें"
+    "errorMessage": "कृपया नाम और मांसपेशी समूह दर्ज करें",
+    "allEquipment": "सभी उपकरण",
+    "bodyweight": "बॉडीवेट"
   },
   "plateCalculator": {
     "title": "प्लेट कैलकुलेटर",
@@ -210,7 +219,7 @@
     "singlePR": "आपने एक नया रिकॉर्ड तोड़ा! 🎉",
     "multiplePRs": "आपने {{count}} नए रिकॉर्ड तोड़े! 🎉",
     "fromPrevious": "पिछले सर्वश्रेष्ठ से",
-    "keepGoing": "चलो! 🔥",
+    "keepGoing": "चलो!",
     "types": {
       "max_weight": "अधिकतम वजन",
       "best_volume": "सर्वश्रेष्ठ वॉल्यूम",
@@ -274,7 +283,122 @@
     "ex-cycling": "साइकलिंग",
     "ex-elliptical": "एलिप्टिकल",
     "ex-stairmaster": "स्टेयरमास्टर",
-    "ex-jump-rope": "रस्सी कूद"
+    "ex-jump-rope": "रस्सी कूद",
+    "ex-incline-bench": "इंक्लाइन बारबेल बेंच प्रेस",
+    "ex-db-bench": "डम्बल बेंच प्रेस",
+    "ex-smith-bench": "स्मिथ मशीन बेंच प्रेस",
+    "ex-machine-chest-press": "मशीन चेस्ट प्रेस",
+    "ex-floor-press": "डम्बल फ्लोर प्रेस",
+    "ex-incline-db-fly": "इंक्लाइन डम्बल फ्लाई",
+    "ex-low-cable-fly": "लो-टू-हाई केबल फ्लाई",
+    "ex-pec-deck": "पेक डेक फ्लाई",
+    "ex-pushup": "पुश-अप",
+    "ex-incline-pushup": "इंक्लाइन पुश-अप",
+    "ex-decline-pushup": "डिक्लाइन पुश-अप",
+    "ex-db-pullover": "डम्बल पुलओवर",
+    "ex-sumo-deadlift": "सूमो डेडलिफ्ट",
+    "ex-trap-bar-deadlift": "ट्रैप बार डेडलिफ्ट",
+    "ex-rack-pull": "रैक पुल",
+    "ex-assisted-pullup": "असिस्टेड पुल-अप",
+    "ex-close-grip-pulldown": "क्लोज़-ग्रिप लैट पुलडाउन",
+    "ex-straight-arm-pulldown": "स्ट्रेट-आर्म पुलडाउन",
+    "ex-db-row": "वन-आर्म डम्बल रो",
+    "ex-chest-supported-row": "चेस्ट-सपोर्टेड डम्बल रो",
+    "ex-machine-row": "मशीन रो",
+    "ex-band-row": "रेज़िस्टेंस बैंड रो",
+    "ex-inverted-row": "इनवर्टेड रो",
+    "ex-shrug": "बारबेल श्रग",
+    "ex-db-shrug": "डम्बल श्रग",
+    "ex-back-extension": "बैक एक्सटेंशन",
+    "ex-superman": "सुपरमैन",
+    "ex-front-squat": "फ्रंट स्क्वाट",
+    "ex-goblet-squat": "गॉब्लेट स्क्वाट",
+    "ex-bw-squat": "बॉडीवेट स्क्वाट",
+    "ex-smith-squat": "स्मिथ मशीन स्क्वाट",
+    "ex-walking-lunge": "वॉकिंग लंज",
+    "ex-reverse-lunge": "रिवर्स लंज",
+    "ex-step-up": "स्टेप-अप",
+    "ex-pistol-squat": "पिस्टल स्क्वाट",
+    "ex-jump-squat": "जंप स्क्वाट",
+    "ex-box-jump": "बॉक्स जंप",
+    "ex-wall-sit": "वॉल सिट",
+    "ex-db-rdl": "डम्बल रोमानियन डेडलिफ्ट",
+    "ex-single-leg-rdl": "सिंगल-लेग रोमानियन डेडलिफ्ट",
+    "ex-good-morning": "गुड मॉर्निंग",
+    "ex-seated-leg-curl": "सीटेड लेग कर्ल",
+    "ex-nordic-curl": "नॉर्डिक हैमस्ट्रिंग कर्ल",
+    "ex-hip-adduction": "हिप एडक्शन मशीन",
+    "ex-seated-calf-raise": "सीटेड काफ रेज़",
+    "ex-hip-thrust": "बारबेल हिप थ्रस्ट",
+    "ex-glute-bridge": "ग्लूट ब्रिज",
+    "ex-single-leg-bridge": "सिंगल-लेग ग्लूट ब्रिज",
+    "ex-cable-pull-through": "केबल पुल-थ्रू",
+    "ex-cable-kickback": "केबल ग्लूट किकबैक",
+    "ex-donkey-kick": "डंकी किक",
+    "ex-hip-abduction": "हिप एबडक्शन मशीन",
+    "ex-push-press": "पुश प्रेस",
+    "ex-db-shoulder-press": "सीटेड डम्बल शोल्डर प्रेस",
+    "ex-machine-shoulder-press": "मशीन शोल्डर प्रेस",
+    "ex-landmine-press": "लैंडमाइन प्रेस",
+    "ex-pike-pushup": "पाइक पुश-अप",
+    "ex-cable-lateral-raise": "केबल लेटरल रेज़",
+    "ex-upright-row": "अपराइट रो",
+    "ex-reverse-pec-deck": "रिवर्स पेक डेक",
+    "ex-band-pull-apart": "बैंड पुल-अपार्ट",
+    "ex-ez-curl": "EZ-बार कर्ल",
+    "ex-db-curl": "डम्बल कर्ल",
+    "ex-incline-db-curl": "इंक्लाइन डम्बल कर्ल",
+    "ex-cable-curl": "केबल कर्ल",
+    "ex-band-curl": "रेज़िस्टेंस बैंड कर्ल",
+    "ex-close-grip-bench": "क्लोज़-ग्रिप बेंच प्रेस",
+    "ex-rope-pushdown": "रोप पुशडाउन",
+    "ex-cable-overhead-ext": "ओवरहेड केबल एक्सटेंशन",
+    "ex-db-kickback": "डम्बल किकबैक",
+    "ex-bench-dips": "बेंच डिप्स",
+    "ex-diamond-pushup": "डायमंड पुश-अप",
+    "ex-wrist-curl": "रिस्ट कर्ल",
+    "ex-reverse-curl": "रिवर्स बारबेल कर्ल",
+    "ex-dead-hang": "डेड हैंग",
+    "ex-side-plank": "साइड प्लैंक",
+    "ex-hollow-hold": "हॉलो बॉडी होल्ड",
+    "ex-crunch": "क्रंच",
+    "ex-situp": "सिट-अप",
+    "ex-bicycle-crunch": "बाइसिकल क्रंच",
+    "ex-russian-twist": "रशियन ट्विस्ट",
+    "ex-leg-raise": "लाइंग लेग रेज़",
+    "ex-flutter-kicks": "फ्लटर किक्स",
+    "ex-dead-bug": "डेड बग",
+    "ex-bird-dog": "बर्ड डॉग",
+    "ex-mountain-climber": "माउंटेन क्लाइंबर्स",
+    "ex-hanging-knee-raise": "हैंगिंग नी रेज़",
+    "ex-pallof-press": "पैलॉफ प्रेस",
+    "ex-woodchopper": "केबल वुडचॉपर",
+    "ex-burpee": "बर्पी",
+    "ex-kb-swing": "केटलबेल स्विंग",
+    "ex-thruster": "डम्बल थ्रस्टर",
+    "ex-wall-ball": "वॉल बॉल",
+    "ex-power-clean": "पावर क्लीन",
+    "ex-farmer-walk": "फार्मर्स वॉक",
+    "ex-sled-push": "स्लेड पुश",
+    "ex-outdoor-run": "दौड़ना",
+    "ex-walking": "पैदल चलना",
+    "ex-air-bike": "एयर बाइक",
+    "ex-ski-erg": "स्की अर्ग",
+    "ex-swimming": "तैराकी",
+    "ex-jumping-jacks": "जंपिंग जैक्स",
+    "ex-high-knees": "हाई नीज़",
+    "ex-shadow-boxing": "शैडो बॉक्सिंग",
+    "ex-battle-ropes": "बैटल रोप्स",
+    "ex-arm-circles": "आर्म सर्कल्स",
+    "ex-leg-swings": "लेग स्विंग्स",
+    "ex-cat-cow": "कैट-काउ",
+    "ex-childs-pose": "बालासन",
+    "ex-downward-dog": "अधोमुख श्वानासन",
+    "ex-cobra": "कोबरा स्ट्रेच",
+    "ex-hip-flexor-stretch": "नीलिंग हिप फ्लेक्सर स्ट्रेच",
+    "ex-hamstring-stretch": "स्टैंडिंग हैमस्ट्रिंग स्ट्रेच",
+    "ex-quad-stretch": "स्टैंडिंग क्वाड स्ट्रेच",
+    "ex-pigeon-stretch": "पिजन स्ट्रेच"
   },
   "muscleGroups": {
     "All": "सभी",
@@ -294,7 +418,7 @@
   },
   "subscription": {
     "statusTitle": "सदस्यता",
-    "trialBanner": "⏳ मुफ्त परीक्षण में {{days}} दिन बाकी",
+    "trialBanner": "मुफ्त परीक्षण में {{days}} दिन बाकी",
     "proTrialBanner": "प्रो के {{days}} दिन बाकी",
     "proTrialHint": "सभी सुविधाएं मुफ्त में उपयोग करें!",
     "upgradeProBanner": "प्रो में अपग्रेड करें",
@@ -303,7 +427,7 @@
     "trialExpired": "आपका नि:शुल्क परीक्षण समाप्त हो गया है",
     "unlockForever": "हमेशा के लिए अनलॉक करें",
     "restorePurchase": "खरीदारी पुनर्स्थापित करें",
-    "premiumActive": "✅ प्रो — आजीवन पहुँच",
+    "premiumActive": "प्रो — आजीवन पहुँच",
     "premiumTagline": "प्रो अनलॉक • आजीवन पहुँच",
     "oneTimePayment": "एकमुश्त भुगतान। कोई सदस्यता नहीं।",
     "everythingYouNeed": "आपको जो कुछ भी चाहिए",
@@ -311,7 +435,7 @@
     "purchaseError": "खरीदारी विफल",
     "noRestoreFound": "कोई खरीदारी नहीं मिली",
     "noRestoreFoundMessage": "इस खाते पर कोई पिछली खरीदारी नहीं मिली।",
-    "restored": "✅ पुनर्स्थापित",
+    "restored": "पुनर्स्थापित",
     "restoredMessage": "आपकी खरीदारी पुनर्स्थापित कर दी गई है!",
     "features": {
       "tracking": "असीमित वर्कआउट ट्रैकिंग",
@@ -326,7 +450,8 @@
     "unlockPro": "प्रो से अनलॉक करें",
     "proFeature": "प्रो सुविधा",
     "upgradeMessage": "इस सुविधा को अनलॉक करने के लिए प्रो में अपग्रेड करें — एकमुश्त भुगतान",
-    "upgrade": "प्रो में अपग्रेड करें"
+    "upgrade": "प्रो में अपग्रेड करें",
+    "badge": "प्रो"
   },
   "aiGate": {
     "title": "अपने AI कोच से मिलें",
@@ -370,7 +495,10 @@
     "finishSetup": "प्रोफ़ाइल पूरी करें",
     "connecting": "आपके खाते से कनेक्ट हो रहा है…",
     "alreadyOwned": "इस Google Play खाते में पहले से AI कोच की सदस्यता है। जिस खाते से ख़रीदी थी उससे साइन इन करें, या सेटिंग्स में \"खरीदारी पुनर्स्थापित करें\" पर टैप करें।",
-    "retry": "फिर से कोशिश करें"
+    "retry": "फिर से कोशिश करें",
+    "trustAI": "AI-संचालित",
+    "trustSecure": "सुरक्षित और निजी",
+    "trustPremium": "प्रीमियम"
   },
   "aiOnboarding": {
     "createAccount": "अपना खाता बनाएं",
@@ -402,7 +530,7 @@
     "migratedWorkouts": "{{count}} वर्कआउट सिंक किए गए",
     "migratedPRs": "{{count}} व्यक्तिगत रिकॉर्ड सिंक किए गए",
     "migratedMeasurements": "{{count}} माप सिंक किए गए",
-    "startChatting": "AI से बात करें 💬",
+    "startChatting": "AI से बात करें",
     "fitnessGoal": "आपका फिटनेस लक्ष्य क्या है?",
     "goalPlaceholder": "जैसे मांसपेशी बनाना, वसा कम करना, मजबूत होना...",
     "signupAfterPurchase": "RepAI पर नए हैं? पहले AI कोच की सदस्यता लें — उसके तुरंत बाद आप अपना खाता बनाएँगे।",
@@ -439,19 +567,19 @@
     "saveStats": "सहेजें",
     "invalidWeight": "अमान्य वजन",
     "invalidWeightMessage": "कृपया एक वैध वजन दर्ज करें।",
-    "saved": "✅ सहेजा गया",
+    "saved": "सहेजा गया",
     "savedMessage": "शरीर के आँकड़े सफलतापूर्वक अपडेट किए गए।",
     "lifetimeStats": "कुल आँकड़े",
     "kgTotal": "kg कुल",
     "dataManagement": "डेटा प्रबंधन",
     "dataManagementDescription": "अपना डेटा निर्यात या रीसेट करें.",
     "resetCloudMessage": "सभी वर्कआउट, कस्टम अभ्यास, आँकड़े और क्लाउड डेटा स्थायी रूप से हटा दिए जाएंगे।",
-    "exportCSV": "📤 डेटा निर्यात (CSV)",
-    "clearAllData": "🗑 सारा डेटा हटाएं",
+    "exportCSV": "डेटा निर्यात (CSV)",
+    "clearAllData": "सारा डेटा हटाएं",
     "noData": "कोई डेटा नहीं",
     "noDataMessage": "निर्यात करने के लिए कोई वर्कआउट नहीं है।",
     "exportError": "निर्यात त्रुटि",
-    "resetTitle": "⚠️ सारा डेटा रीसेट करें?",
+    "resetTitle": "सारा डेटा रीसेट करें?",
     "resetMessage": "सभी वर्कआउट, कस्टम अभ्यास और आँकड़े स्थायी रूप से हटा दिए जाएंगे।",
     "deleteEverything": "सब कुछ हटाएं",
     "confirmDelete": "हाँ, सब कुछ हटा दें",
@@ -467,7 +595,7 @@
     "lightMode": "लाइट",
     "restartRequired": "पुनः आरंभ आवश्यक",
     "restartMessage": "नई लेआउट दिशा लागू करने के लिए ऐप पुनः आरंभ होगा।",
-    "aiActive": "✨ AI कोच — सक्रिय",
+    "aiActive": "AI कोच — सक्रिय",
     "aiActiveDesc": "AI कोचिंग, क्लाउड सिंक और स्वचालित बैकअप सक्रिय हैं।",
     "aiTagline": "AI कोच सक्रिय • क्लाउड सिंक",
     "manageSubscription": "सदस्यता प्रबंधित करें",
@@ -489,7 +617,9 @@
     "imperial": "इम्पीरियल (पाउंड, इंच)",
     "weight": "वज़न",
     "height": "ऊंचाई",
-    "totalLabel": "कुल"
+    "totalLabel": "कुल",
+    "preferences": "प्राथमिकताएँ",
+    "body": "शरीर"
   },
   "aiChat": {
     "subtitle": "आपका AI फिटनेस कोच",
@@ -502,7 +632,8 @@
     "suggestion2": "इस हफ्ते मैंने कितनी बार ट्रेनिंग की?",
     "suggestion3": "क्या मैं किसी मांसपेशी को ओवरट्रेन कर रहा हूं?",
     "suggestion4": "आज के लिए वर्कआउट सुझाएं",
-    "subscriptionRequired": "आपकी AI कोच सदस्यता अब सक्रिय नहीं है। चैट जारी रखने के लिए इसे नवीनीकृत करें।"
+    "subscriptionRequired": "आपकी AI कोच सदस्यता अब सक्रिय नहीं है। चैट जारी रखने के लिए इसे नवीनीकृत करें।",
+    "send": "भेजें"
   },
   "aura": {
     "consulting": "जिम के दिग्गजों से सलाह ले रहे हैं...",
@@ -519,22 +650,31 @@
     "kevinBtn": "🛋️ Kevin की राय",
     "aiRequiredTitle": "AI सुविधा",
     "aiRequiredDesc": "वर्कआउट ऑरा AI से चलता है। व्यक्तिगत वर्कआउट विश्लेषण अनलॉक करने के लिए AI Coach की सदस्यता लें।",
-    "goToAI": "AI Coach अनलॉक करें ✨"
+    "goToAI": "AI Coach अनलॉक करें",
+    "coachTab": "कोच",
+    "auraTab": "ऑरा",
+    "statsTab": "आँकड़े",
+    "sessionAnalysis": "सत्र विश्लेषण",
+    "coachAnalysis": "AI कोच विश्लेषण",
+    "workoutCompleted": "वर्कआउट पूरा हुआ",
+    "workoutFallback": "वर्कआउट",
+    "totalVolume": "कुल वॉल्यूम ({{unit}})",
+    "verifiedWorkout": "सत्यापित वर्कआउट"
   },
   "aiWorkout": {
-    "generateBtn": "Generate Workout",
-    "generating": "Creating your workout...",
-    "previewTitle": "Your AI Workout",
-    "aiGenerated": "AI Generated",
-    "reasoning": "Why this workout?",
-    "startWorkout": "Start This Workout",
-    "regenerate": "Regenerate",
-    "removeExercise": "Remove",
+    "generateBtn": "वर्कआउट बनाएं",
+    "generating": "आपका वर्कआउट बनाया जा रहा है...",
+    "previewTitle": "आपका AI वर्कआउट",
+    "aiGenerated": "AI द्वारा बनाया गया",
+    "reasoning": "यह वर्कआउट क्यों?",
+    "startWorkout": "यह वर्कआउट शुरू करें",
+    "regenerate": "फिर से बनाएं",
+    "removeExercise": "हटाएं",
     "newExercise": "NEW",
-    "errorTitle": "Generation Failed",
-    "errorMessage": "Could not generate a workout. Please try again.",
-    "workoutActiveTitle": "Workout in Progress",
-    "workoutActiveMessage": "Finish or cancel your current workout before starting a new one.",
+    "errorTitle": "बनाया नहीं जा सका",
+    "errorMessage": "वर्कआउट नहीं बन सका। कृपया फिर से कोशिश करें।",
+    "workoutActiveTitle": "वर्कआउट चल रहा है",
+    "workoutActiveMessage": "नया वर्कआउट शुरू करने से पहले मौजूदा वर्कआउट पूरा या रद्द करें।",
     "commentTitle": "आप कैसा महसूस कर रहे हैं?",
     "commentDesc": "अपने AI कोच के लिए एक नोट जोड़ें (वैकल्पिक)",
     "commentPlaceholder": "जैसे: आज थकान है, ऊपरी शरीर पर ध्यान दें...",
@@ -627,5 +767,132 @@
     "battle_ropes": "बैटल रोप्स",
     "sled": "स्लेड",
     "pool": "स्विमिंग पूल"
+  },
+  "muscles": {
+    "chest": "छाती",
+    "upper_chest": "ऊपरी छाती",
+    "front_delts": "फ्रंट डेल्ट्स",
+    "side_delts": "साइड डेल्ट्स",
+    "rear_delts": "रियर डेल्ट्स",
+    "biceps": "बाइसेप्स",
+    "triceps": "ट्राइसेप्स",
+    "forearms": "फोरआर्म्स",
+    "lats": "लैट्स",
+    "upper_back": "ऊपरी पीठ",
+    "traps": "ट्रैप्स",
+    "lower_back": "निचली पीठ",
+    "abs": "एब्स",
+    "obliques": "ऑब्लिक्स",
+    "hip_flexors": "हिप फ्लेक्सर्स",
+    "glutes": "ग्लूट्स",
+    "quads": "क्वाड्स",
+    "hamstrings": "हैमस्ट्रिंग्स",
+    "adductors": "एडक्टर्स",
+    "abductors": "एबडक्टर्स",
+    "calves": "काफ्स"
+  },
+  "levels": {
+    "beginner": "शुरुआती",
+    "intermediate": "मध्यम",
+    "advanced": "उन्नत"
+  },
+  "exerciseInfo": {
+    "primaryMuscles": "मुख्य मांसपेशियाँ",
+    "secondaryMuscles": "सहायक मांसपेशियाँ",
+    "equipment": "उपकरण",
+    "bodyweight": "बॉडीवेट (बिना उपकरण)",
+    "level": "स्तर"
+  },
+  "programContent": {
+    "prog-ppl-3": {
+      "name": "पुश पुल लेग्स",
+      "description": "क्लासिक 3-दिवसीय PPL स्प्लिट। हर मांसपेशी समूह हफ़्ते में एक बार, ज़्यादा वॉल्यूम और कंपाउंड लिफ्ट्स के साथ।",
+      "days": {
+        "0": "पुश",
+        "1": "पुल",
+        "2": "लेग्स"
+      }
+    },
+    "prog-ppl-6": {
+      "name": "PPL 6-दिवसीय स्प्लिट",
+      "description": "हाई-फ़्रीक्वेंसी PPL। अधिकतम ग्रोथ के लिए हर मांसपेशी समूह हफ़्ते में दो बार। गंभीर लिफ्टर्स के लिए।",
+      "days": {
+        "0": "पुश (हेवी)",
+        "1": "पुल (हेवी)",
+        "2": "लेग्स (क्वाड फोकस)",
+        "3": "पुश (वॉल्यूम)",
+        "4": "पुल (वॉल्यूम)",
+        "5": "लेग्स (हैमस्ट्रिंग/ग्लूट फोकस)"
+      }
+    },
+    "prog-upper-lower": {
+      "name": "अपर / लोअर स्प्लिट",
+      "description": "ऊपरी और निचले शरीर के बीच बदलता संतुलित 4-दिवसीय प्रोग्राम। मध्यम स्तर के लिफ्टर्स के लिए बढ़िया।",
+      "days": {
+        "0": "अपर (स्ट्रेंथ)",
+        "1": "लोअर (स्ट्रेंथ)",
+        "2": "अपर (हाइपरट्रॉफी)",
+        "3": "लोअर (हाइपरट्रॉफी)"
+      }
+    },
+    "prog-full-body": {
+      "name": "फुल बॉडी, हफ़्ते में 3 बार",
+      "description": "हर प्रमुख मांसपेशी समूह हफ़्ते में तीन बार। ताकत की नींव बनाने वाले शुरुआती लोगों के लिए बिल्कुल सही।",
+      "days": {
+        "0": "फुल बॉडी A",
+        "1": "फुल बॉडी B",
+        "2": "फुल बॉडी C"
+      }
+    },
+    "prog-531": {
+      "name": "5/3/1 स्ट्रेंथ",
+      "description": "जिम वेंडलर का आज़माया हुआ स्ट्रेंथ प्रोग्राम। 4 बड़े लिफ्ट्स पर ध्यान, धीमी और लगातार प्रगति के साथ। लंबे समय के फ़ायदों के लिए बना।",
+      "days": {
+        "0": "स्क्वाट डे",
+        "1": "बेंच डे",
+        "2": "डेडलिफ्ट डे",
+        "3": "ओवरहेड प्रेस डे"
+      }
+    },
+    "prog-bro-split": {
+      "name": "क्लासिक ब्रो स्प्लिट",
+      "description": "हर दिन एक मांसपेशी समूह, हफ़्ते में 5 दिन। ज़्यादा पंप चाहने वाले अनुभवी लिफ्टर्स के लिए हाई-वॉल्यूम तरीका।",
+      "days": {
+        "0": "छाती",
+        "1": "पीठ",
+        "2": "कंधे",
+        "3": "पैर",
+        "4": "बाजू"
+      }
+    },
+    "prog-home": {
+      "name": "घर पर वर्कआउट",
+      "description": "जिम नहीं? कोई बात नहीं। बॉडीवेट वाला पूरा प्रोग्राम जिसे आप कहीं भी कर सकते हैं। किसी उपकरण की ज़रूरत नहीं।",
+      "days": {
+        "0": "अपर बॉडी",
+        "1": "लोअर बॉडी",
+        "2": "फुल बॉडी HIIT"
+      }
+    },
+    "prog-strength": {
+      "name": "प्योर स्ट्रेंथ",
+      "description": "कम रेप्स, भारी वज़न, लंबा आराम। अपने स्क्वाट, बेंच, डेडलिफ्ट और ओवरहेड प्रेस को अधिकतम करें।",
+      "days": {
+        "0": "स्क्वाट + बेंच",
+        "1": "डेडलिफ्ट + ओवरहेड प्रेस",
+        "2": "स्क्वाट + बेंच (वॉल्यूम)",
+        "3": "डेडलिफ्ट + ओवरहेड प्रेस (वॉल्यूम)"
+      }
+    },
+    "prog-fat-loss": {
+      "name": "बर्न एंड बिल्ड",
+      "description": "स्ट्रेंथ और कार्डियो को मिलाने वाले हाई-इंटेंसिटी सर्किट। मांसपेशियाँ बचाते हुए फैट जलाएँ। छोटे, तीव्र सत्र।",
+      "days": {
+        "0": "अपर बॉडी सर्किट",
+        "1": "लोअर बॉडी सर्किट",
+        "2": "फुल बॉडी बर्न",
+        "3": "कार्डियो + कोर"
+      }
+    }
   }
 }

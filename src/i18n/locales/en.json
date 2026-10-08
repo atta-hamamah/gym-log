@@ -22,7 +22,8 @@
     "all": "All",
     "rpe": "RPE",
     "finish": "Finish",
-    "continue": "Continue"
+    "continue": "Continue",
+    "animationNotAvailable": "Animation not available"
   },
   "tabs": {
     "dashboard": "Dashboard",
@@ -35,8 +36,8 @@
   "home": {
     "title": "RepAI",
     "subtitle": "Track every rep. Beat every PR.",
-    "workoutActive": "💪 Workout Active",
-    "readyToLift": "🏋️ Ready to lift?",
+    "workoutActive": "Workout Active",
+    "readyToLift": "Ready to lift?",
     "activeDescription": "\"{{name}}\" — {{count}} exercises",
     "inactiveDescription": "Start a new session to track your progress.",
     "resumeWorkout": "Resume Workout",
@@ -51,8 +52,8 @@
     "newWorkout": "New Workout",
     "giveSessionName": "Give your session a name",
     "namePlaceholder": "e.g. Push Day, Leg Day...",
-    "letsGo": "Let's Go! 🔥",
-    "generateWithAI": "Generate with AI Coach ✨",
+    "letsGo": "Let's Go!",
+    "generateWithAI": "Generate with AI Coach",
     "aiSubscriptionOnly": "AI subscription only"
   },
   "programs": {
@@ -78,7 +79,13 @@
       "hypertrophy": "Hypertrophy",
       "general": "General",
       "fat_loss": "Fat Loss"
-    }
+    },
+    "dayN": "Day {{n}}",
+    "durationOngoing": "Ongoing",
+    "durationWeeks_one": "{{count}} week",
+    "durationWeeks_other": "{{count}} weeks",
+    "durationCycles_one": "{{count}}-week cycles",
+    "durationCycles_other": "{{count}}-week cycles"
   },
   "history": {
     "title": "History",
@@ -88,7 +95,7 @@
     "deleteMessage": "This action cannot be undone.",
     "noWorkoutsYet": "No workouts yet",
     "noWorkoutsDescription": "Complete a session to see\nyour history here.",
-    "clearAllTitle": "⚠️ Clear All History?",
+    "clearAllTitle": "Clear All History?",
     "clearAllMessage": "This will permanently delete all workout history. This cannot be undone.",
     "clearAllCloudMessage": "This will permanently delete all workout history from this device and from the cloud. This cannot be undone.",
     "clearAllConfirm": "Yes, clear all history",
@@ -103,12 +110,12 @@
     "emptyWorkoutMessage": "Add at least one exercise before finishing.",
     "finishTitle": "Finish Workout?",
     "finishMessage": "Save this session to your history.",
-    "finishConfirm": "Finish ✓",
+    "finishConfirm": "Finish",
     "cancelTitle": "Cancel Workout?",
     "cancelMessage": "All progress will be lost.",
     "discard": "Discard",
     "noExercises": "No exercises added yet.\nTap the button below to get started.",
-    "addExercise": "+ Add Exercise",
+    "addExercise": "Add Exercise",
     "sessionNotes": "Session notes...",
     "cancelWorkout": "Cancel Workout",
     "remove": "REMOVE",
@@ -142,7 +149,7 @@
     "history": "Recent Entries",
     "error": "Missing Data",
     "errorEmpty": "Enter at least one measurement.",
-    "saved": "✅ Saved",
+    "saved": "Saved",
     "savedMessage": "Measurements recorded successfully.",
     "neck": "Neck",
     "chest": "Chest",
@@ -181,7 +188,7 @@
   "exerciseList": {
     "selectExercise": "Select Exercise",
     "searchPlaceholder": "Search exercises...",
-    "new": "+ New",
+    "new": "New",
     "noResults": "No exercises found for \"{{query}}\".",
     "customExercise": "Custom Exercise",
     "addToLibrary": "Add your own exercise to the library",
@@ -189,7 +196,9 @@
     "muscleGroupPlaceholder": "Muscle Group (e.g. Chest, Back)",
     "addAndSelect": "Add & Select",
     "error": "Error",
-    "errorMessage": "Please enter name and muscle group"
+    "errorMessage": "Please enter name and muscle group",
+    "allEquipment": "All equipment",
+    "bodyweight": "Bodyweight"
   },
   "plateCalculator": {
     "title": "Plate Calculator",
@@ -206,11 +215,11 @@
     "dismiss": "Done"
   },
   "pr": {
-    "newPR": "NEW PERSONAL RECORD!",
+    "newPR": "New personal record!",
     "singlePR": "You just crushed a new record! 🎉",
     "multiplePRs": "You smashed {{count}} new records! 🎉",
     "fromPrevious": "from previous best",
-    "keepGoing": "LET'S GO! 🔥",
+    "keepGoing": "Let's go!",
     "types": {
       "max_weight": "Max Weight",
       "best_volume": "Best Volume",
@@ -274,7 +283,122 @@
     "ex-cycling": "Cycling",
     "ex-elliptical": "Elliptical",
     "ex-stairmaster": "Stairmaster",
-    "ex-jump-rope": "Jump Rope"
+    "ex-jump-rope": "Jump Rope",
+    "ex-incline-bench": "Incline Barbell Bench Press",
+    "ex-db-bench": "Dumbbell Bench Press",
+    "ex-smith-bench": "Smith Machine Bench Press",
+    "ex-machine-chest-press": "Machine Chest Press",
+    "ex-floor-press": "Dumbbell Floor Press",
+    "ex-incline-db-fly": "Incline Dumbbell Fly",
+    "ex-low-cable-fly": "Low-to-High Cable Fly",
+    "ex-pec-deck": "Pec Deck Fly",
+    "ex-pushup": "Push-Up",
+    "ex-incline-pushup": "Incline Push-Up",
+    "ex-decline-pushup": "Decline Push-Up",
+    "ex-db-pullover": "Dumbbell Pullover",
+    "ex-sumo-deadlift": "Sumo Deadlift",
+    "ex-trap-bar-deadlift": "Trap Bar Deadlift",
+    "ex-rack-pull": "Rack Pull",
+    "ex-assisted-pullup": "Assisted Pull-Up",
+    "ex-close-grip-pulldown": "Close-Grip Lat Pulldown",
+    "ex-straight-arm-pulldown": "Straight-Arm Pulldown",
+    "ex-db-row": "One-Arm Dumbbell Row",
+    "ex-chest-supported-row": "Chest-Supported Dumbbell Row",
+    "ex-machine-row": "Machine Row",
+    "ex-band-row": "Resistance Band Row",
+    "ex-inverted-row": "Inverted Row",
+    "ex-shrug": "Barbell Shrug",
+    "ex-db-shrug": "Dumbbell Shrug",
+    "ex-back-extension": "Back Extension",
+    "ex-superman": "Superman",
+    "ex-front-squat": "Front Squat",
+    "ex-goblet-squat": "Goblet Squat",
+    "ex-bw-squat": "Bodyweight Squat",
+    "ex-smith-squat": "Smith Machine Squat",
+    "ex-walking-lunge": "Walking Lunge",
+    "ex-reverse-lunge": "Reverse Lunge",
+    "ex-step-up": "Step-Up",
+    "ex-pistol-squat": "Pistol Squat",
+    "ex-jump-squat": "Jump Squat",
+    "ex-box-jump": "Box Jump",
+    "ex-wall-sit": "Wall Sit",
+    "ex-db-rdl": "Dumbbell Romanian Deadlift",
+    "ex-single-leg-rdl": "Single-Leg Romanian Deadlift",
+    "ex-good-morning": "Good Morning",
+    "ex-seated-leg-curl": "Seated Leg Curl",
+    "ex-nordic-curl": "Nordic Hamstring Curl",
+    "ex-hip-adduction": "Hip Adduction Machine",
+    "ex-seated-calf-raise": "Seated Calf Raise",
+    "ex-hip-thrust": "Barbell Hip Thrust",
+    "ex-glute-bridge": "Glute Bridge",
+    "ex-single-leg-bridge": "Single-Leg Glute Bridge",
+    "ex-cable-pull-through": "Cable Pull-Through",
+    "ex-cable-kickback": "Cable Glute Kickback",
+    "ex-donkey-kick": "Donkey Kick",
+    "ex-hip-abduction": "Hip Abduction Machine",
+    "ex-push-press": "Push Press",
+    "ex-db-shoulder-press": "Seated Dumbbell Shoulder Press",
+    "ex-machine-shoulder-press": "Machine Shoulder Press",
+    "ex-landmine-press": "Landmine Press",
+    "ex-pike-pushup": "Pike Push-Up",
+    "ex-cable-lateral-raise": "Cable Lateral Raise",
+    "ex-upright-row": "Upright Row",
+    "ex-reverse-pec-deck": "Reverse Pec Deck",
+    "ex-band-pull-apart": "Band Pull-Apart",
+    "ex-ez-curl": "EZ-Bar Curl",
+    "ex-db-curl": "Dumbbell Curl",
+    "ex-incline-db-curl": "Incline Dumbbell Curl",
+    "ex-cable-curl": "Cable Curl",
+    "ex-band-curl": "Resistance Band Curl",
+    "ex-close-grip-bench": "Close-Grip Bench Press",
+    "ex-rope-pushdown": "Rope Pushdown",
+    "ex-cable-overhead-ext": "Overhead Cable Extension",
+    "ex-db-kickback": "Dumbbell Kickback",
+    "ex-bench-dips": "Bench Dips",
+    "ex-diamond-pushup": "Diamond Push-Up",
+    "ex-wrist-curl": "Wrist Curl",
+    "ex-reverse-curl": "Reverse Barbell Curl",
+    "ex-dead-hang": "Dead Hang",
+    "ex-side-plank": "Side Plank",
+    "ex-hollow-hold": "Hollow Body Hold",
+    "ex-crunch": "Crunch",
+    "ex-situp": "Sit-Up",
+    "ex-bicycle-crunch": "Bicycle Crunch",
+    "ex-russian-twist": "Russian Twist",
+    "ex-leg-raise": "Lying Leg Raise",
+    "ex-flutter-kicks": "Flutter Kicks",
+    "ex-dead-bug": "Dead Bug",
+    "ex-bird-dog": "Bird Dog",
+    "ex-mountain-climber": "Mountain Climbers",
+    "ex-hanging-knee-raise": "Hanging Knee Raise",
+    "ex-pallof-press": "Pallof Press",
+    "ex-woodchopper": "Cable Woodchopper",
+    "ex-burpee": "Burpee",
+    "ex-kb-swing": "Kettlebell Swing",
+    "ex-thruster": "Dumbbell Thruster",
+    "ex-wall-ball": "Wall Ball",
+    "ex-power-clean": "Power Clean",
+    "ex-farmer-walk": "Farmer's Walk",
+    "ex-sled-push": "Sled Push",
+    "ex-outdoor-run": "Running",
+    "ex-walking": "Walking",
+    "ex-air-bike": "Air Bike",
+    "ex-ski-erg": "Ski Erg",
+    "ex-swimming": "Swimming",
+    "ex-jumping-jacks": "Jumping Jacks",
+    "ex-high-knees": "High Knees",
+    "ex-shadow-boxing": "Shadow Boxing",
+    "ex-battle-ropes": "Battle Ropes",
+    "ex-arm-circles": "Arm Circles",
+    "ex-leg-swings": "Leg Swings",
+    "ex-cat-cow": "Cat-Cow",
+    "ex-childs-pose": "Child's Pose",
+    "ex-downward-dog": "Downward Dog",
+    "ex-cobra": "Cobra Stretch",
+    "ex-hip-flexor-stretch": "Kneeling Hip Flexor Stretch",
+    "ex-hamstring-stretch": "Standing Hamstring Stretch",
+    "ex-quad-stretch": "Standing Quad Stretch",
+    "ex-pigeon-stretch": "Pigeon Stretch"
   },
   "muscleGroups": {
     "All": "All",
@@ -294,7 +418,7 @@
   },
   "subscription": {
     "statusTitle": "Subscription",
-    "trialBanner": "⏳ {{days}} days left in your free trial",
+    "trialBanner": "{{days}} days left in your free trial",
     "proTrialBanner": "{{days}} days of Pro remaining",
     "proTrialHint": "Enjoying all features for free!",
     "upgradeProBanner": "Upgrade to Pro",
@@ -303,7 +427,7 @@
     "trialExpired": "Your free trial has ended",
     "unlockForever": "Unlock Forever",
     "restorePurchase": "Restore Purchase",
-    "premiumActive": "✅ Pro — Lifetime Access",
+    "premiumActive": "Pro — Lifetime Access",
     "premiumTagline": "Pro unlocked • Lifetime access",
     "oneTimePayment": "One-time payment. No subscriptions.",
     "everythingYouNeed": "Everything you need",
@@ -311,7 +435,7 @@
     "purchaseError": "Purchase Failed",
     "noRestoreFound": "No Purchase Found",
     "noRestoreFoundMessage": "No previous purchase was found on this account.",
-    "restored": "✅ Restored",
+    "restored": "Restored",
     "restoredMessage": "Your purchase has been restored!",
     "features": {
       "tracking": "Unlimited Workout Tracking",
@@ -326,7 +450,8 @@
     "unlockPro": "Unlock with Pro",
     "proFeature": "Pro Feature",
     "upgradeMessage": "Upgrade to Pro to unlock this feature — one-time payment",
-    "upgrade": "Upgrade to Pro"
+    "upgrade": "Upgrade to Pro",
+    "badge": "Pro"
   },
   "aiGate": {
     "title": "Meet Your AI Coach",
@@ -370,7 +495,10 @@
     "finishSetup": "Complete Profile",
     "connecting": "Connecting to your account…",
     "alreadyOwned": "This Google Play account already has an AI Coach subscription. Sign in to the account you used, or tap Restore Purchases in Settings.",
-    "retry": "Retry"
+    "retry": "Retry",
+    "trustAI": "AI-Powered",
+    "trustSecure": "Secure & Private",
+    "trustPremium": "Premium"
   },
   "aiOnboarding": {
     "createAccount": "Create Your Account",
@@ -402,7 +530,7 @@
     "migratedWorkouts": "{{count}} workouts synced",
     "migratedPRs": "{{count}} personal records synced",
     "migratedMeasurements": "{{count}} measurements synced",
-    "startChatting": "Start Chatting with AI 💬",
+    "startChatting": "Start Chatting with AI",
     "fitnessGoal": "What's your fitness goal?",
     "goalPlaceholder": "e.g. Build muscle, lose fat, get stronger...",
     "signupAfterPurchase": "New to RepAI? Subscribe to AI Coach first — you'll create your account right after.",
@@ -439,19 +567,19 @@
     "saveStats": "Save Stats",
     "invalidWeight": "Invalid Weight",
     "invalidWeightMessage": "Please enter a valid weight.",
-    "saved": "✅ Saved",
+    "saved": "Saved",
     "savedMessage": "Body stats updated successfully.",
     "lifetimeStats": "Lifetime Stats",
     "kgTotal": "kg Total",
     "dataManagement": "Data Management",
     "dataManagementDescription": "Export or reset your data.",
     "resetCloudMessage": "This will permanently delete all workouts, custom exercises, stats, and cloud data. This cannot be undone.",
-    "exportCSV": "📤 Export Data (CSV)",
-    "clearAllData": "🗑 Clear All Data",
+    "exportCSV": "Export Data (CSV)",
+    "clearAllData": "Clear All Data",
     "noData": "No Data",
     "noDataMessage": "You have no workouts to export.",
     "exportError": "Export Error",
-    "resetTitle": "⚠️ Reset All Data?",
+    "resetTitle": "Reset All Data?",
     "resetMessage": "This will permanently delete all workouts, custom exercises, and stats. This cannot be undone.",
     "deleteEverything": "Delete",
     "confirmDelete": "Yes, delete everything",
@@ -467,7 +595,7 @@
     "lightMode": "Light",
     "restartRequired": "Restart Required",
     "restartMessage": "The app will restart to apply the new layout direction.",
-    "aiActive": "✨ AI Coach — Active",
+    "aiActive": "AI Coach — Active",
     "aiActiveDesc": "AI coaching, cloud sync, and automatic backup are all active.",
     "aiTagline": "AI Coach active • Cloud synced",
     "manageSubscription": "Manage Subscription",
@@ -489,7 +617,9 @@
     "imperial": "Imperial (lbs, in)",
     "weight": "Weight",
     "height": "Height",
-    "totalLabel": "Total"
+    "totalLabel": "Total",
+    "preferences": "Preferences",
+    "body": "Body"
   },
   "aiChat": {
     "subtitle": "Your AI fitness coach",
@@ -502,7 +632,8 @@
     "suggestion2": "How many times did I train this week?",
     "suggestion3": "Am I overtraining any muscle?",
     "suggestion4": "Suggest a workout for today",
-    "subscriptionRequired": "Your AI Coach subscription is no longer active. Renew it to keep chatting."
+    "subscriptionRequired": "Your AI Coach subscription is no longer active. Renew it to keep chatting.",
+    "send": "Send"
   },
   "aura": {
     "consulting": "Consulting the iron oracle...",
@@ -519,7 +650,16 @@
     "kevinBtn": "🛋️ Kevin's Take",
     "aiRequiredTitle": "AI Feature",
     "aiRequiredDesc": "Workout Aura is powered by AI. Subscribe to AI Coach to unlock personalized workout analysis and more.",
-    "goToAI": "Unlock AI Coach ✨"
+    "goToAI": "Unlock AI Coach",
+    "coachTab": "Coach",
+    "auraTab": "Aura",
+    "statsTab": "Stats",
+    "sessionAnalysis": "Session analysis",
+    "coachAnalysis": "AI Coach analysis",
+    "workoutCompleted": "Workout completed",
+    "workoutFallback": "Workout",
+    "totalVolume": "{{unit}} total volume",
+    "verifiedWorkout": "Verified workout"
   },
   "aiWorkout": {
     "generateBtn": "Generate Workout",
@@ -627,5 +767,132 @@
     "battle_ropes": "Battle ropes",
     "sled": "Sled",
     "pool": "Pool"
+  },
+  "muscles": {
+    "chest": "Chest",
+    "upper_chest": "Upper chest",
+    "front_delts": "Front delts",
+    "side_delts": "Side delts",
+    "rear_delts": "Rear delts",
+    "biceps": "Biceps",
+    "triceps": "Triceps",
+    "forearms": "Forearms",
+    "lats": "Lats",
+    "upper_back": "Upper back",
+    "traps": "Traps",
+    "lower_back": "Lower back",
+    "abs": "Abs",
+    "obliques": "Obliques",
+    "hip_flexors": "Hip flexors",
+    "glutes": "Glutes",
+    "quads": "Quads",
+    "hamstrings": "Hamstrings",
+    "adductors": "Adductors",
+    "abductors": "Abductors",
+    "calves": "Calves"
+  },
+  "levels": {
+    "beginner": "Beginner",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced"
+  },
+  "exerciseInfo": {
+    "primaryMuscles": "Primary muscles",
+    "secondaryMuscles": "Secondary muscles",
+    "equipment": "Equipment",
+    "bodyweight": "Bodyweight (no equipment)",
+    "level": "Level"
+  },
+  "programContent": {
+    "prog-ppl-3": {
+      "name": "Push Pull Legs",
+      "description": "The classic 3-day PPL split. Hit every muscle group once per week with high volume and compound lifts.",
+      "days": {
+        "0": "Push",
+        "1": "Pull",
+        "2": "Legs"
+      }
+    },
+    "prog-ppl-6": {
+      "name": "PPL 6-Day Split",
+      "description": "High-frequency PPL. Each muscle group twice per week for maximum growth. For serious lifters.",
+      "days": {
+        "0": "Push (Heavy)",
+        "1": "Pull (Heavy)",
+        "2": "Legs (Quad Focus)",
+        "3": "Push (Volume)",
+        "4": "Pull (Volume)",
+        "5": "Legs (Ham/Glute Focus)"
+      }
+    },
+    "prog-upper-lower": {
+      "name": "Upper / Lower Split",
+      "description": "Balanced 4-day program alternating between upper and lower body. Great for intermediate lifters.",
+      "days": {
+        "0": "Upper (Strength)",
+        "1": "Lower (Strength)",
+        "2": "Upper (Hypertrophy)",
+        "3": "Lower (Hypertrophy)"
+      }
+    },
+    "prog-full-body": {
+      "name": "Full Body 3x/Week",
+      "description": "Hit every major muscle group three times a week. Perfect for beginners building a strength foundation.",
+      "days": {
+        "0": "Full Body A",
+        "1": "Full Body B",
+        "2": "Full Body C"
+      }
+    },
+    "prog-531": {
+      "name": "5/3/1 Strength",
+      "description": "Jim Wendler's proven strength program. Focus on 4 big lifts with slow, steady progress. Built for long-term gains.",
+      "days": {
+        "0": "Squat Day",
+        "1": "Bench Day",
+        "2": "Deadlift Day",
+        "3": "OHP Day"
+      }
+    },
+    "prog-bro-split": {
+      "name": "Classic Bro Split",
+      "description": "One muscle group per day, 5 days a week. High volume approach for experienced lifters chasing maximum pump.",
+      "days": {
+        "0": "Chest",
+        "1": "Back",
+        "2": "Shoulders",
+        "3": "Legs",
+        "4": "Arms"
+      }
+    },
+    "prog-home": {
+      "name": "Home Workout",
+      "description": "No gym? No problem. Full bodyweight program you can do anywhere. Zero equipment needed.",
+      "days": {
+        "0": "Upper Body",
+        "1": "Lower Body",
+        "2": "Full Body HIIT"
+      }
+    },
+    "prog-strength": {
+      "name": "Pure Strength",
+      "description": "Low reps, heavy weights, long rest. Maximise your squat, bench, deadlift, and overhead press.",
+      "days": {
+        "0": "Squat + Bench",
+        "1": "Deadlift + OHP",
+        "2": "Squat + Bench (Volume)",
+        "3": "Deadlift + OHP (Volume)"
+      }
+    },
+    "prog-fat-loss": {
+      "name": "Burn & Build",
+      "description": "High-intensity circuits combining strength and cardio. Torch fat while keeping muscle. Short, intense sessions.",
+      "days": {
+        "0": "Upper Body Circuit",
+        "1": "Lower Body Circuit",
+        "2": "Full Body Burn",
+        "3": "Cardio + Core"
+      }
+    }
   }
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Platform, ActivityIndicator } from 'react-native';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -47,67 +47,77 @@ const TabNavigator = () => {
                 tabBarStyle: {
                     backgroundColor: colors.surface,
                     borderTopColor: colors.border,
-                    borderTopWidth: 1,
-                    height: Platform.OS === 'ios' ? 88 + insets.bottom : 80,
-                    paddingBottom: Platform.OS === 'ios' ? insets.bottom + 12 : 24,
-                    paddingTop: 12,
+                    borderTopWidth: StyleSheet.hairlineWidth,
+                    height: 64 + Math.max(insets.bottom, Platform.OS === 'ios' ? 0 : 10),
+                    paddingBottom: Math.max(insets.bottom, Platform.OS === 'ios' ? 0 : 10),
+                    paddingTop: 6,
                     elevation: 0,
+                },
+                tabBarItemStyle: {
+                    paddingVertical: 0,
+                    paddingHorizontal: 0,
                 },
                 tabBarActiveTintColor: colors.primary,
                 tabBarInactiveTintColor: colors.textMuted,
-                tabBarLabelStyle: {
-                    fontSize: 11,
-                    fontWeight: '600',
-                    letterSpacing: 0.3,
-                },
+                // Long translations shrink to fit instead of being cut off on narrow phones.
+                tabBarLabel: ({ color, position, children }) => (
+                    <Text
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.75}
+                        style={[styles.tabLabel, position === 'beside-icon' && styles.tabLabelBeside, { color }]}
+                    >
+                        {children}
+                    </Text>
+                ),
             }}
         >
             <Tab.Screen
                 name="Home"
                 component={HomeScreen}
                 options={{
-                    tabBarIcon: ({ color, size }) => <Home color={color} size={size - 2} />,
-                    tabBarLabel: t('tabs.dashboard'),
+                    tabBarIcon: ({ color, focused }) => <Home color={color} size={22} strokeWidth={focused ? 2.2 : 1.8} />,
+                    title: t('tabs.dashboard'),
                 }}
             />
             <Tab.Screen
                 name="Programs"
                 component={ProgramsScreen}
                 options={{
-                    tabBarIcon: ({ color, size }) => <BookOpen color={color} size={size - 2} />,
-                    tabBarLabel: t('tabs.programs'),
+                    tabBarIcon: ({ color, focused }) => <BookOpen color={color} size={22} strokeWidth={focused ? 2.2 : 1.8} />,
+                    title: t('tabs.programs'),
                 }}
             />
             <Tab.Screen
                 name="History"
                 component={HistoryScreen}
                 options={{
-                    tabBarIcon: ({ color, size }) => <History color={color} size={size - 2} />,
-                    tabBarLabel: t('tabs.history'),
+                    tabBarIcon: ({ color, focused }) => <History color={color} size={22} strokeWidth={focused ? 2.2 : 1.8} />,
+                    title: t('tabs.history'),
                 }}
             />
             <Tab.Screen
                 name="Progress"
                 component={ProgressScreen}
                 options={{
-                    tabBarIcon: ({ color, size }) => <TrendingUp color={color} size={size - 2} />,
-                    tabBarLabel: t('tabs.progress'),
+                    tabBarIcon: ({ color, focused }) => <TrendingUp color={color} size={22} strokeWidth={focused ? 2.2 : 1.8} />,
+                    title: t('tabs.progress'),
                 }}
             />
             <Tab.Screen
                 name="AI"
                 component={AITabScreen}
                 options={{
-                    tabBarIcon: ({ color, size }) => <Sparkles color={color} size={size - 2} />,
-                    tabBarLabel: t('tabs.ai'),
+                    tabBarIcon: ({ color, focused }) => <Sparkles color={color} size={22} strokeWidth={focused ? 2.2 : 1.8} />,
+                    title: t('tabs.ai'),
                 }}
             />
             <Tab.Screen
                 name="Settings"
                 component={SettingsScreen}
                 options={{
-                    tabBarIcon: ({ color, size }) => <Settings color={color} size={size - 2} />,
-                    tabBarLabel: t('tabs.settings'),
+                    tabBarIcon: ({ color, focused }) => <Settings color={color} size={22} strokeWidth={focused ? 2.2 : 1.8} />,
+                    title: t('tabs.settings'),
                 }}
             />
         </Tab.Navigator>
@@ -195,9 +205,10 @@ export const AppNavigator = () => {
                         presentation: 'modal',
                         headerShown: true,
                         headerTitle: t('exerciseList.selectExercise'),
-                        headerStyle: { backgroundColor: colors.surface },
+                        headerStyle: { backgroundColor: colors.background },
+                        headerShadowVisible: false,
                         headerTintColor: colors.text,
-                        headerTitleStyle: { fontWeight: '600' },
+                        headerTitleStyle: { fontWeight: '600', fontSize: 17 },
                         animation: 'slide_from_bottom',
                     }}
                 />
@@ -208,9 +219,10 @@ export const AppNavigator = () => {
                         presentation: 'card',
                         headerShown: true,
                         headerTitle: t('workoutDetails.exercises'),
-                        headerStyle: { backgroundColor: colors.surface },
+                        headerStyle: { backgroundColor: colors.background },
+                        headerShadowVisible: false,
                         headerTintColor: colors.text,
-                        headerTitleStyle: { fontWeight: '600' },
+                        headerTitleStyle: { fontWeight: '600', fontSize: 17 },
                     }}
                 />
                 <Stack.Screen
@@ -263,6 +275,18 @@ export const AppNavigator = () => {
 };
 
 const styles = StyleSheet.create({
+    tabLabel: {
+        fontSize: 10,
+        lineHeight: 14,
+        fontWeight: '600',
+        textAlign: 'center',
+        marginTop: 2,
+    },
+    tabLabelBeside: {
+        marginTop: 0,
+        marginStart: 16,
+        fontSize: 12,
+    },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',

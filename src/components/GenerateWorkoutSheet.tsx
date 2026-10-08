@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { Sparkles } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Typography } from './Typography';
-import { borderRadius } from '../theme/colors';
+import { Button } from './Button';
+import { Chip } from './Chip';
+import { borderRadius, ThemeColors } from '../theme/colors';
 import { useTheme } from '../context/ThemeContext';
 import { getMuscleGroupName } from '../constants/exercises';
 import { EQUIPMENT_PRESETS } from '../constants/exerciseCatalog';
 import { AIWorkoutRequest } from '../types';
-
-const AI_COLOR = '#8B5CF6';
 
 export type GenerateWorkoutOptions = AIWorkoutRequest;
 
@@ -61,27 +61,27 @@ export const GenerateWorkoutSheet: React.FC<Props> = ({ visible, onCancel, onGen
   };
 
   const chip = (label: string, active: boolean, onPress: () => void, key?: string) => (
-    <TouchableOpacity
-      key={key ?? label}
-      style={[styles.chip, active && styles.chipActive]}
-      onPress={onPress}
-      activeOpacity={0.7}
-    >
-      <Typography variant="caption" color={active ? '#fff' : colors.textSecondary} bold={active} style={{ fontSize: 12 }}>
-        {label}
-      </Typography>
-    </TouchableOpacity>
+    <Chip key={key ?? label} label={label} selected={active} onPress={onPress} tone="secondary" size="small" />
   );
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <View style={styles.overlay}>
-        <View style={styles.card}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} />
+        <View style={styles.sheet}>
+          <View style={styles.handle} />
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            <Typography variant="h2" style={{ marginBottom: 4 }}>{t('aiWorkout.commentTitle')}</Typography>
-            <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 16 }}>
-              {t('aiWorkout.sheetDesc')}
-            </Typography>
+            <View style={styles.titleRow}>
+              <View style={styles.titleIcon}>
+                <Sparkles color={colors.secondary} size={18} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Typography variant="h3">{t('aiWorkout.commentTitle')}</Typography>
+                <Typography variant="caption" color={colors.textSecondary}>
+                  {t('aiWorkout.sheetDesc')}
+                </Typography>
+              </View>
+            </View>
 
             <Typography variant="label" style={styles.label}>{t('aiWorkout.timeAvailable')}</Typography>
             <View style={styles.row}>
@@ -113,15 +113,13 @@ export const GenerateWorkoutSheet: React.FC<Props> = ({ visible, onCancel, onGen
             />
 
             <View style={styles.buttons}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={onCancel} activeOpacity={0.7}>
-                <Typography variant="body" color={colors.textSecondary}>{t('common.cancel')}</Typography>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.generateBtn} onPress={handleGenerate} activeOpacity={0.7}>
-                <Sparkles color="#fff" size={16} />
-                <Typography variant="body" color="#fff" bold style={{ marginLeft: 6 }}>
-                  {t('aiWorkout.generate')}
-                </Typography>
-              </TouchableOpacity>
+              <Button title={t('common.cancel')} variant="outline" onPress={onCancel} style={{ flex: 1 }} />
+              <Button
+                title={t('aiWorkout.generate')}
+                onPress={handleGenerate}
+                icon={c => <Sparkles color={c} size={17} />}
+                style={{ flex: 1.6 }}
+              />
             </View>
           </ScrollView>
         </View>
@@ -130,23 +128,48 @@ export const GenerateWorkoutSheet: React.FC<Props> = ({ visible, onCancel, onGen
   );
 };
 
-const createStyles = (colors: any) => StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
+    backgroundColor: colors.overlay,
+    justifyContent: 'flex-end',
   },
-  card: {
-    maxHeight: '88%',
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: borderRadius.l,
-    padding: 20,
+  sheet: {
+    maxHeight: '90%',
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: borderRadius.xl,
+    borderTopRightRadius: borderRadius.xl,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 28,
     borderWidth: 1,
+    borderBottomWidth: 0,
     borderColor: colors.border,
   },
+  handle: {
+    alignSelf: 'center',
+    width: 38,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.border,
+    marginBottom: 16,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 6,
+  },
+  titleIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: colors.secondarySoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   label: {
-    marginTop: 12,
+    marginTop: 18,
     marginBottom: 8,
   },
   row: {
@@ -154,20 +177,8 @@ const createStyles = (colors: any) => StyleSheet.create({
     flexWrap: 'wrap',
     gap: 6,
   },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.surfaceLight,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  chipActive: {
-    backgroundColor: AI_COLOR,
-    borderColor: AI_COLOR,
-  },
   input: {
-    minHeight: 70,
+    minHeight: 72,
     maxHeight: 110,
     backgroundColor: colors.surfaceLight,
     borderRadius: borderRadius.m,
@@ -175,31 +186,11 @@ const createStyles = (colors: any) => StyleSheet.create({
     paddingVertical: 10,
     color: colors.text,
     fontSize: 15,
-    borderWidth: 1,
-    borderColor: colors.border,
     textAlignVertical: 'top',
   },
   buttons: {
     flexDirection: 'row',
-    marginTop: 16,
+    marginTop: 20,
     gap: 10,
-  },
-  cancelBtn: {
-    flex: 1,
-    paddingVertical: 14,
-    alignItems: 'center',
-    borderRadius: borderRadius.m,
-    backgroundColor: colors.surfaceLight,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  generateBtn: {
-    flex: 1.5,
-    flexDirection: 'row',
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: borderRadius.m,
-    backgroundColor: AI_COLOR,
   },
 });

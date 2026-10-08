@@ -7,7 +7,7 @@ import { Button } from '../components/Button';
 import { useWorkout } from '../context/WorkoutContext';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { ExerciseInfoModal } from '../components/ExerciseInfoModal';
-import { borderRadius } from '../theme/colors';
+import { borderRadius, ThemeColors } from '../theme/colors';
 import { AIGeneratedExercise, AIGeneratedWorkout } from '../types';
 import { useTranslation } from 'react-i18next';
 import { getExerciseName } from '../constants/exercises';
@@ -15,11 +15,12 @@ import { useTheme } from '../context/ThemeContext';
 import { useUnits } from '../context/UnitsContext';
 import { StorageService } from '../services/storage';
 import { generateId } from '../utils/generateId';
-import { PlayCircle, Sparkles, RefreshCw, Trash2, ChevronLeft, Zap } from 'lucide-react-native';
+import { PlayCircle, Sparkles, RefreshCw, Trash2, Lightbulb, Flame, Target, Play, ListChecks, Layers, Clock } from 'lucide-react-native';
+import { BackArrow } from '../components/DirectionalIcons';
+import { IconButton } from '../components/IconButton';
+import { StatTile } from '../components/StatTile';
 import { useAction, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-
-const AI_COLOR = '#8B5CF6';
 
 export const AIWorkoutPreviewScreen = ({ route, navigation }: any) => {
     const { t } = useTranslation();
@@ -161,81 +162,65 @@ export const AIWorkoutPreviewScreen = ({ route, navigation }: any) => {
         <ScreenLayout>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
                 {/* Back Button */}
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn} activeOpacity={0.7}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                        <ChevronLeft color={colors.primary} size={18} />
-                        <Typography variant="body" color={colors.primary}>{t('common.goBack')}</Typography>
-                    </View>
-                </TouchableOpacity>
+                <View style={styles.topBar}>
+                    <IconButton
+                        icon={c => <BackArrow color={c} size={20} />}
+                        onPress={() => navigation.goBack()}
+                        accessibilityLabel={t('common.goBack')}
+                    />
+                </View>
 
                 {/* Header Card */}
                 <Card style={styles.headerCard}>
-                    <View style={[styles.headerAccent, { backgroundColor: AI_COLOR }]} />
-                    <View style={styles.headerContent}>
-                        {/* AI Badge */}
-                        <View style={styles.aiBadge}>
-                            <Sparkles color={AI_COLOR} size={14} />
-                            <Typography variant="caption" color={AI_COLOR} bold style={{ fontSize: 11 }}>
-                                {t('aiWorkout.aiGenerated')}
-                            </Typography>
-                        </View>
-
-                        {/* Icon */}
-                        <View style={[styles.bigIcon, { backgroundColor: AI_COLOR + '20' }]}>
-                            <Zap color={AI_COLOR} size={32} />
-                        </View>
-
-                        {/* Title */}
-                        <Typography variant="h1" style={{ marginTop: 12, textAlign: 'center' }}>
-                            {workout.workoutName}
+                    {/* AI Badge */}
+                    <View style={styles.aiBadge}>
+                        <Sparkles color={colors.secondary} size={13} />
+                        <Typography variant="caption" color={colors.secondary} bold>
+                            {t('aiWorkout.aiGenerated')}
                         </Typography>
-
-                        {/* Stats */}
-                        <View style={styles.statsRow}>
-                            <View style={styles.statBox}>
-                                <Typography variant="h2" color={AI_COLOR}>{totalExercises}</Typography>
-                                <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 10 }}>
-                                    {t('common.exercises')}
-                                </Typography>
-                            </View>
-                            <View style={styles.statBox}>
-                                <Typography variant="h2" color={AI_COLOR}>{totalSets}</Typography>
-                                <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 10 }}>
-                                    {t('common.sets')}
-                                </Typography>
-                            </View>
-                            {!!workout.estimatedMinutes && (
-                                <View style={styles.statBox}>
-                                    <Typography variant="h2" color={AI_COLOR}>{workout.estimatedMinutes}</Typography>
-                                    <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 10 }}>
-                                        {t('common.min')}
-                                    </Typography>
-                                </View>
-                            )}
-                        </View>
-
-                        {/* Reasoning */}
-                        <View style={styles.reasoningBox}>
-                            <Typography variant="label" color={AI_COLOR} style={{ marginBottom: 6, fontSize: 11 }}>
-                                💡 {t('aiWorkout.reasoning')}
-                            </Typography>
-                            <Typography variant="body" color={colors.textSecondary} style={{ lineHeight: 20, fontSize: 13 }}>
-                                {workout.reasoning}
-                            </Typography>
-                        </View>
-
-                        {!!workout.warmup && (
-                            <View style={[styles.reasoningBox, { marginTop: 10 }]}>
-                                <Typography variant="label" color={AI_COLOR} style={{ marginBottom: 6, fontSize: 11 }}>
-                                    🔥 {t('aiWorkout.warmup')}
-                                </Typography>
-                                <Typography variant="body" color={colors.textSecondary} style={{ lineHeight: 20, fontSize: 13 }}>
-                                    {workout.warmup}
-                                </Typography>
-                            </View>
-                        )}
                     </View>
+
+                    {/* Title */}
+                    <Typography variant="h1" align="center" style={{ marginTop: 10 }}>
+                        {workout.workoutName}
+                    </Typography>
+
+                    {/* Reasoning */}
+                    <View style={styles.reasoningBox}>
+                        <View style={styles.boxTitle}>
+                            <Lightbulb color={colors.secondary} size={14} />
+                            <Typography variant="label" color={colors.secondary}>
+                                {t('aiWorkout.reasoning')}
+                            </Typography>
+                        </View>
+                        <Typography variant="bodySmall" color={colors.textSecondary} style={{ lineHeight: 19 }}>
+                            {workout.reasoning}
+                        </Typography>
+                    </View>
+
+                    {!!workout.warmup && (
+                        <View style={[styles.reasoningBox, { marginTop: 8 }]}>
+                            <View style={styles.boxTitle}>
+                                <Flame color={colors.accent} size={14} />
+                                <Typography variant="label" color={colors.accent}>
+                                    {t('aiWorkout.warmup')}
+                                </Typography>
+                            </View>
+                            <Typography variant="bodySmall" color={colors.textSecondary} style={{ lineHeight: 19 }}>
+                                {workout.warmup}
+                            </Typography>
+                        </View>
+                    )}
                 </Card>
+
+                {/* Stats */}
+                <View style={styles.statsRow}>
+                    <StatTile compact value={totalExercises} label={t('common.exercises')} icon={c => <ListChecks color={c} size={14} />} tone="secondary" />
+                    <StatTile compact value={totalSets} label={t('common.sets')} icon={c => <Layers color={c} size={14} />} tone="secondary" />
+                    {!!workout.estimatedMinutes && (
+                        <StatTile compact value={workout.estimatedMinutes} label={t('common.min')} icon={c => <Clock color={c} size={14} />} tone="secondary" />
+                    )}
+                </View>
 
                 {/* Exercise List */}
                 <Typography variant="h3" style={styles.sectionTitle}>
@@ -245,10 +230,10 @@ export const AIWorkoutPreviewScreen = ({ route, navigation }: any) => {
                 <Card style={styles.exerciseCard}>
                     {/* Table Header */}
                     <View style={styles.tableHeader}>
-                        <Typography variant="label" style={styles.colExercise}>{t('programs.exercise')}</Typography>
-                        <Typography variant="label" style={styles.colSets}>{t('common.sets')}</Typography>
-                        <Typography variant="label" style={styles.colReps}>{t('common.reps')}</Typography>
-                        <Typography variant="label" style={styles.colRest}>{t('programs.rest')}</Typography>
+                        <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.colExercise}>{t('programs.exercise')}</Typography>
+                        <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.colSets}>{t('common.sets')}</Typography>
+                        <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.colReps}>{t('common.reps')}</Typography>
+                        <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.colRest}>{t('programs.rest')}</Typography>
                         <View style={{ width: 36 }} />
                     </View>
 
@@ -263,15 +248,15 @@ export const AIWorkoutPreviewScreen = ({ route, navigation }: any) => {
                                                 {ex.isNew ? ex.exerciseName : getExerciseName(ex.exerciseId || '', t, ex.exerciseName)}
                                             </Typography>
                                             {!!ex.supersetGroup && (
-                                                <View style={[styles.newBadge, { backgroundColor: colors.secondary }]}>
-                                                    <Typography variant="caption" color="#fff" bold style={{ fontSize: 8 }}>
+                                                <View style={[styles.newBadge, { backgroundColor: colors.primarySoft }]}>
+                                                    <Typography variant="caption" color={colors.primary} bold style={styles.badgeText}>
                                                         {ex.supersetGroup}
                                                     </Typography>
                                                 </View>
                                             )}
                                             {ex.isNew && (
                                                 <View style={styles.newBadge}>
-                                                    <Typography variant="caption" color="#fff" bold style={{ fontSize: 8 }}>
+                                                    <Typography variant="caption" color={colors.secondary} bold style={styles.badgeText}>
                                                         {t('aiWorkout.newExercise')}
                                                     </Typography>
                                                 </View>
@@ -279,8 +264,12 @@ export const AIWorkoutPreviewScreen = ({ route, navigation }: any) => {
                                         </View>
                                     </View>
                                     {!ex.isNew && ex.exerciseId && (
-                                        <TouchableOpacity
-                                            style={styles.infoBtn}
+                                        <IconButton
+                                            icon={c => <PlayCircle color={c} size={17} />}
+                                            variant="tonal"
+                                            tone="primary"
+                                            size={32}
+                                            style={{ marginLeft: 4 }}
                                             onPress={() => {
                                                 setSelectedExercise({
                                                     id: ex.exerciseId!,
@@ -288,9 +277,8 @@ export const AIWorkoutPreviewScreen = ({ route, navigation }: any) => {
                                                 });
                                                 setInfoModalVisible(true);
                                             }}
-                                        >
-                                            <PlayCircle color={colors.primary} size={18} />
-                                        </TouchableOpacity>
+                                            accessibilityLabel={getExerciseName(ex.exerciseId!, t, ex.exerciseName)}
+                                        />
                                     )}
                                 </View>
                                 <Typography variant="bodySmall" style={styles.colSets} bold>{ex.sets}</Typography>
@@ -304,20 +292,26 @@ export const AIWorkoutPreviewScreen = ({ route, navigation }: any) => {
                                     onPress={() => handleRemoveExercise(index)}
                                     activeOpacity={0.7}
                                 >
-                                    <Trash2 color={colors.error} size={16} />
+                                    <Trash2 color={colors.textMuted} size={16} />
                                 </TouchableOpacity>
                             </View>
                             {(!!ex.notes || !!ex.targetWeight) && (
                                 <View style={styles.noteRow}>
                                     {!!ex.targetWeight && (
-                                        <Typography variant="caption" color={AI_COLOR} bold style={{ fontSize: 11 }}>
-                                            🎯 {t('aiWorkout.targetLoad', { weight: `${Math.round(displayWeight(ex.targetWeight) * 2) / 2} ${weightUnit}` })}
-                                        </Typography>
+                                        <View style={styles.noteLine}>
+                                            <Target color={colors.primary} size={12} />
+                                            <Typography variant="caption" color={colors.primary} bold style={{ fontSize: 11.5 }}>
+                                                {t('aiWorkout.targetLoad', { weight: `${Math.round(displayWeight(ex.targetWeight) * 2) / 2} ${weightUnit}` })}
+                                            </Typography>
+                                        </View>
                                     )}
                                     {!!ex.notes && (
-                                        <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 10, fontStyle: 'italic' }}>
-                                            💡 {ex.notes}
-                                        </Typography>
+                                        <View style={styles.noteLine}>
+                                            <Lightbulb color={colors.textMuted} size={12} />
+                                            <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 11.5, flex: 1 }}>
+                                                {ex.notes}
+                                            </Typography>
+                                        </View>
                                     )}
                                 </View>
                             )}
@@ -328,28 +322,22 @@ export const AIWorkoutPreviewScreen = ({ route, navigation }: any) => {
                 {/* Action Buttons */}
                 <View style={styles.actionsContainer}>
                     <Button
-                        title={`${t('aiWorkout.startWorkout')} 🔥`}
+                        title={t('aiWorkout.startWorkout')}
                         onPress={handleStartWorkout}
                         size="large"
                         fullWidth
-                        style={{ marginBottom: 12 }}
+                        icon={c => <Play color={c} size={18} fill={c} />}
                     />
 
-                    <TouchableOpacity
-                        style={styles.regenerateBtn}
+                    <Button
+                        title={regenerating ? t('aiWorkout.generating') : t('aiWorkout.regenerate')}
+                        variant="ai"
                         onPress={handleRegenerate}
                         disabled={regenerating}
-                        activeOpacity={0.7}
-                    >
-                        {regenerating ? (
-                            <ActivityIndicator size="small" color={AI_COLOR} />
-                        ) : (
-                            <RefreshCw color={AI_COLOR} size={18} />
-                        )}
-                        <Typography variant="body" color={AI_COLOR} bold style={{ marginLeft: 8 }}>
-                            {regenerating ? t('aiWorkout.generating') : t('aiWorkout.regenerate')}
-                        </Typography>
-                    </TouchableOpacity>
+                        loading={regenerating}
+                        fullWidth
+                        icon={c => <RefreshCw color={c} size={17} />}
+                    />
                 </View>
             </ScrollView>
 
@@ -374,67 +362,45 @@ export const AIWorkoutPreviewScreen = ({ route, navigation }: any) => {
     );
 };
 
-const createStyles = (colors: any) => StyleSheet.create({
-    backBtn: {
-        paddingVertical: 8,
-        marginBottom: 4,
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
+    topBar: {
+        flexDirection: 'row',
+        paddingTop: 4,
+        paddingBottom: 12,
     },
     headerCard: {
-        padding: 0,
-        overflow: 'hidden',
-        marginBottom: 8,
-    },
-    headerAccent: {
-        height: 4,
-        width: '100%',
-    },
-    headerContent: {
         padding: 20,
         alignItems: 'center',
+        marginBottom: 10,
     },
     aiBadge: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        backgroundColor: AI_COLOR + '15',
+        backgroundColor: colors.secondarySoft,
         paddingHorizontal: 12,
         paddingVertical: 4,
-        borderRadius: 20,
-        marginBottom: 8,
-    },
-    bigIcon: {
-        width: 72,
-        height: 72,
-        borderRadius: 36,
-        alignItems: 'center',
-        justifyContent: 'center',
+        borderRadius: borderRadius.full,
     },
     statsRow: {
         flexDirection: 'row',
-        gap: 12,
-        marginTop: 20,
-        width: '100%',
-    },
-    statBox: {
-        flex: 1,
-        alignItems: 'center',
-        backgroundColor: colors.surfaceLight,
-        paddingVertical: 12,
-        borderRadius: borderRadius.m,
-        borderWidth: 1,
-        borderColor: colors.border,
+        gap: 10,
     },
     reasoningBox: {
         marginTop: 16,
         width: '100%',
-        backgroundColor: AI_COLOR + '08',
+        backgroundColor: colors.surfaceLight,
         borderRadius: borderRadius.m,
         padding: 14,
-        borderWidth: 1,
-        borderColor: AI_COLOR + '20',
+    },
+    boxTitle: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        marginBottom: 6,
     },
     sectionTitle: {
-        marginTop: 20,
+        marginTop: 24,
         marginBottom: 12,
     },
     exerciseCard: {
@@ -447,7 +413,7 @@ const createStyles = (colors: any) => StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 10,
         paddingHorizontal: 14,
-        borderBottomWidth: 1,
+        borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: colors.border,
     },
     exerciseRow: {
@@ -455,21 +421,26 @@ const createStyles = (colors: any) => StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 10,
         paddingHorizontal: 14,
-        borderRadius: borderRadius.xs,
     },
     rowAlt: {
-        backgroundColor: colors.surfaceLight + '40',
+        backgroundColor: colors.surfaceLight + '80',
     },
     noteRow: {
         paddingHorizontal: 14,
-        paddingBottom: 6,
+        paddingBottom: 8,
         marginTop: -4,
+        gap: 3,
+    },
+    noteLine: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
     },
     colExercise: {
         flex: 3,
     },
     colSets: {
-        width: 36,
+        width: 44,
         textAlign: 'center',
     },
     colReps: {
@@ -477,23 +448,18 @@ const createStyles = (colors: any) => StyleSheet.create({
         textAlign: 'center',
     },
     colRest: {
-        width: 40,
+        width: 48,
         textAlign: 'center',
     },
     newBadge: {
-        backgroundColor: AI_COLOR,
+        backgroundColor: colors.secondarySoft,
         paddingHorizontal: 6,
-        paddingVertical: 2,
-        borderRadius: 4,
+        paddingVertical: 1,
+        borderRadius: 6,
     },
-    infoBtn: {
-        backgroundColor: colors.surfaceLight,
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-        borderRadius: borderRadius.s,
-        borderWidth: 1,
-        borderColor: colors.border,
-        marginLeft: 4,
+    badgeText: {
+        fontSize: 10,
+        lineHeight: 14,
     },
     removeBtn: {
         width: 36,
@@ -503,17 +469,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     },
     actionsContainer: {
         marginTop: 20,
-        alignItems: 'center',
-    },
-    regenerateBtn: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 12,
-        paddingHorizontal: 20,
-        borderRadius: borderRadius.m,
-        backgroundColor: AI_COLOR + '10',
-        borderWidth: 1,
-        borderColor: AI_COLOR + '25',
+        gap: 10,
     },
 });

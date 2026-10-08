@@ -4,17 +4,17 @@ import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { useWorkout } from '../context/WorkoutContext';
 import { Card } from '../components/Card';
-import { StatBadge } from '../components/StatBadge';
+import { StatTile } from '../components/StatTile';
+import { Clock, Layers, Repeat, Weight, Trophy, Link2, NotebookPen, Trash2 } from 'lucide-react-native';
 import { Button } from '../components/Button';
-import { format } from 'date-fns';
-import { borderRadius } from '../theme/colors';
+import { formatDate } from '../utils/dates';
+import { borderRadius, ThemeColors } from '../theme/colors';
 import { WorkoutSession, ExerciseLog, Set as WorkoutSet } from '../types';
 import { useTranslation } from 'react-i18next';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import {
     getSupersetType,
     getSupersetColor,
-    getSupersetEmoji,
     getSupersetPositionLabel,
 } from '../utils/supersetUtils';
 import { getExerciseName } from '../constants/exercises';
@@ -154,7 +154,7 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
                 <View style={styles.exHeader}>
                     <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
                         {posLabel && (
-                            <View style={[styles.positionBadge, { backgroundColor: (ssColor || colors.secondary) + '25', borderColor: (ssColor || colors.secondary) + '50' }]}>
+                            <View style={[styles.positionBadge, { backgroundColor: (ssColor || colors.secondary) + '22' }]}>
                                 <Typography variant="caption" color={ssColor || colors.secondary} bold style={{ fontSize: 11 }}>
                                     {posLabel}
                                 </Typography>
@@ -164,8 +164,9 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
                     </View>
                     {bestWeight > 0 && (
                         <View style={styles.prBadge}>
-                            <Typography variant="label" color={colors.primary} style={{ fontSize: 10 }}>
-                                {t('workoutDetails.best')} {displayWeight(bestWeight)}{weightUnit}
+                            <Trophy color={colors.accent} size={12} />
+                            <Typography variant="caption" color={colors.accent} bold style={{ fontSize: 11.5 }}>
+                                {displayWeight(bestWeight)} {weightUnit}
                             </Typography>
                         </View>
                     )}
@@ -173,17 +174,17 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
 
                 {/* Table */}
                 <View style={styles.tableHeader}>
-                    <Typography variant="label" style={styles.colSet}>{t('common.set')}</Typography>
-                    <Typography variant="label" style={styles.colData}>{weightUnit}</Typography>
-                    <Typography variant="label" style={styles.colData}>{t('common.repsLabel')}</Typography>
-                    <Typography variant="label" style={styles.colData}>{t('common.rpe')}</Typography>
-                    <Typography variant="label" style={[styles.colData, { textAlign: 'right' }]}>{t('common.vol')}</Typography>
+                    <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.colSet}>{t('common.set')}</Typography>
+                    <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.colData}>{weightUnit}</Typography>
+                    <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.colData}>{t('common.repsLabel')}</Typography>
+                    <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.colData}>{t('common.rpe')}</Typography>
+                    <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={[styles.colData, { textAlign: 'right' }]}>{t('common.vol')}</Typography>
                 </View>
 
                 {log.sets.map((set: WorkoutSet, index: number) => (
                     <View key={set.id} style={[styles.row, index % 2 === 0 && styles.rowAlt]}>
                         <View style={styles.setBadge}>
-                            <Typography variant="bodySmall" bold align="center">{index + 1}</Typography>
+                            <Typography variant="bodySmall" bold align="center" color={colors.primary}>{index + 1}</Typography>
                         </View>
                         {set.durationSec ? (
                             // Timed hold or cardio: show time (and distance / added load)
@@ -198,7 +199,7 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
                                 <Typography variant="body" style={styles.colData}>{set.reps}</Typography>
                             </>
                         )}
-                        <Typography variant="body" style={styles.colData} color={set.rpe ? (set.rpe <= 5 ? colors.success : set.rpe <= 7 ? colors.warning : set.rpe <= 8 ? '#FF9800' : colors.error) : colors.textMuted}>
+                        <Typography variant="body" style={styles.colData} color={set.rpe ? (set.rpe <= 5 ? colors.success : set.rpe <= 7 ? colors.warning : set.rpe <= 8 ? colors.accent : colors.error) : colors.textMuted}>
                             {set.rpe || '—'}
                         </Typography>
                         <Typography variant="bodySmall" color={colors.textMuted} style={[styles.colData, { textAlign: 'right' }]}>
@@ -210,15 +211,16 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
                 {/* Exercise totals */}
                 <View style={styles.exFooter}>
                     <Typography variant="caption" color={colors.textSecondary}>
-                        {log.sets.length} {t('common.sets')} • {Math.round(displayWeight(exVolume)).toLocaleString()} {weightUnit}
+                        {log.sets.length} {t('common.sets')} · {Math.round(displayWeight(exVolume)).toLocaleString()} {weightUnit}
                     </Typography>
                 </View>
 
                 {/* Exercise notes */}
                 {log.notes ? (
                     <View style={styles.exNotes}>
-                        <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 11 }}>
-                            📝 {log.notes}
+                        <NotebookPen color={colors.textMuted} size={13} />
+                        <Typography variant="caption" color={colors.textSecondary} style={{ flex: 1 }}>
+                            {log.notes}
                         </Typography>
                     </View>
                 ) : null}
@@ -231,17 +233,17 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
                 {/* Title */}
                 <Typography variant="h1" style={{ marginBottom: 4 }}>{workout.name}</Typography>
-                <Typography variant="caption" style={{ marginBottom: 4 }}>
-                    {format(workout.startTime, 'EEEE, MMM dd, yyyy • HH:mm')}
+                <Typography variant="bodySmall" color={colors.textSecondary} style={{ marginBottom: 12 }}>
+                    {formatDate(workout.startTime, 'EEEE, MMM dd, yyyy · HH:mm')}
                 </Typography>
 
                 {/* Mood Badge */}
                 {workout.mood ? (
                     <View style={styles.moodBadge}>
-                        <Typography variant="caption" style={{ fontSize: 16 }}>
+                        <Typography variant="caption" style={{ fontSize: 15 }}>
                             {MOOD_EMOJIS[workout.mood - 1] || ''}
                         </Typography>
-                        <Typography variant="caption" color={colors.textSecondary} style={{ marginLeft: 6, fontSize: 11 }}>
+                        <Typography variant="caption" color={colors.textSecondary} style={{ marginLeft: 6 }}>
                             {t('workoutDetails.energy')}: {workout.mood}/5
                         </Typography>
                     </View>
@@ -249,22 +251,16 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
 
                 {/* Summary Stats */}
                 <View style={styles.summaryRow}>
-                    <Card style={styles.summaryCard} variant="glass">
-                        <StatBadge value={duration} label={t('common.min')} color={colors.primary} />
-                    </Card>
-                    <Card style={styles.summaryCard} variant="glass">
-                        <StatBadge value={totalSets} label={t('common.sets')} color={colors.secondary} />
-                    </Card>
-                    <Card style={styles.summaryCard} variant="glass">
-                        <StatBadge value={totalReps} label={t('common.reps')} color={colors.warning} />
-                    </Card>
-                    <Card style={styles.summaryCard} variant="glass">
-                        <StatBadge
-                            value={displayWeight(totalVolume) > 999 ? `${(displayWeight(totalVolume) / 1000).toFixed(1)}k` : Math.round(displayWeight(totalVolume))}
-                            label={weightUnit}
-                            color={colors.accent}
-                        />
-                    </Card>
+                    <StatTile compact value={duration} label={t('common.min')} icon={c => <Clock color={c} size={14} />} tone="accent" />
+                    <StatTile compact value={totalSets} label={t('common.sets')} icon={c => <Layers color={c} size={14} />} tone="secondary" />
+                    <StatTile compact value={totalReps} label={t('common.reps')} icon={c => <Repeat color={c} size={14} />} tone="primary" />
+                    <StatTile
+                        compact
+                        value={displayWeight(totalVolume) > 999 ? `${(displayWeight(totalVolume) / 1000).toFixed(1)}k` : Math.round(displayWeight(totalVolume))}
+                        label={weightUnit}
+                        icon={c => <Weight color={c} size={14} />}
+                        tone="success"
+                    />
                 </View>
 
                 {/* Notes */}
@@ -288,7 +284,6 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
                         const groupSize = groupExercises.length;
                         const ssType = getSupersetType(groupSize);
                         const ssColor = getSupersetColor(ssType);
-                        const ssEmoji = getSupersetEmoji(ssType);
                         const ssLabel = groupSize === 2
                             ? t('superset.superset')
                             : t('superset.circuit');
@@ -297,9 +292,9 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
                             <View key={item.groupId} style={styles.supersetContainer}>
                                 {/* Superset group header */}
                                 <View style={[styles.supersetHeader, { borderColor: ssColor + '50' }]}>
-                                    <View style={[styles.supersetHeaderDot, { backgroundColor: ssColor }]} />
-                                    <Typography variant="caption" color={ssColor} bold style={{ fontSize: 11 }}>
-                                        {ssEmoji} {ssLabel.toUpperCase()} • {groupSize} {t('common.exercises')}
+                                    <Link2 color={ssColor} size={14} />
+                                    <Typography variant="label" color={ssColor}>
+                                        {ssLabel} · {groupSize} {t('common.exercises')}
                                     </Typography>
                                 </View>
 
@@ -324,6 +319,7 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
                     variant="danger"
                     size="medium"
                     onPress={handleDelete}
+                    icon={c => <Trash2 color={c} size={17} />}
                     fullWidth
                     style={{ marginTop: 16 }}
                 />
@@ -342,17 +338,11 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
     );
 };
 
-const createStyles = (colors: any) => StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
     summaryRow: {
         flexDirection: 'row',
         gap: 8,
         marginBottom: 20,
-    },
-    summaryCard: {
-        flex: 1,
-        alignItems: 'center',
-        paddingVertical: 14,
-        marginBottom: 0,
     },
     exHeader: {
         flexDirection: 'row',
@@ -360,59 +350,60 @@ const createStyles = (colors: any) => StyleSheet.create({
         marginBottom: 12,
     },
     prBadge: {
-        paddingHorizontal: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        paddingHorizontal: 9,
         paddingVertical: 3,
-        borderRadius: borderRadius.xs,
-        borderWidth: 1,
-        borderColor: colors.primary + '40',
-        backgroundColor: colors.primary + '10',
+        borderRadius: borderRadius.full,
+        backgroundColor: colors.accentSoft,
     },
     positionBadge: {
         paddingHorizontal: 8,
         paddingVertical: 3,
-        borderRadius: borderRadius.xs,
-        borderWidth: 1,
+        borderRadius: borderRadius.s,
         marginRight: 10,
     },
     tableHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingBottom: 8,
-        borderBottomWidth: 1,
+        borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: colors.border,
         marginBottom: 4,
     },
     row: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 6,
+        paddingVertical: 5,
         paddingHorizontal: 4,
-        borderRadius: borderRadius.xs,
+        borderRadius: borderRadius.s,
     },
     rowAlt: {
-        backgroundColor: colors.surfaceLight + '40',
+        backgroundColor: colors.surfaceLight + '80',
     },
     colSet: {
-        width: 36,
+        width: 40,
         textAlign: 'center',
     },
     colData: {
         flex: 1,
         textAlign: 'center',
+        fontVariant: ['tabular-nums'],
     },
     setBadge: {
-        width: 28,
-        height: 28,
-        borderRadius: 14,
-        backgroundColor: colors.surfaceLight,
+        width: 26,
+        height: 26,
+        borderRadius: 13,
+        backgroundColor: colors.primarySoft,
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 8,
+        marginRight: 10,
     },
     exFooter: {
         marginTop: 8,
-        paddingTop: 8,
-        borderTopWidth: 1,
+        paddingTop: 10,
+        borderTopWidth: StyleSheet.hairlineWidth,
         borderTopColor: colors.border,
     },
     // ── Superset styles ──────────────────────────────────
@@ -422,26 +413,17 @@ const createStyles = (colors: any) => StyleSheet.create({
     supersetHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderWidth: 1,
-        borderBottomWidth: 0,
-        borderTopLeftRadius: borderRadius.m,
-        borderTopRightRadius: borderRadius.m,
-        backgroundColor: colors.surfaceLight + '60',
-    },
-    supersetHeaderDot: {
-        width: 6,
-        height: 6,
-        borderRadius: 3,
-        marginRight: 8,
+        gap: 6,
+        paddingHorizontal: 4,
+        paddingBottom: 8,
     },
     supersetBody: {
         flexDirection: 'row',
+        gap: 8,
     },
     supersetSidebar: {
         width: 3,
-        borderBottomLeftRadius: 3,
+        borderRadius: 2,
         marginBottom: 12,
     },
     supersetExercises: {
@@ -451,19 +433,20 @@ const createStyles = (colors: any) => StyleSheet.create({
     moodBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 20,
+        marginBottom: 16,
         paddingHorizontal: 10,
-        paddingVertical: 5,
+        paddingVertical: 4,
         backgroundColor: colors.surfaceLight,
-        borderRadius: borderRadius.s,
-        borderWidth: 1,
-        borderColor: colors.border,
+        borderRadius: borderRadius.full,
         alignSelf: 'flex-start',
     },
     exNotes: {
-        marginTop: 6,
-        paddingTop: 6,
-        borderTopWidth: 1,
-        borderTopColor: colors.border + '40',
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 6,
+        marginTop: 8,
+        paddingTop: 8,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderTopColor: colors.border,
     },
 });

@@ -3,24 +3,18 @@ import { FlatList, TouchableOpacity, View, StyleSheet, ScrollView } from 'react-
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { Card } from '../components/Card';
-import { borderRadius } from '../theme/colors';
+import { borderRadius, ThemeColors } from '../theme/colors';
+
+import { ForwardChevron } from '../components/DirectionalIcons';
+import { ScreenHeader } from '../components/ScreenHeader';
+import { Chip } from '../components/Chip';
+import { GoalIcon, LevelDots, goalTone } from '../components/ProgramVisuals';
+import { toneColors } from '../theme/tones';
 import { PROGRAMS, PROGRAM_LEVELS, PROGRAM_GOALS } from '../constants/programs';
 import { WorkoutProgram } from '../types';
+import { programDescription, programDuration, programName } from '../utils/programText';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
-
-const LEVEL_ICONS: Record<string, string> = {
-    beginner: '🟢',
-    intermediate: '🟡',
-    advanced: '🔴',
-};
-
-const GOAL_ICONS: Record<string, string> = {
-    strength: '🏋️',
-    hypertrophy: '💪',
-    general: '⚡',
-    fat_loss: '🔥',
-};
 
 export const ProgramsScreen = ({ navigation }: any) => {
     const { t } = useTranslation();
@@ -39,6 +33,7 @@ export const ProgramsScreen = ({ navigation }: any) => {
 
     const renderProgramCard = ({ item }: { item: WorkoutProgram }) => {
         const totalExercises = item.days.reduce((acc, d) => acc + d.exercises.length, 0);
+        const tone = toneColors(colors, goalTone(item.goal));
 
         return (
             <TouchableOpacity
@@ -46,54 +41,50 @@ export const ProgramsScreen = ({ navigation }: any) => {
                 onPress={() => navigation.navigate('ProgramDetail', { programId: item.id })}
             >
                 <Card style={styles.programCard}>
-                    {/* Color accent strip */}
-                    <View style={[styles.accentStrip, { backgroundColor: item.color }]} />
-
-                    <View style={styles.cardContent}>
-                        {/* Header row */}
-                        <View style={styles.cardHeader}>
-                            <View style={[styles.iconCircle, { backgroundColor: item.color + '20' }]}>
-                                <Typography variant="h2" style={{ fontSize: 24 }}>{item.icon}</Typography>
-                            </View>
-                            <View style={{ flex: 1, marginLeft: 12 }}>
-                                <Typography variant="h3" style={{ marginBottom: 2 }}>{item.name}</Typography>
-                                <View style={styles.tagRow}>
-                                    <View style={[styles.levelBadge, { backgroundColor: item.color + '20' }]}>
-                                        <Typography variant="caption" color={item.color} bold style={{ fontSize: 10 }}>
-                                            {LEVEL_ICONS[item.level]} {t(`programs.levels.${item.level}`)}
-                                        </Typography>
-                                    </View>
-                                    <View style={styles.goalBadge}>
-                                        <Typography variant="caption" color={colors.textSecondary} style={{ fontSize: 10 }}>
-                                            {GOAL_ICONS[item.goal] || '🎯'} {t(`programs.goals.${item.goal}`)}
-                                        </Typography>
-                                    </View>
+                    {/* Header row */}
+                    <View style={styles.cardHeader}>
+                        <View style={[styles.iconTile, { backgroundColor: tone.soft }]}>
+                            <GoalIcon goal={item.goal} color={tone.fg} />
+                        </View>
+                        <View style={{ flex: 1, marginLeft: 12 }}>
+                            <Typography variant="h3" numberOfLines={2}>{programName(item, t)}</Typography>
+                            <View style={styles.tagRow}>
+                                <View style={styles.tag}>
+                                    <LevelDots level={item.level} />
+                                    <Typography variant="caption" color={colors.textSecondary} style={styles.tagText}>
+                                        {t(`programs.levels.${item.level}`)}
+                                    </Typography>
+                                </View>
+                                <View style={styles.tag}>
+                                    <Typography variant="caption" color={colors.textSecondary} style={styles.tagText}>
+                                        {t(`programs.goals.${item.goal}`)}
+                                    </Typography>
                                 </View>
                             </View>
-                            <Typography variant="body" color={item.color} style={{ fontSize: 18, fontWeight: '700' }}>›</Typography>
                         </View>
+                        <ForwardChevron color={colors.textMuted} size={18} />
+                    </View>
 
-                        {/* Description */}
-                        <Typography variant="bodySmall" color={colors.textSecondary} style={{ marginTop: 10, lineHeight: 18 }}>
-                            {item.description}
-                        </Typography>
+                    {/* Description */}
+                    <Typography variant="bodySmall" color={colors.textSecondary} style={{ marginTop: 12, lineHeight: 19 }}>
+                        {programDescription(item, t)}
+                    </Typography>
 
-                        {/* Stats row */}
-                        <View style={styles.statsRow}>
-                            <View style={styles.statItem}>
-                                <Typography variant="label" color={colors.text} style={{ fontSize: 14 }}>{item.daysPerWeek}</Typography>
-                                <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 10 }}>{t('programs.daysPerWeek')}</Typography>
-                            </View>
-                            <View style={styles.statDivider} />
-                            <View style={styles.statItem}>
-                                <Typography variant="label" color={colors.text} style={{ fontSize: 14 }}>{totalExercises}</Typography>
-                                <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 10 }}>{t('common.exercises')}</Typography>
-                            </View>
-                            <View style={styles.statDivider} />
-                            <View style={styles.statItem}>
-                                <Typography variant="label" color={colors.text} style={{ fontSize: 14 }}>{item.duration}</Typography>
-                                <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 10 }}>{t('programs.duration')}</Typography>
-                            </View>
+                    {/* Stats row */}
+                    <View style={styles.statsRow}>
+                        <View style={styles.statItem}>
+                            <Typography variant="body" bold style={styles.statValue}>{item.daysPerWeek}</Typography>
+                            <Typography variant="caption" color={colors.textMuted} style={styles.statLabel}>{t('programs.daysPerWeek')}</Typography>
+                        </View>
+                        <View style={styles.statDivider} />
+                        <View style={styles.statItem}>
+                            <Typography variant="body" bold style={styles.statValue}>{totalExercises}</Typography>
+                            <Typography variant="caption" color={colors.textMuted} style={styles.statLabel}>{t('common.exercises')}</Typography>
+                        </View>
+                        <View style={styles.statDivider} />
+                        <View style={styles.statItem}>
+                            <Typography variant="body" bold style={[styles.statValue, styles.statValueWrap]} numberOfLines={2}>{programDuration(item.duration, t)}</Typography>
+                            <Typography variant="caption" color={colors.textMuted} style={styles.statLabel}>{t('programs.duration')}</Typography>
                         </View>
                     </View>
                 </Card>
@@ -105,42 +96,23 @@ export const ProgramsScreen = ({ navigation }: any) => {
         <ScreenLayout>
             {/* Fixed filter header */}
             <View style={styles.filterContainer}>
-                {/* Header */}
-                <View style={styles.headerRow}>
-                    <View>
-                        <Typography variant="h1">{t('programs.title')}</Typography>
-                        <Typography variant="caption" style={{ marginTop: 2 }}>
-                            {t('programs.subtitle')}
-                        </Typography>
-                    </View>
-                </View>
+                <ScreenHeader title={t('programs.title')} subtitle={t('programs.subtitle')} />
 
                 {/* Level Filter */}
                 <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.filterRow}
-                    style={{ flexGrow: 0, marginBottom: 4 }}
+                    style={styles.filterScroll}
                 >
                     {PROGRAM_LEVELS.map(level => (
-                        <TouchableOpacity
+                        <Chip
                             key={level}
-                            style={[
-                                styles.filterChip,
-                                selectedLevel === level && styles.filterChipActive,
-                            ]}
+                            size="small"
+                            label={level === 'all' ? t('common.all') : t(`programs.levels.${level}`)}
+                            selected={selectedLevel === level}
                             onPress={() => setSelectedLevel(level)}
-                            activeOpacity={0.7}
-                        >
-                            <Typography
-                                variant="caption"
-                                color={selectedLevel === level ? colors.black : colors.textSecondary}
-                                bold={selectedLevel === level}
-                                style={{ fontSize: 10 }}
-                            >
-                                {level === 'all' ? t('common.all') : `${LEVEL_ICONS[level] || ''} ${t(`programs.levels.${level}`)}`}
-                            </Typography>
-                        </TouchableOpacity>
+                        />
                     ))}
                 </ScrollView>
 
@@ -149,27 +121,17 @@ export const ProgramsScreen = ({ navigation }: any) => {
                     horizontal
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.filterRow}
-                    style={{ flexGrow: 0 }}
+                    style={styles.filterScroll}
                 >
                     {PROGRAM_GOALS.map(goal => (
-                        <TouchableOpacity
+                        <Chip
                             key={goal}
-                            style={[
-                                styles.filterChip,
-                                selectedGoal === goal && styles.filterChipActiveSecondary,
-                            ]}
+                            size="small"
+                            label={goal === 'all' ? t('common.all') : t(`programs.goals.${goal}`)}
+                            icon={goal === 'all' ? undefined : c => <GoalIcon goal={goal as WorkoutProgram['goal']} color={c} size={13} />}
+                            selected={selectedGoal === goal}
                             onPress={() => setSelectedGoal(goal)}
-                            activeOpacity={0.7}
-                        >
-                            <Typography
-                                variant="caption"
-                                color={selectedGoal === goal ? colors.black : colors.textSecondary}
-                                bold={selectedGoal === goal}
-                                style={{ fontSize: 10 }}
-                            >
-                                {goal === 'all' ? t('common.all') : `${GOAL_ICONS[goal] || ''} ${t(`programs.goals.${goal}`)}`}
-                            </Typography>
-                        </TouchableOpacity>
+                        />
                     ))}
                 </ScrollView>
             </View>
@@ -194,95 +156,79 @@ export const ProgramsScreen = ({ navigation }: any) => {
     );
 };
 
-const createStyles = (colors: any) => StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
     filterContainer: {
         flexShrink: 0,
-        marginBottom: 12,
+        marginBottom: 10,
     },
-    headerRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-start',
-        marginBottom: 16,
-        marginTop: 8,
+    filterScroll: {
+        flexGrow: 0,
+        flexShrink: 0,
     },
     filterRow: {
         flexDirection: 'row',
-        gap: 8,
+        gap: 6,
         paddingRight: 16,
         paddingVertical: 4,
     },
-    filterChip: {
-        height: 40,
-        paddingHorizontal: 12,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderRadius: borderRadius.full,
-        backgroundColor: colors.surfaceLight,
-        borderWidth: 1,
-        borderColor: colors.border,
-    },
-    filterChipActive: {
-        backgroundColor: colors.primary,
-        borderColor: colors.primary,
-    },
-    filterChipActiveSecondary: {
-        backgroundColor: colors.secondary,
-        borderColor: colors.secondary,
-    },
     programCard: {
-        padding: 0,
-        overflow: 'hidden',
-        marginBottom: 12,
-    },
-    accentStrip: {
-        height: 3,
-        width: '100%',
-    },
-    cardContent: {
         padding: 16,
+        marginBottom: 12,
     },
     cardHeader: {
         flexDirection: 'row',
         alignItems: 'center',
     },
-    iconCircle: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+    iconTile: {
+        width: 46,
+        height: 46,
+        borderRadius: 14,
         alignItems: 'center',
         justifyContent: 'center',
     },
     tagRow: {
         flexDirection: 'row',
         gap: 6,
-        marginTop: 4,
+        marginTop: 5,
     },
-    levelBadge: {
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: borderRadius.full,
-    },
-    goalBadge: {
+    tag: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
         paddingHorizontal: 8,
         paddingVertical: 2,
         borderRadius: borderRadius.full,
         backgroundColor: colors.surfaceLight,
+    },
+    tagText: {
+        fontSize: 11.5,
+        lineHeight: 16,
     },
     statsRow: {
         flexDirection: 'row',
         alignItems: 'center',
         marginTop: 14,
         paddingTop: 12,
-        borderTopWidth: 1,
+        borderTopWidth: StyleSheet.hairlineWidth,
         borderTopColor: colors.border,
     },
     statItem: {
         flex: 1,
         alignItems: 'center',
     },
+    statValue: {
+        fontVariant: ['tabular-nums'],
+    },
+    // Durations such as "Ciclos de 4 semanas" wrap onto a second line instead of being cut off.
+    statValueWrap: {
+        textAlign: 'center',
+        lineHeight: 19,
+    },
+    statLabel: {
+        fontSize: 11,
+    },
     statDivider: {
-        width: 1,
+        width: StyleSheet.hairlineWidth,
         height: 24,
         backgroundColor: colors.border,
     },

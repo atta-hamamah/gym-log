@@ -101,7 +101,7 @@ export interface Gear {
   off?: Vec;
   /** Fixed anchor for cables, bands, ropes, levers and the landmine pivot. */
   from?: Vec;
-  /** Size override (radius or length). */
+  /** Size override (radius or length; landmine: plate distance past the hands, negative = towards the pivot). */
   size?: number;
   /** Platform / pad / stick angle in degrees. */
   ang?: number;
@@ -134,6 +134,8 @@ export interface AnimSpec {
   noGround?: boolean;
   /** Scale the whole scene around the floor center, for poses that need more room. */
   zoom?: number;
+  /** Shift the whole scene after zooming (e.g. move hanging poses up). */
+  pan?: Vec;
 }
 
 // ── Body dimensions ───────────────────────────────────────
@@ -497,8 +499,9 @@ function drawGear(g: Gear, s: Skeleton, time: number, out: Prim[]) {
     case 'landmine': {
       const from = g.from ?? [20, GROUND];
       const u = sub(p, from);
-      const end = add(p, mul(u, 12 / (len(u) || 1)));
-      out.push({ t: 'l', a: from, b: end, w: 3.5, r: 'equip' });
+      const tip = add(p, mul(u, Math.max(g.size ?? 12, 6) / (len(u) || 1)));
+      const end = add(p, mul(u, (g.size ?? 12) / (len(u) || 1)));
+      out.push({ t: 'l', a: from, b: tip, w: 3.5, r: 'equip' });
       out.push({ t: 'c', c: end, rad: 10, r: 'plate' });
       out.push({ t: 'c', c: end, rad: 2.2, r: 'hub' });
       break;
@@ -603,8 +606,8 @@ export function poseAt(spec: AnimSpec, time: number): Pose {
   return frames[0];
 }
 
-function zoomPrim(p: Prim, z: number): Prim {
-  const f = (v: Vec): Vec => [100 + (v[0] - 100) * z, GROUND + (v[1] - GROUND) * z];
+function zoomPrim(p: Prim, z: number, pan: Vec = [0, 0]): Prim {
+  const f = (v: Vec): Vec => [100 + (v[0] - 100) * z + pan[0], GROUND + (v[1] - GROUND) * z + pan[1]];
   switch (p.t) {
     case 'l': return { ...p, a: f(p.a), b: f(p.b), w: p.w * z };
     case 'c': return { ...p, c: f(p.c), rad: p.rad * z, ring: p.ring && p.ring * z };
@@ -645,7 +648,9 @@ export function renderScene(spec: AnimSpec, time: number, pose?: Pose): Prim[] {
   frontGear.forEach(g => drawGear(g, s, time, out));
   if (spec.fg) out.push(...spec.fg);
 
-  const scaled = spec.zoom && spec.zoom !== 1 ? out.map(prim => zoomPrim(prim, spec.zoom!)) : out;
+  const z = spec.zoom ?? 1;
+  const pan = spec.pan ?? [0, 0];
+  const scaled = z !== 1 || spec.pan ? out.map(prim => zoomPrim(prim, z, pan)) : out;
   if (spec.noGround) return scaled;
-  return [seg([8, GROUND + 3], [192, GROUND + 3], 2, 'ground'), ...scaled];
+  return [seg([8, GROUND + 3 + pan[1]], [192, GROUND + 3 + pan[1]], 2, 'ground'), ...scaled];
 }

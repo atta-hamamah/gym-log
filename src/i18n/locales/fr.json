@@ -22,7 +22,8 @@
     "all": "Tout",
     "rpe": "RPE",
     "finish": "Terminer",
-    "continue": "Continuer"
+    "continue": "Continuer",
+    "animationNotAvailable": "Animation non disponible"
   },
   "tabs": {
     "dashboard": "Accueil",
@@ -35,8 +36,8 @@
   "home": {
     "title": "RepAI",
     "subtitle": "Chaque rep compte. Battez vos records.",
-    "workoutActive": "💪 Entraînement en cours",
-    "readyToLift": "🏋️ Prêt à soulever ?",
+    "workoutActive": "Entraînement en cours",
+    "readyToLift": "Prêt à soulever ?",
     "activeDescription": "\"{{name}}\" — {{count}} exercices",
     "inactiveDescription": "Démarrez une séance pour suivre vos progrès.",
     "resumeWorkout": "Reprendre",
@@ -51,8 +52,8 @@
     "newWorkout": "Nouvelle séance",
     "giveSessionName": "Donnez un nom à votre séance",
     "namePlaceholder": "ex. Push Day, Leg Day...",
-    "letsGo": "C'est parti ! 🔥",
-    "generateWithAI": "Générer avec AI Coach ✨",
+    "letsGo": "C'est parti !",
+    "generateWithAI": "Générer avec AI Coach",
     "aiSubscriptionOnly": "Abonnement AI uniquement"
   },
   "programs": {
@@ -78,7 +79,13 @@
       "hypertrophy": "Hypertrophie",
       "general": "Général",
       "fat_loss": "Perte de gras"
-    }
+    },
+    "dayN": "Jour {{n}}",
+    "durationOngoing": "Continu",
+    "durationWeeks_one": "{{count}} semaine",
+    "durationWeeks_other": "{{count}} semaines",
+    "durationCycles_one": "Cycles de {{count}} semaine",
+    "durationCycles_other": "Cycles de {{count}} semaines"
   },
   "history": {
     "title": "Historique",
@@ -88,7 +95,7 @@
     "deleteMessage": "Cette action est irréversible.",
     "noWorkoutsYet": "Pas encore de séances",
     "noWorkoutsDescription": "Terminez une séance pour\nvoir votre historique ici.",
-    "clearAllTitle": "⚠️ Effacer tout l'historique ?",
+    "clearAllTitle": "Effacer tout l'historique ?",
     "clearAllMessage": "Cela supprimera définitivement tout l'historique d'entraînements. Cette action est irréversible.",
     "clearAllCloudMessage": "Cela supprimera définitivement tout l'historique d'entraînements de cet appareil et du cloud. Cette action est irréversible.",
     "clearAllConfirm": "Oui, tout effacer",
@@ -103,12 +110,12 @@
     "emptyWorkoutMessage": "Ajoutez au moins un exercice avant de terminer.",
     "finishTitle": "Terminer la séance ?",
     "finishMessage": "Enregistrer cette séance dans votre historique.",
-    "finishConfirm": "Terminer ✓",
+    "finishConfirm": "Terminer",
     "cancelTitle": "Annuler la séance ?",
     "cancelMessage": "Toute la progression sera perdue.",
     "discard": "Abandonner",
     "noExercises": "Aucun exercice ajouté.\nAppuyez sur le bouton ci-dessous pour commencer.",
-    "addExercise": "+ Ajouter un exercice",
+    "addExercise": "Ajouter un exercice",
     "sessionNotes": "Notes de séance...",
     "cancelWorkout": "Annuler la séance",
     "remove": "RETIRER",
@@ -142,7 +149,7 @@
     "history": "Entrées récentes",
     "error": "Données manquantes",
     "errorEmpty": "Entrez au moins une mesure.",
-    "saved": "✅ Enregistré",
+    "saved": "Enregistré",
     "savedMessage": "Mensurations enregistrées avec succès.",
     "neck": "Cou",
     "chest": "Poitrine",
@@ -181,7 +188,7 @@
   "exerciseList": {
     "selectExercise": "Choisir un exercice",
     "searchPlaceholder": "Rechercher des exercices...",
-    "new": "+ Nouveau",
+    "new": "Nouveau",
     "noResults": "Aucun exercice trouvé pour \"{{query}}\".",
     "customExercise": "Exercice personnalisé",
     "addToLibrary": "Ajoutez votre propre exercice à la bibliothèque",
@@ -189,7 +196,9 @@
     "muscleGroupPlaceholder": "Groupe musculaire (ex. Pectoraux, Dos)",
     "addAndSelect": "Ajouter et sélectionner",
     "error": "Erreur",
-    "errorMessage": "Veuillez entrer un nom et un groupe musculaire"
+    "errorMessage": "Veuillez entrer un nom et un groupe musculaire",
+    "allEquipment": "Tout l'équipement",
+    "bodyweight": "Poids du corps"
   },
   "plateCalculator": {
     "title": "Calculateur de Plaques",
@@ -206,11 +215,11 @@
     "dismiss": "OK"
   },
   "pr": {
-    "newPR": "NOUVEAU RECORD PERSONNEL !",
+    "newPR": "Nouveau record personnel !",
     "singlePR": "Vous venez de battre un record ! 🎉",
     "multiplePRs": "Vous avez battu {{count}} records ! 🎉",
     "fromPrevious": "du précédent record",
-    "keepGoing": "C'EST PARTI ! 🔥",
+    "keepGoing": "C'est parti !",
     "types": {
       "max_weight": "Poids Max",
       "best_volume": "Meilleur Volume",
@@ -274,7 +283,122 @@
     "ex-cycling": "Vélo",
     "ex-elliptical": "Elliptique",
     "ex-stairmaster": "Simulateur d'escaliers",
-    "ex-jump-rope": "Corde à sauter"
+    "ex-jump-rope": "Corde à sauter",
+    "ex-incline-bench": "Développé incliné barre",
+    "ex-db-bench": "Développé couché haltères",
+    "ex-smith-bench": "Développé couché à la Smith machine",
+    "ex-machine-chest-press": "Presse pectorale à la machine",
+    "ex-floor-press": "Développé au sol haltères",
+    "ex-incline-db-fly": "Écarté incliné haltères",
+    "ex-low-cable-fly": "Écarté poulie basse vers le haut",
+    "ex-pec-deck": "Pec deck",
+    "ex-pushup": "Pompes",
+    "ex-incline-pushup": "Pompes inclinées",
+    "ex-decline-pushup": "Pompes déclinées",
+    "ex-db-pullover": "Pull-over haltère",
+    "ex-sumo-deadlift": "Soulevé de terre sumo",
+    "ex-trap-bar-deadlift": "Soulevé de terre à la trap bar",
+    "ex-rack-pull": "Rack pull",
+    "ex-assisted-pullup": "Tractions assistées",
+    "ex-close-grip-pulldown": "Tirage vertical prise serrée",
+    "ex-straight-arm-pulldown": "Tirage bras tendus",
+    "ex-db-row": "Rowing haltère à un bras",
+    "ex-chest-supported-row": "Rowing haltères buste appuyé",
+    "ex-machine-row": "Rowing à la machine",
+    "ex-band-row": "Rowing à l'élastique",
+    "ex-inverted-row": "Rowing inversé",
+    "ex-shrug": "Shrug barre",
+    "ex-db-shrug": "Shrug haltères",
+    "ex-back-extension": "Extension lombaire",
+    "ex-superman": "Superman",
+    "ex-front-squat": "Squat avant",
+    "ex-goblet-squat": "Goblet squat",
+    "ex-bw-squat": "Squat au poids du corps",
+    "ex-smith-squat": "Squat à la Smith machine",
+    "ex-walking-lunge": "Fentes marchées",
+    "ex-reverse-lunge": "Fente arrière",
+    "ex-step-up": "Montée sur box",
+    "ex-pistol-squat": "Squat pistol",
+    "ex-jump-squat": "Squat sauté",
+    "ex-box-jump": "Saut sur box",
+    "ex-wall-sit": "Chaise contre le mur",
+    "ex-db-rdl": "Soulevé de terre roumain haltères",
+    "ex-single-leg-rdl": "Soulevé de terre roumain sur une jambe",
+    "ex-good-morning": "Good morning",
+    "ex-seated-leg-curl": "Leg curl assis",
+    "ex-nordic-curl": "Nordic curl",
+    "ex-hip-adduction": "Adducteurs à la machine",
+    "ex-seated-calf-raise": "Mollets assis",
+    "ex-hip-thrust": "Hip thrust barre",
+    "ex-glute-bridge": "Pont fessier",
+    "ex-single-leg-bridge": "Pont fessier sur une jambe",
+    "ex-cable-pull-through": "Pull-through à la poulie",
+    "ex-cable-kickback": "Kickback fessier à la poulie",
+    "ex-donkey-kick": "Donkey kick",
+    "ex-hip-abduction": "Abducteurs à la machine",
+    "ex-push-press": "Push press",
+    "ex-db-shoulder-press": "Développé épaules assis haltères",
+    "ex-machine-shoulder-press": "Développé épaules à la machine",
+    "ex-landmine-press": "Développé landmine",
+    "ex-pike-pushup": "Pompes en pike",
+    "ex-cable-lateral-raise": "Élévation latérale à la poulie",
+    "ex-upright-row": "Rowing menton",
+    "ex-reverse-pec-deck": "Pec deck inversé",
+    "ex-band-pull-apart": "Écartement d'élastique",
+    "ex-ez-curl": "Curl barre EZ",
+    "ex-db-curl": "Curl haltères",
+    "ex-incline-db-curl": "Curl incliné haltères",
+    "ex-cable-curl": "Curl à la poulie",
+    "ex-band-curl": "Curl à l'élastique",
+    "ex-close-grip-bench": "Développé couché prise serrée",
+    "ex-rope-pushdown": "Extension triceps à la corde",
+    "ex-cable-overhead-ext": "Extension triceps au-dessus de la tête à la poulie",
+    "ex-db-kickback": "Kickback triceps haltère",
+    "ex-bench-dips": "Dips sur banc",
+    "ex-diamond-pushup": "Pompes diamant",
+    "ex-wrist-curl": "Curl poignets",
+    "ex-reverse-curl": "Curl inversé barre",
+    "ex-dead-hang": "Suspension passive",
+    "ex-side-plank": "Planche latérale",
+    "ex-hollow-hold": "Hollow body",
+    "ex-crunch": "Crunch",
+    "ex-situp": "Redressement assis",
+    "ex-bicycle-crunch": "Crunch vélo",
+    "ex-russian-twist": "Rotation russe",
+    "ex-leg-raise": "Relevé de jambes allongé",
+    "ex-flutter-kicks": "Battements de jambes",
+    "ex-dead-bug": "Dead bug",
+    "ex-bird-dog": "Bird dog",
+    "ex-mountain-climber": "Mountain climbers",
+    "ex-hanging-knee-raise": "Relevé de genoux suspendu",
+    "ex-pallof-press": "Pallof press",
+    "ex-woodchopper": "Bûcheron à la poulie",
+    "ex-burpee": "Burpee",
+    "ex-kb-swing": "Swing kettlebell",
+    "ex-thruster": "Thruster haltères",
+    "ex-wall-ball": "Wall ball",
+    "ex-power-clean": "Épaulé en puissance",
+    "ex-farmer-walk": "Marche du fermier",
+    "ex-sled-push": "Poussée de traîneau",
+    "ex-outdoor-run": "Course à pied",
+    "ex-walking": "Marche",
+    "ex-air-bike": "Air bike",
+    "ex-ski-erg": "SkiErg",
+    "ex-swimming": "Natation",
+    "ex-jumping-jacks": "Jumping jacks",
+    "ex-high-knees": "Montées de genoux",
+    "ex-shadow-boxing": "Shadow boxing",
+    "ex-battle-ropes": "Cordes ondulatoires",
+    "ex-arm-circles": "Cercles de bras",
+    "ex-leg-swings": "Balancements de jambe",
+    "ex-cat-cow": "Chat-vache",
+    "ex-childs-pose": "Posture de l'enfant",
+    "ex-downward-dog": "Chien tête en bas",
+    "ex-cobra": "Étirement du cobra",
+    "ex-hip-flexor-stretch": "Étirement des fléchisseurs de hanche à genou",
+    "ex-hamstring-stretch": "Étirement des ischio-jambiers debout",
+    "ex-quad-stretch": "Étirement des quadriceps debout",
+    "ex-pigeon-stretch": "Posture du pigeon"
   },
   "muscleGroups": {
     "All": "Tous",
@@ -294,7 +418,7 @@
   },
   "subscription": {
     "statusTitle": "Abonnement",
-    "trialBanner": "⏳ {{days}} jours restants d'essai gratuit",
+    "trialBanner": "{{days}} jours restants d'essai gratuit",
     "proTrialBanner": "{{days}} jours de Pro restants",
     "proTrialHint": "Profitez de toutes les fonctionnalités gratuitement !",
     "upgradeProBanner": "Passer à Pro",
@@ -303,7 +427,7 @@
     "trialExpired": "Votre essai gratuit est terminé",
     "unlockForever": "Débloquer à vie",
     "restorePurchase": "Restaurer l'achat",
-    "premiumActive": "✅ Pro — Accès à vie",
+    "premiumActive": "Pro — Accès à vie",
     "premiumTagline": "Pro débloqué • Accès à vie",
     "oneTimePayment": "Paiement unique. Sans abonnement.",
     "everythingYouNeed": "Tout ce dont vous avez besoin",
@@ -311,7 +435,7 @@
     "purchaseError": "Échec de l'achat",
     "noRestoreFound": "Aucun achat trouvé",
     "noRestoreFoundMessage": "Aucun achat précédent n'a été trouvé sur ce compte.",
-    "restored": "✅ Restauré",
+    "restored": "Restauré",
     "restoredMessage": "Votre achat a été restauré !",
     "features": {
       "tracking": "Suivi d'entraînement illimité",
@@ -326,7 +450,8 @@
     "unlockPro": "Débloquer avec Pro",
     "proFeature": "Fonction Pro",
     "upgradeMessage": "Passez à Pro pour débloquer cette fonction — paiement unique",
-    "upgrade": "Passer à Pro"
+    "upgrade": "Passer à Pro",
+    "badge": "Pro"
   },
   "aiGate": {
     "title": "Rencontrez votre Coach IA",
@@ -370,7 +495,10 @@
     "finishSetup": "Compléter le profil",
     "connecting": "Connexion à votre compte…",
     "alreadyOwned": "Ce compte Google Play a déjà un abonnement Coach IA. Connectez-vous avec le compte utilisé, ou touchez Restaurer les achats dans Réglages.",
-    "retry": "Réessayer"
+    "retry": "Réessayer",
+    "trustAI": "Propulsé par l'IA",
+    "trustSecure": "Sécurisé et privé",
+    "trustPremium": "Premium"
   },
   "aiOnboarding": {
     "createAccount": "Créez votre compte",
@@ -402,7 +530,7 @@
     "migratedWorkouts": "{{count}} entraînements synchronisés",
     "migratedPRs": "{{count}} records personnels synchronisés",
     "migratedMeasurements": "{{count}} mesures synchronisées",
-    "startChatting": "Discutez avec l'IA 💬",
+    "startChatting": "Discutez avec l'IA",
     "fitnessGoal": "Quel est votre objectif fitness ?",
     "goalPlaceholder": "ex. Gagner du muscle, perdre du gras, devenir plus fort...",
     "signupAfterPurchase": "Nouveau sur RepAI ? Abonnez-vous d'abord au Coach IA — vous créerez votre compte juste après.",
@@ -439,19 +567,19 @@
     "saveStats": "Enregistrer",
     "invalidWeight": "Poids invalide",
     "invalidWeightMessage": "Veuillez entrer un poids valide.",
-    "saved": "✅ Enregistré",
+    "saved": "Enregistré",
     "savedMessage": "Statistiques corporelles mises à jour.",
     "lifetimeStats": "Statistiques globales",
     "kgTotal": "kg Total",
     "dataManagement": "Gestion des données",
     "dataManagementDescription": "Exporter ou réinitialiser vos données.",
     "resetCloudMessage": "Toutes les séances, exercices personnalisés, statistiques et données cloud seront supprimés définitivement.",
-    "exportCSV": "📤 Exporter (CSV)",
-    "clearAllData": "🗑 Tout supprimer",
+    "exportCSV": "Exporter (CSV)",
+    "clearAllData": "Tout supprimer",
     "noData": "Aucune donnée",
     "noDataMessage": "Vous n'avez aucune séance à exporter.",
     "exportError": "Erreur d'export",
-    "resetTitle": "⚠️ Tout réinitialiser ?",
+    "resetTitle": "Tout réinitialiser ?",
     "resetMessage": "Toutes les séances, exercices personnalisés et statistiques seront supprimés définitivement.",
     "deleteEverything": "Tout supprimer",
     "confirmDelete": "Oui, tout supprimer",
@@ -467,7 +595,7 @@
     "lightMode": "Clair",
     "restartRequired": "Redémarrage nécessaire",
     "restartMessage": "L'application va redémarrer pour appliquer la nouvelle direction de mise en page.",
-    "aiActive": "✨ Coach IA — Actif",
+    "aiActive": "Coach IA — Actif",
     "aiActiveDesc": "Coaching IA, synchronisation cloud et sauvegarde automatique actifs.",
     "aiTagline": "Coach IA actif • Cloud synchronisé",
     "manageSubscription": "Gérer l'abonnement",
@@ -489,7 +617,9 @@
     "imperial": "Impérial (lbs, in)",
     "weight": "Poids",
     "height": "Taille",
-    "totalLabel": "Total"
+    "totalLabel": "Total",
+    "preferences": "Préférences",
+    "body": "Corps"
   },
   "aiChat": {
     "subtitle": "Votre coach fitness IA",
@@ -502,7 +632,8 @@
     "suggestion2": "Combien de fois me suis-je entraîné cette semaine ?",
     "suggestion3": "Est-ce que je surentraîne un muscle ?",
     "suggestion4": "Suggère un entraînement pour aujourd'hui",
-    "subscriptionRequired": "Votre abonnement Coach IA n'est plus actif. Renouvelez-le pour continuer à discuter."
+    "subscriptionRequired": "Votre abonnement Coach IA n'est plus actif. Renouvelez-le pour continuer à discuter.",
+    "send": "Envoyer"
   },
   "aura": {
     "consulting": "Consultation de l'oracle de la muscu...",
@@ -519,22 +650,31 @@
     "kevinBtn": "🛋️ L'avis de Kevin",
     "aiRequiredTitle": "Fonctionnalité IA",
     "aiRequiredDesc": "L'Aura d'entraînement est alimentée par l'IA. Abonnez-vous à AI Coach pour débloquer l'analyse personnalisée.",
-    "goToAI": "Débloquer AI Coach ✨"
+    "goToAI": "Débloquer AI Coach",
+    "coachTab": "Coach",
+    "auraTab": "Aura",
+    "statsTab": "Stats",
+    "sessionAnalysis": "Analyse de la séance",
+    "coachAnalysis": "Analyse du coach IA",
+    "workoutCompleted": "Séance terminée",
+    "workoutFallback": "Séance",
+    "totalVolume": "Volume total ({{unit}})",
+    "verifiedWorkout": "Séance vérifiée"
   },
   "aiWorkout": {
-    "generateBtn": "Generate Workout",
-    "generating": "Creating your workout...",
-    "previewTitle": "Your AI Workout",
-    "aiGenerated": "AI Generated",
-    "reasoning": "Why this workout?",
-    "startWorkout": "Start This Workout",
-    "regenerate": "Regenerate",
-    "removeExercise": "Remove",
+    "generateBtn": "Générer une séance",
+    "generating": "Création de votre séance...",
+    "previewTitle": "Votre séance IA",
+    "aiGenerated": "Généré par l'IA",
+    "reasoning": "Pourquoi cette séance ?",
+    "startWorkout": "Commencer cette séance",
+    "regenerate": "Régénérer",
+    "removeExercise": "Retirer",
     "newExercise": "NEW",
-    "errorTitle": "Generation Failed",
-    "errorMessage": "Could not generate a workout. Please try again.",
-    "workoutActiveTitle": "Workout in Progress",
-    "workoutActiveMessage": "Finish or cancel your current workout before starting a new one.",
+    "errorTitle": "Échec de la génération",
+    "errorMessage": "Impossible de générer une séance. Veuillez réessayer.",
+    "workoutActiveTitle": "Séance en cours",
+    "workoutActiveMessage": "Terminez ou annulez votre séance en cours avant d'en commencer une nouvelle.",
     "commentTitle": "Comment vous sentez-vous ?",
     "commentDesc": "Ajoutez une note pour votre coach AI (optionnel)",
     "commentPlaceholder": "ex. Je suis fatigué aujourd'hui, focus sur le haut du corps...",
@@ -627,5 +767,132 @@
     "battle_ropes": "Cordes ondulatoires",
     "sled": "Traîneau",
     "pool": "Piscine"
+  },
+  "muscles": {
+    "chest": "Pectoraux",
+    "upper_chest": "Haut des pectoraux",
+    "front_delts": "Deltoïdes antérieurs",
+    "side_delts": "Deltoïdes latéraux",
+    "rear_delts": "Deltoïdes postérieurs",
+    "biceps": "Biceps",
+    "triceps": "Triceps",
+    "forearms": "Avant-bras",
+    "lats": "Grands dorsaux",
+    "upper_back": "Haut du dos",
+    "traps": "Trapèzes",
+    "lower_back": "Lombaires",
+    "abs": "Abdominaux",
+    "obliques": "Obliques",
+    "hip_flexors": "Fléchisseurs de hanche",
+    "glutes": "Fessiers",
+    "quads": "Quadriceps",
+    "hamstrings": "Ischio-jambiers",
+    "adductors": "Adducteurs",
+    "abductors": "Abducteurs",
+    "calves": "Mollets"
+  },
+  "levels": {
+    "beginner": "Débutant",
+    "intermediate": "Intermédiaire",
+    "advanced": "Avancé"
+  },
+  "exerciseInfo": {
+    "primaryMuscles": "Muscles principaux",
+    "secondaryMuscles": "Muscles secondaires",
+    "equipment": "Équipement",
+    "bodyweight": "Poids du corps (sans matériel)",
+    "level": "Niveau"
+  },
+  "programContent": {
+    "prog-ppl-3": {
+      "name": "Poussée / Tirage / Jambes",
+      "description": "Le split PPL classique sur 3 jours. Chaque groupe musculaire une fois par semaine, avec beaucoup de volume et des exercices polyarticulaires.",
+      "days": {
+        "0": "Poussée",
+        "1": "Tirage",
+        "2": "Jambes"
+      }
+    },
+    "prog-ppl-6": {
+      "name": "PPL sur 6 jours",
+      "description": "PPL à haute fréquence. Chaque groupe musculaire deux fois par semaine pour une croissance maximale. Pour les pratiquants sérieux.",
+      "days": {
+        "0": "Poussée (lourd)",
+        "1": "Tirage (lourd)",
+        "2": "Jambes (quadriceps)",
+        "3": "Poussée (volume)",
+        "4": "Tirage (volume)",
+        "5": "Jambes (ischios et fessiers)"
+      }
+    },
+    "prog-upper-lower": {
+      "name": "Haut / Bas du corps",
+      "description": "Programme équilibré sur 4 jours qui alterne haut et bas du corps. Idéal pour les pratiquants intermédiaires.",
+      "days": {
+        "0": "Haut du corps (force)",
+        "1": "Bas du corps (force)",
+        "2": "Haut du corps (hypertrophie)",
+        "3": "Bas du corps (hypertrophie)"
+      }
+    },
+    "prog-full-body": {
+      "name": "Corps entier 3x/semaine",
+      "description": "Chaque grand groupe musculaire trois fois par semaine. Parfait pour les débutants qui posent leurs bases de force.",
+      "days": {
+        "0": "Corps entier A",
+        "1": "Corps entier B",
+        "2": "Corps entier C"
+      }
+    },
+    "prog-531": {
+      "name": "Force 5/3/1",
+      "description": "Le programme de force éprouvé de Jim Wendler. Centré sur 4 grands mouvements avec une progression lente et régulière. Conçu pour des gains durables.",
+      "days": {
+        "0": "Jour squat",
+        "1": "Jour développé couché",
+        "2": "Jour soulevé de terre",
+        "3": "Jour développé militaire"
+      }
+    },
+    "prog-bro-split": {
+      "name": "Split classique par muscle",
+      "description": "Un groupe musculaire par jour, 5 jours par semaine. Approche à gros volume pour les pratiquants expérimentés qui cherchent la congestion maximale.",
+      "days": {
+        "0": "Poitrine",
+        "1": "Dos",
+        "2": "Épaules",
+        "3": "Jambes",
+        "4": "Bras"
+      }
+    },
+    "prog-home": {
+      "name": "Entraînement à la maison",
+      "description": "Pas de salle ? Pas de problème. Un programme complet au poids du corps, à faire n'importe où. Aucun équipement nécessaire.",
+      "days": {
+        "0": "Haut du corps",
+        "1": "Bas du corps",
+        "2": "HIIT corps entier"
+      }
+    },
+    "prog-strength": {
+      "name": "Force pure",
+      "description": "Peu de répétitions, charges lourdes, longs repos. Maximisez votre squat, développé couché, soulevé de terre et développé militaire.",
+      "days": {
+        "0": "Squat + développé couché",
+        "1": "Soulevé de terre + développé militaire",
+        "2": "Squat + développé couché (volume)",
+        "3": "Soulevé de terre + développé militaire (volume)"
+      }
+    },
+    "prog-fat-loss": {
+      "name": "Brûler & Construire",
+      "description": "Circuits à haute intensité qui combinent force et cardio. Brûlez du gras tout en gardant le muscle. Séances courtes et intenses.",
+      "days": {
+        "0": "Circuit haut du corps",
+        "1": "Circuit bas du corps",
+        "2": "Brûle-graisse corps entier",
+        "3": "Cardio + gainage"
+      }
+    }
   }
 }
