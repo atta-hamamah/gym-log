@@ -182,11 +182,12 @@ export const BACK: Record<string, AnimSpec> = {
   },
   'ex-superman': {
     frames: [
-      { hip: [95, 177], trunk: 90, head: 90, aN: fk(90, 90), aF: fk(91, 91), lN: fk(270, 270), lF: fk(269, 269), fN: 180, fF: 180 },
-      { hip: [95, 177], trunk: 78, chest: 64, head: 58, aN: fk(62, 62), aF: fk(63, 63), lN: fk(254, 254), lF: fk(253, 253), fN: 170, fF: 170 },
+      { hip: [95, 177], trunk: 90, head: 90, aN: fk(90, 90), aF: fk(91, 91), lN: fk(270, 270), lF: fk(269, 269), fN: 262, fF: 262 },
+      { hip: [95, 177], trunk: 78, chest: 64, head: 58, aN: fk(62, 62), aF: fk(63, 63), lN: fk(282, 282), lF: fk(281, 281), fN: 262, fF: 262 },
     ],
     hl: ['lowerTrunk', 'glutes'],
     zoom: 0.8,
+    thumb: 1,
   },
 };
 

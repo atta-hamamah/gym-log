@@ -134,7 +134,15 @@ export function mirror(l: Limb, cx = 100): Limb {
   return { ...l, h, t: [2 * cx - l.t[0], l.t[1]] };
 }
 
-/** Front-view pose with symmetric limbs: give the screen-left side. */
+/** Front-view pose with symmetric limbs: give the screen-left side (segment scales are mirrored too). */
 export function sym(p: Omit<Pose, 'aF' | 'lF'>, cx = 100): Pose {
-  return { ...p, aF: mirror(p.aN, cx), lF: mirror(p.lN, cx) } as Pose;
+  return {
+    kF: p.kN,
+    jF: p.jN,
+    qF: p.qN,
+    wF: p.wN === undefined ? undefined : -p.wN,
+    ...p,
+    aF: mirror(p.aN, cx),
+    lF: mirror(p.lN, cx),
+  } as Pose;
 }
