@@ -185,8 +185,19 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
                         <View style={styles.setBadge}>
                             <Typography variant="bodySmall" bold align="center">{index + 1}</Typography>
                         </View>
-                        <Typography variant="body" style={styles.colData} bold>{displayWeight(set.weight)}</Typography>
-                        <Typography variant="body" style={styles.colData}>{set.reps}</Typography>
+                        {set.durationSec ? (
+                            // Timed hold or cardio: show time (and distance / added load)
+                            <Typography variant="body" style={[styles.colData, { flex: 2 }]} bold>
+                                {`${Math.floor(set.durationSec / 60)}:${String(Math.round(set.durationSec % 60)).padStart(2, '0')}`}
+                                {set.distance ? ` · ${Math.round((weightUnit === 'lbs' ? set.distance * 0.621371 : set.distance) * 100) / 100} ${weightUnit === 'lbs' ? 'mi' : 'km'}` : ''}
+                                {set.weight > 0 ? ` · +${displayWeight(set.weight)}` : ''}
+                            </Typography>
+                        ) : (
+                            <>
+                                <Typography variant="body" style={styles.colData} bold>{displayWeight(set.weight)}</Typography>
+                                <Typography variant="body" style={styles.colData}>{set.reps}</Typography>
+                            </>
+                        )}
                         <Typography variant="body" style={styles.colData} color={set.rpe ? (set.rpe <= 5 ? colors.success : set.rpe <= 7 ? colors.warning : set.rpe <= 8 ? '#FF9800' : colors.error) : colors.textMuted}>
                             {set.rpe || '—'}
                         </Typography>

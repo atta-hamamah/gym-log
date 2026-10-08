@@ -9,7 +9,6 @@ import {
   Platform,
   ActivityIndicator,
   Animated,
-  Modal,
 } from 'react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,6 +20,9 @@ import { api } from '../../convex/_generated/api';
 import { useSubscription } from '../context/SubscriptionContext';
 import { Send, X, Bot, User, Sparkles, Zap } from 'lucide-react-native';
 import { AIGeneratedWorkout } from '../types';
+import { useWorkout } from '../context/WorkoutContext';
+import { toCloudWorkout } from '../services/cloudSync';
+import { GenerateWorkoutOptions, GenerateWorkoutSheet } from '../components/GenerateWorkoutSheet';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
 
@@ -40,7 +42,7 @@ export const AIChatScreen = ({ navigation }: any) => {
   const generateWorkoutAction = useAction(api.aiWorkout.generateWorkout);
   const [generating, setGenerating] = useState(false);
   const [commentModalVisible, setCommentModalVisible] = useState(false);
-  const [userComment, setUserComment] = useState('');
+  const { currentWorkout } = useWorkout();
 
   // Signed-in user's cloud profile (the AI actions resolve the user from auth)
   const convexUser = useQuery(api.users.me);
@@ -103,6 +105,8 @@ export const AIChatScreen = ({ navigation }: any) => {
       const response = await chatAction({
         message: userMessage.content,
         conversationHistory: history,
+        // The coach also sees the workout in progress (it's only on the device until finished).
+        ...(currentWorkout ? { activeWorkout: toCloudWorkout(currentWorkout) } : {}),
       });
 
       const aiMessage: ChatMessage = {
@@ -125,27 +129,23 @@ export const AIChatScreen = ({ navigation }: any) => {
     } finally {
       setLoading(false);
     }
-  }, [input, loading, convexUser, messages, chatAction, scrollToBottom, t, subscriptionErrorText]);
+  }, [input, loading, convexUser, messages, chatAction, scrollToBottom, t, subscriptionErrorText, currentWorkout]);
 
-  // ── Show comment modal before generating ──
+  // ── Show options sheet before generating ──
   const handleGenerateWorkoutPress = useCallback(() => {
-    setUserComment('');
     setCommentModalVisible(true);
   }, []);
 
   // ── Generate workout handler ──
-  const handleGenerateWorkout = useCallback(async () => {
+  const handleGenerateWorkout = useCallback(async (options: GenerateWorkoutOptions) => {
     if (generating || !convexUser?._id) return;
     setCommentModalVisible(false);
     setGenerating(true);
-    const comment = userComment.trim();
     try {
-      const result = await generateWorkoutAction({
-        ...(comment ? { userComment: comment } : {}),
-      });
+      const result = await generateWorkoutAction(options);
       navigation.navigate('AIWorkoutPreview', {
         workout: result as AIGeneratedWorkout,
-        ...(comment ? { userComment: comment } : {}),
+        options,
       });
     } catch (error: any) {
       const errorMessage: ChatMessage = {
@@ -157,9 +157,8 @@ export const AIChatScreen = ({ navigation }: any) => {
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setGenerating(false);
-      setUserComment('');
     }
-  }, [generating, convexUser, generateWorkoutAction, navigation, t, userComment, subscriptionErrorText]);
+  }, [generating, convexUser, generateWorkoutAction, navigation, t, subscriptionErrorText]);
 
   // ── Render a single message bubble ──
   const renderMessage = useCallback(({ item }: { item: ChatMessage }) => {
@@ -332,53 +331,12 @@ export const AIChatScreen = ({ navigation }: any) => {
         </KeyboardAvoidingView>
       </Animated.View>
 
-      {/* Comment Modal */}
-      <Modal
+      {/* Generate options */}
+      <GenerateWorkoutSheet
         visible={commentModalVisible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setCommentModalVisible(false)}
-      >
-        <View style={styles.commentModalOverlay}>
-          <View style={styles.commentModalCard}>
-            <Typography variant="h2" style={{ marginBottom: 4 }}>{t('aiWorkout.commentTitle')}</Typography>
-            <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 16 }}>
-              {t('aiWorkout.commentDesc')}
-            </Typography>
-
-            <TextInput
-              style={styles.commentInput}
-              placeholder={t('aiWorkout.commentPlaceholder')}
-              placeholderTextColor={colors.textMuted}
-              value={userComment}
-              onChangeText={setUserComment}
-              multiline
-              maxLength={300}
-              autoFocus
-            />
-
-            <View style={styles.commentModalButtons}>
-              <TouchableOpacity
-                style={styles.commentCancelBtn}
-                onPress={() => { setCommentModalVisible(false); setUserComment(''); }}
-                activeOpacity={0.7}
-              >
-                <Typography variant="body" color={colors.textSecondary}>{t('common.cancel')}</Typography>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.commentGenerateBtn}
-                onPress={handleGenerateWorkout}
-                activeOpacity={0.7}
-              >
-                <Sparkles color="#fff" size={16} />
-                <Typography variant="body" color="#fff" bold style={{ marginLeft: 6 }}>
-                  {t('aiWorkout.generate')}
-                </Typography>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        onCancel={() => setCommentModalVisible(false)}
+        onGenerate={handleGenerateWorkout}
+      />
     </ScreenLayout>
   );
 };
@@ -557,55 +515,5 @@ const createStyles = (colors: any, bottomInset: number = 0) => StyleSheet.create
     borderRadius: 16,
     paddingHorizontal: 14,
     paddingVertical: 8,
-  },
-  // Comment Modal
-  commentModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    paddingHorizontal: 24,
-  },
-  commentModalCard: {
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: borderRadius.l,
-    padding: 24,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  commentInput: {
-    minHeight: 80,
-    maxHeight: 120,
-    backgroundColor: colors.surfaceLight,
-    borderRadius: borderRadius.m,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    color: colors.text,
-    fontSize: 15,
-    borderWidth: 1,
-    borderColor: colors.border,
-    textAlignVertical: 'top',
-  },
-  commentModalButtons: {
-    flexDirection: 'row',
-    marginTop: 16,
-    gap: 10,
-  },
-  commentCancelBtn: {
-    flex: 1,
-    paddingVertical: 14,
-    alignItems: 'center',
-    borderRadius: borderRadius.m,
-    backgroundColor: colors.surfaceLight,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  commentGenerateBtn: {
-    flex: 1.5,
-    flexDirection: 'row',
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: borderRadius.m,
-    backgroundColor: '#8B5CF6',
   },
 });

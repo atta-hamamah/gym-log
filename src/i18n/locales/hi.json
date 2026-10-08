@@ -21,8 +21,8 @@
     "cardioType": "कार्डियो",
     "all": "सभी",
     "rpe": "RPE",
-    "finish":"समाप्त",
-    "continue":"जारी रखें"
+    "finish": "समाप्त",
+    "continue": "जारी रखें"
   },
   "tabs": {
     "dashboard": "डैशबोर्ड",
@@ -117,7 +117,12 @@
     "howFeeling": "आज कैसा महसूस हो रहा है?",
     "addNote": "नोट जोड़ें",
     "hideNotes": "नोट छुपाएं",
-    "exerciseNotePlaceholder": "जैसे मजबूत महसूस किया, बाएं कंधे में दर्द..."
+    "exerciseNotePlaceholder": "जैसे मजबूत महसूस किया, बाएं कंधे में दर्द...",
+    "plan": "योजना",
+    "lastTime": "पिछली बार",
+    "restShort": "आराम",
+    "time": "समय",
+    "seconds": "सेकंड"
   },
   "workoutDetails": {
     "workoutNotFound": "वर्कआउट नहीं मिला",
@@ -281,7 +286,11 @@
     "Biceps": "बाइसेप्स",
     "Triceps": "ट्राइसेप्स",
     "Core": "कोर",
-    "Cardio": "कार्डियो"
+    "Cardio": "कार्डियो",
+    "Glutes": "ग्लूट्स",
+    "Forearms": "फोरआर्म्स",
+    "Full Body": "पूरा शरीर",
+    "Mobility": "मोबिलिटी"
   },
   "subscription": {
     "statusTitle": "सदस्यता",
@@ -529,7 +538,17 @@
     "commentTitle": "आप कैसा महसूस कर रहे हैं?",
     "commentDesc": "अपने AI कोच के लिए एक नोट जोड़ें (वैकल्पिक)",
     "commentPlaceholder": "जैसे: आज थकान है, ऊपरी शरीर पर ध्यान दें...",
-    "generate": "बनाएं"
+    "generate": "बनाएं",
+    "sheetDesc": "अपने कोच को आज के बारे में बताएं। उसे आपका इतिहास, रिकवरी और उपकरण पहले से पता हैं।",
+    "timeAvailable": "उपलब्ध समय",
+    "whereToday": "आज कहाँ ट्रेनिंग कर रहे हैं?",
+    "placeProfile": "मेरे उपकरण",
+    "placeGym": "पूरा जिम",
+    "placeBodyweight": "बिना उपकरण",
+    "focus": "फोकस",
+    "focusAuto": "कोच तय करे",
+    "warmup": "वार्म-अप",
+    "targetLoad": "लक्ष्य: {{weight}}"
   },
   "account": {
     "title": "खाता और सिंक",
@@ -565,5 +584,48 @@
     "aiBillingIssue": "भुगतान में समस्या — AI कोच जारी रखने के लिए Google Play में अपना भुगतान तरीका अपडेट करें।",
     "proFromAI": "आपकी AI कोच सदस्यता के साथ आजीवन शामिल।",
     "resubscribeAI": "AI कोच की सदस्यता फिर से लें"
+  },
+  "trainingProfile": {
+    "title": "ट्रेनिंग प्रोफ़ाइल",
+    "subtitle": "अनुभव, शेड्यूल, उपकरण, चोटें",
+    "description": "RepAI इसका उपयोग ऐसे व्यायाम चुनने और ऐसे सेशन प्लान करने के लिए करता है जो आपके हफ्ते में फिट हों।",
+    "experience": "अनुभव स्तर",
+    "level_beginner": "शुरुआती",
+    "level_intermediate": "मध्यम",
+    "level_advanced": "उन्नत",
+    "daysPerWeek": "हफ्ते में ट्रेनिंग के दिन",
+    "sessionLength": "सेशन की अवधि",
+    "equipment": "आपके पास उपकरण",
+    "preset_gym": "पूरा जिम",
+    "preset_home": "घरेलू जिम",
+    "preset_bodyweight": "बिना उपकरण",
+    "limitations": "चोटें या सीमाएँ",
+    "limitationsPlaceholder": "जैसे: कमर में दर्द, सिर के ऊपर प्रेस नहीं, बायाँ घुटना कमजोर...",
+    "saved": "आपकी ट्रेनिंग प्रोफ़ाइल अपडेट हो गई। RepAI इसी के अनुसार प्लान करेगा।",
+    "saveFailed": "सेव नहीं हो सका"
+  },
+  "equipment": {
+    "barbell": "बारबेल",
+    "dumbbell": "डम्बल",
+    "kettlebell": "केटलबेल",
+    "ez_bar": "EZ बार",
+    "trap_bar": "ट्रैप बार",
+    "plate": "वेट प्लेट",
+    "machine": "मशीनें",
+    "cable": "केबल मशीन",
+    "smith": "स्मिथ मशीन",
+    "rack": "स्क्वाट रैक",
+    "bench": "बेंच",
+    "pullup_bar": "पुल-अप बार",
+    "dip_bars": "डिप बार",
+    "band": "रेज़िस्टेंस बैंड",
+    "box": "प्लायो बॉक्स",
+    "medicine_ball": "मेडिसिन बॉल",
+    "ab_wheel": "एब व्हील",
+    "jump_rope": "रस्सी",
+    "cardio_machine": "कार्डियो मशीनें",
+    "battle_ropes": "बैटल रोप्स",
+    "sled": "स्लेड",
+    "pool": "स्विमिंग पूल"
   }
 }

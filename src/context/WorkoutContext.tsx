@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { WorkoutSession, Exercise, UserStats, Set, ExerciseLog, DetectedPR, PersonalRecord, BodyMeasurement } from '../types';
+import { WorkoutSession, Exercise, UserStats, Set, ExerciseLog, DetectedPR, PersonalRecord, BodyMeasurement, ExerciseTarget, WorkoutSource } from '../types';
 import { StorageService } from '../services/storage';
 import { generateId } from '../utils/generateId';
 import { EXERCISES } from '../constants/exercises';
@@ -16,7 +16,9 @@ interface WorkoutContextType {
     personalRecords: PersonalRecord[];
     bodyMeasurements: BodyMeasurement[];
 
-    startWorkout: (name?: string) => void;
+    startWorkout: (name?: string, source?: WorkoutSource) => void;
+    /** Start a workout from a plan (AI coach or program), keeping each exercise's targets. */
+    startPlannedWorkout: (name: string, source: WorkoutSource, items: PlannedExercise[]) => void;
     finishWorkout: (notes?: string, mood?: number) => Promise<string | null>;
     cancelWorkout: () => Promise<void>;
 
@@ -46,6 +48,13 @@ interface WorkoutContextType {
     /** Delete all workouts, PRs, measurements, custom exercises and body stats */
     clearAllData: () => Promise<void>;
     clearDetectedPRs: () => void;
+}
+
+export interface PlannedExercise {
+    exercise: Pick<Exercise, 'id' | 'name'>;
+    target?: ExerciseTarget;
+    /** Exercises sharing a label are linked as a superset. */
+    supersetGroup?: string;
 }
 
 const WorkoutContext = createContext<WorkoutContextType | undefined>(undefined);
@@ -115,12 +124,47 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
     }, [currentWorkout]);
 
-    const startWorkout = useCallback((name: string = 'New Workout') => {
+    const startWorkout = useCallback((name: string = 'New Workout', source?: WorkoutSource) => {
         const newSession: WorkoutSession = {
             id: generateId(),
             name,
             startTime: Date.now(),
             exercises: [],
+            source: source ?? { type: 'manual' },
+        };
+        setCurrentWorkout(newSession);
+        StorageService.saveCurrentWorkout(newSession);
+    }, []);
+
+    const startPlannedWorkout = useCallback((name: string, source: WorkoutSource, items: PlannedExercise[]) => {
+        const groupIds = new Map<string, string>();
+        const groupSizes = new Map<string, number>();
+        items.forEach(item => {
+            if (item.supersetGroup) groupSizes.set(item.supersetGroup, (groupSizes.get(item.supersetGroup) ?? 0) + 1);
+        });
+        const exercises: ExerciseLog[] = items.map(item => {
+            const label = item.supersetGroup;
+            let supersetGroupId: string | undefined;
+            // A superset needs at least two exercises.
+            if (label && (groupSizes.get(label) ?? 0) >= 2) {
+                supersetGroupId = groupIds.get(label) ?? generateId();
+                groupIds.set(label, supersetGroupId);
+            }
+            return {
+                id: generateId(),
+                exerciseId: item.exercise.id,
+                exerciseName: item.exercise.name,
+                sets: [],
+                ...(item.target ? { target: item.target } : {}),
+                ...(supersetGroupId ? { supersetGroupId } : {}),
+            };
+        });
+        const newSession: WorkoutSession = {
+            id: generateId(),
+            name,
+            startTime: Date.now(),
+            exercises,
+            source,
         };
         setCurrentWorkout(newSession);
         StorageService.saveCurrentWorkout(newSession);
@@ -200,6 +244,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 id: generateId(),
                 ...setConfig,
                 completed: true,
+                completedAt: Date.now(),
             };
 
             const updatedExercises = prev.exercises.map(ex => {
@@ -382,6 +427,7 @@ export const WorkoutProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 personalRecords,
                 bodyMeasurements,
                 startWorkout,
+                startPlannedWorkout,
                 finishWorkout,
                 cancelWorkout,
                 addExerciseToWorkout,

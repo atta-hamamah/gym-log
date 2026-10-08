@@ -21,8 +21,8 @@
     "cardioType": "كارديو",
     "all": "الكل",
     "rpe": "RPE",
-    "finish":"إنهاء",
-    "continue":"متابعة"
+    "finish": "إنهاء",
+    "continue": "متابعة"
   },
   "tabs": {
     "dashboard": "الرئيسية",
@@ -117,7 +117,12 @@
     "howFeeling": "كيف تشعر؟",
     "addNote": "إضافة ملاحظة",
     "hideNotes": "إخفاء الملاحظة",
-    "exerciseNotePlaceholder": "مثال: شعرت بالقوة، ألم في الكتف الأيسر..."
+    "exerciseNotePlaceholder": "مثال: شعرت بالقوة، ألم في الكتف الأيسر...",
+    "plan": "الخطة",
+    "lastTime": "آخر مرة",
+    "restShort": "راحة",
+    "time": "الوقت",
+    "seconds": "ث"
   },
   "workoutDetails": {
     "workoutNotFound": "التمرين غير موجود",
@@ -281,7 +286,11 @@
     "Biceps": "باي",
     "Triceps": "عضلة ثلاثية الرؤوس",
     "Core": "كور",
-    "Cardio": "كارديو"
+    "Cardio": "كارديو",
+    "Glutes": "الأرداف",
+    "Forearms": "الساعد",
+    "Full Body": "الجسم كامل",
+    "Mobility": "المرونة"
   },
   "subscription": {
     "statusTitle": "الاشتراك",
@@ -529,7 +538,17 @@
     "commentTitle": "كيف تشعر؟",
     "commentDesc": "أضف ملاحظة لمدربك AI (اختياري)",
     "commentPlaceholder": "مثلاً: أشعر بالتعب اليوم، ركز على الجزء العلوي...",
-    "generate": "إنشاء"
+    "generate": "إنشاء",
+    "sheetDesc": "أخبر مدربك عن يومك. هو يعرف تاريخك وتعافيك ومعداتك.",
+    "timeAvailable": "الوقت المتاح",
+    "whereToday": "أين تتمرن اليوم؟",
+    "placeProfile": "معداتي",
+    "placeGym": "نادي كامل",
+    "placeBodyweight": "بدون معدات",
+    "focus": "التركيز",
+    "focusAuto": "المدرب يقرر",
+    "warmup": "الإحماء",
+    "targetLoad": "الهدف: {{weight}}"
   },
   "account": {
     "title": "الحساب والمزامنة",
@@ -565,5 +584,48 @@
     "aiBillingIssue": "مشكلة في الدفع — حدّث طريقة الدفع في Google Play للاحتفاظ بالمدرب الذكي.",
     "proFromAI": "مشمول مدى الحياة مع اشتراكك في المدرب الذكي.",
     "resubscribeAI": "جدّد اشتراك المدرب الذكي"
+  },
+  "trainingProfile": {
+    "title": "ملف التمرين",
+    "subtitle": "الخبرة، الجدول، المعدات، الإصابات",
+    "description": "يستخدم RepAI هذه المعلومات لاختيار تمارين تقدر تعملها وتخطيط جلسات تناسب أسبوعك.",
+    "experience": "مستوى الخبرة",
+    "level_beginner": "مبتدئ",
+    "level_intermediate": "متوسط",
+    "level_advanced": "متقدم",
+    "daysPerWeek": "أيام التمرين في الأسبوع",
+    "sessionLength": "مدة الجلسة",
+    "equipment": "المعدات المتوفرة لديك",
+    "preset_gym": "نادي كامل",
+    "preset_home": "نادي منزلي",
+    "preset_bodyweight": "بدون معدات",
+    "limitations": "إصابات أو قيود",
+    "limitationsPlaceholder": "مثال: ألم أسفل الظهر، بدون ضغط فوق الرأس، ركبة يسرى ضعيفة...",
+    "saved": "تم تحديث ملف التمرين. سيخطط RepAI حسبه.",
+    "saveFailed": "تعذر الحفظ"
+  },
+  "equipment": {
+    "barbell": "بار حديد",
+    "dumbbell": "دمبلز",
+    "kettlebell": "كيتل بيل",
+    "ez_bar": "بار EZ",
+    "trap_bar": "بار سداسي",
+    "plate": "قرص وزن",
+    "machine": "أجهزة",
+    "cable": "جهاز كابل",
+    "smith": "جهاز سميث",
+    "rack": "رف سكوات",
+    "bench": "بنش",
+    "pullup_bar": "عقلة",
+    "dip_bars": "متوازي",
+    "band": "حبل مطاطي",
+    "box": "صندوق قفز",
+    "medicine_ball": "كرة طبية",
+    "ab_wheel": "عجلة بطن",
+    "jump_rope": "حبل قفز",
+    "cardio_machine": "أجهزة كارديو",
+    "battle_ropes": "حبال معركة",
+    "sled": "زلاجة دفع",
+    "pool": "مسبح"
   }
 }

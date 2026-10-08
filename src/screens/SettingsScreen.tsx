@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TextInput, ScrollView, Share, TouchableOpacity, I18nManager, NativeModules } from 'react-native';
+import { View, StyleSheet, TextInput, ScrollView, Share, TouchableOpacity, I18nManager, NativeModules, Modal } from 'react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { Button } from '../components/Button';
@@ -14,12 +14,13 @@ import * as Updates from 'expo-updates';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { useSubscription, TRIAL_DURATION_DAYS } from '../context/SubscriptionContext';
 import { useCloudSync, SUBSCRIPTION_NOT_VERIFIED } from '../context/CloudSyncContext';
-import { BodyMeasurement, MeasurementKey } from '../types';
+import { BodyMeasurement, MeasurementKey, TrainingProfile } from '../types';
+import { TrainingProfileForm, trainingProfileArgs, trainingProfileOf } from '../components/TrainingProfileForm';
 import { generateId } from '../utils/generateId';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-import { Crown, Sparkles, CreditCard, LogOut, Sun, Moon, Target, Ruler, Cloud, CloudOff, RefreshCw, AlertTriangle, UserCircle } from 'lucide-react-native';
+import { Crown, Sparkles, CreditCard, LogOut, Sun, Moon, Target, Ruler, Cloud, CloudOff, RefreshCw, AlertTriangle, UserCircle, Dumbbell } from 'lucide-react-native';
 import { useTheme } from '../context/ThemeContext';
 import { useUnits, UnitSystem } from '../context/UnitsContext';
 
@@ -67,6 +68,8 @@ export const SettingsScreen = ({ navigation }: any) => {
     const [bodyFat, setBodyFat] = useState('');
     const [height, setHeight] = useState('');
     const [fitnessGoal, setFitnessGoal] = useState<string | null>(null);
+    const [trainingDraft, setTrainingDraft] = useState<TrainingProfile | null>(null);
+    const [savingTraining, setSavingTraining] = useState(false);
 
     // Body measurements state
     const [showMeasurements, setShowMeasurements] = useState(false);
@@ -524,6 +527,24 @@ export const SettingsScreen = ({ navigation }: any) => {
                             </TouchableOpacity>
                         )}
                     </View>
+
+                    {/* Training profile (experience, schedule, equipment, limitations) */}
+                    <TouchableOpacity
+                        style={styles.manageRow}
+                        onPress={() => setTrainingDraft(trainingProfileOf(convexUser))}
+                        activeOpacity={0.7}
+                    >
+                        <Dumbbell color={colors.textSecondary} size={18} />
+                        <View style={{ flex: 1, marginLeft: 12 }}>
+                            <Typography variant="body" color={colors.text}>
+                                {t('trainingProfile.title')}
+                            </Typography>
+                            <Typography variant="caption" color={colors.textMuted}>
+                                {t('trainingProfile.subtitle')}
+                            </Typography>
+                        </View>
+                        <Typography variant="caption" color={colors.textMuted}>›</Typography>
+                    </TouchableOpacity>
 
                     {/* Manage Subscription */}
                     <TouchableOpacity
@@ -1132,6 +1153,54 @@ export const SettingsScreen = ({ navigation }: any) => {
                 </View>
             </ScrollView>
 
+            {/* Training profile editor */}
+            <Modal
+                visible={trainingDraft !== null}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setTrainingDraft(null)}
+            >
+                <View style={styles.trainingOverlay}>
+                    <View style={styles.trainingCard}>
+                        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+                            <Typography variant="h2">{t('trainingProfile.title')}</Typography>
+                            <Typography variant="caption" color={colors.textSecondary} style={{ marginTop: 4 }}>
+                                {t('trainingProfile.description')}
+                            </Typography>
+                            {trainingDraft && (
+                                <TrainingProfileForm value={trainingDraft} onChange={setTrainingDraft} />
+                            )}
+                            <View style={{ flexDirection: 'row', gap: 10, marginTop: 20 }}>
+                                <Button
+                                    title={t('common.cancel')}
+                                    variant="ghost"
+                                    onPress={() => setTrainingDraft(null)}
+                                    style={{ flex: 1 }}
+                                />
+                                <Button
+                                    title={savingTraining ? t('subscription.processing') : t('common.save')}
+                                    disabled={savingTraining}
+                                    onPress={async () => {
+                                        if (!trainingDraft) return;
+                                        setSavingTraining(true);
+                                        try {
+                                            await updateProfile(trainingProfileArgs(trainingDraft));
+                                            setTrainingDraft(null);
+                                            showModal(t('settings.saved'), t('trainingProfile.saved'), undefined, 'success');
+                                        } catch (e: any) {
+                                            showModal(t('trainingProfile.saveFailed'), e?.message ?? '', undefined, 'danger');
+                                        } finally {
+                                            setSavingTraining(false);
+                                        }
+                                    }}
+                                    style={{ flex: 1.5 }}
+                                />
+                            </View>
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal>
+
             <ConfirmationModal
                 visible={modalVisible}
                 title={modalConfig.title}
@@ -1275,6 +1344,20 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 12,
+    },
+    trainingOverlay: {
+        flex: 1,
+        backgroundColor: colors.overlay,
+        justifyContent: 'center',
+        paddingHorizontal: 16,
+    },
+    trainingCard: {
+        maxHeight: '90%',
+        backgroundColor: colors.surfaceElevated,
+        borderRadius: borderRadius.l,
+        padding: 20,
+        borderWidth: 1,
+        borderColor: colors.border,
     },
     manageRow: {
         flexDirection: 'row',

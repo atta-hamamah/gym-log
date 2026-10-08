@@ -28,6 +28,8 @@ import type {
   PersonalRecord,
   BodyMeasurement,
   Set as WorkoutSet,
+  WorkoutSource,
+  ExerciseTarget,
 } from '../types';
 
 export interface SyncAccount {
@@ -81,11 +83,33 @@ const chunk = <T,>(list: T[], size: number): T[][] => {
 const num = (value: unknown) => (typeof value === 'number' && Number.isFinite(value) ? value : undefined);
 const str = (value: unknown) => (typeof value === 'string' ? value : undefined);
 const SET_TYPES: WorkoutSet['type'][] = ['warmup', 'normal', 'failure', 'drop'];
+const SOURCE_TYPES: WorkoutSource['type'][] = ['manual', 'ai', 'program'];
+
+function toCloudSource(source: WorkoutSource | undefined) {
+  if (!source || !SOURCE_TYPES.includes(source.type)) return undefined;
+  return {
+    type: source.type,
+    programId: str(source.programId),
+    dayName: str(source.dayName),
+    reasoning: str(source.reasoning)?.slice(0, 1000),
+  };
+}
+
+function toCloudTarget(target: ExerciseTarget | undefined) {
+  if (!target || num(target.sets) === undefined || num(target.restSeconds) === undefined) return undefined;
+  return {
+    sets: target.sets,
+    reps: String(target.reps ?? ''),
+    restSeconds: target.restSeconds,
+    weight: num(target.weight),
+    notes: str(target.notes)?.slice(0, 500),
+  };
+}
 
 // ── Shape conversion ─────────────────────────────────────
 // Convex validators reject unknown fields, so payloads are built explicitly.
 
-function toCloudWorkout(w: WorkoutSession) {
+export function toCloudWorkout(w: WorkoutSession) {
   return {
     id: String(w.id),
     name: w.name ?? '',
@@ -94,12 +118,14 @@ function toCloudWorkout(w: WorkoutSession) {
     notes: str(w.notes),
     bodyWeight: num(w.bodyWeight),
     mood: num(w.mood),
+    source: toCloudSource(w.source),
     exercises: (w.exercises ?? []).map(ex => ({
       id: String(ex.id),
       exerciseId: String(ex.exerciseId),
       exerciseName: ex.exerciseName ?? '',
       notes: str(ex.notes),
       supersetGroupId: str(ex.supersetGroupId),
+      target: toCloudTarget(ex.target),
       sets: (ex.sets ?? []).map(s => ({
         id: String(s.id),
         weight: num(Number(s.weight)) ?? 0,
@@ -107,6 +133,9 @@ function toCloudWorkout(w: WorkoutSession) {
         rpe: num(s.rpe),
         completed: !!s.completed,
         type: SET_TYPES.includes(s.type) ? s.type : 'normal' as const,
+        durationSec: num(s.durationSec),
+        distance: num(s.distance),
+        completedAt: num(s.completedAt),
       })),
     })),
   };
@@ -410,12 +439,14 @@ function fromCloudWorkout(w: CloudWorkout): WorkoutSession {
     notes: w.notes,
     bodyWeight: w.bodyWeight,
     mood: w.mood,
+    source: w.source ? compact(w.source) : undefined,
     exercises: w.exercises.map(ex => compact({
       id: ex.id,
       exerciseId: ex.exerciseId,
       exerciseName: ex.exerciseName,
       notes: ex.notes,
       supersetGroupId: ex.supersetGroupId,
+      target: ex.target ? compact(ex.target) : undefined,
       sets: ex.sets.map(s => compact({
         id: s.id,
         weight: s.weight,
@@ -423,6 +454,9 @@ function fromCloudWorkout(w: CloudWorkout): WorkoutSession {
         rpe: s.rpe,
         completed: s.completed,
         type: s.type,
+        durationSec: s.durationSec,
+        distance: s.distance,
+        completedAt: s.completedAt,
       })),
     })),
   });

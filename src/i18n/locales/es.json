@@ -21,8 +21,8 @@
     "cardioType": "Cardio",
     "all": "Todo",
     "rpe": "RPE",
-    "finish":"Terminar",
-    "continue":"Continuar"
+    "finish": "Terminar",
+    "continue": "Continuar"
   },
   "tabs": {
     "dashboard": "Inicio",
@@ -117,7 +117,12 @@
     "howFeeling": "¿Cómo te sientes?",
     "addNote": "Agregar nota",
     "hideNotes": "Ocultar nota",
-    "exerciseNotePlaceholder": "ej. me sentí fuerte, dolor en hombro izquierdo..."
+    "exerciseNotePlaceholder": "ej. me sentí fuerte, dolor en hombro izquierdo...",
+    "plan": "Plan",
+    "lastTime": "Última vez",
+    "restShort": "descanso",
+    "time": "TIEMPO",
+    "seconds": "seg"
   },
   "workoutDetails": {
     "workoutNotFound": "Entrenamiento no encontrado",
@@ -281,7 +286,11 @@
     "Biceps": "Bíceps",
     "Triceps": "Tríceps",
     "Core": "Core",
-    "Cardio": "Cardio"
+    "Cardio": "Cardio",
+    "Glutes": "Glúteos",
+    "Forearms": "Antebrazos",
+    "Full Body": "Cuerpo completo",
+    "Mobility": "Movilidad"
   },
   "subscription": {
     "statusTitle": "Suscripción",
@@ -529,7 +538,17 @@
     "commentTitle": "¿Cómo te sientes?",
     "commentDesc": "Agrega una nota para tu coach AI (opcional)",
     "commentPlaceholder": "ej. Estoy cansado hoy, enfócate en el tren superior...",
-    "generate": "Generar"
+    "generate": "Generar",
+    "sheetDesc": "Cuéntale a tu coach cómo es tu día. Ya conoce tu historial, recuperación y equipo.",
+    "timeAvailable": "Tiempo disponible",
+    "whereToday": "¿Dónde entrenas hoy?",
+    "placeProfile": "Mi equipo",
+    "placeGym": "Gimnasio completo",
+    "placeBodyweight": "Sin equipo",
+    "focus": "Enfoque",
+    "focusAuto": "Decide el coach",
+    "warmup": "Calentamiento",
+    "targetLoad": "Objetivo: {{weight}}"
   },
   "account": {
     "title": "Cuenta y sincronización",
@@ -565,5 +584,48 @@
     "aiBillingIssue": "Problema con el pago: actualiza tu método de pago en Google Play para mantener el Coach IA.",
     "proFromAI": "Incluido de por vida con tu suscripción al Coach IA.",
     "resubscribeAI": "Volver a suscribirse al Coach IA"
+  },
+  "trainingProfile": {
+    "title": "Perfil de entrenamiento",
+    "subtitle": "Experiencia, horario, equipo, lesiones",
+    "description": "RepAI usa esto para elegir ejercicios que puedes hacer y planificar sesiones que encajen en tu semana.",
+    "experience": "Nivel de experiencia",
+    "level_beginner": "Principiante",
+    "level_intermediate": "Intermedio",
+    "level_advanced": "Avanzado",
+    "daysPerWeek": "Días de entrenamiento por semana",
+    "sessionLength": "Duración de la sesión",
+    "equipment": "Equipo que tienes",
+    "preset_gym": "Gimnasio completo",
+    "preset_home": "Gimnasio en casa",
+    "preset_bodyweight": "Sin equipo",
+    "limitations": "Lesiones o limitaciones",
+    "limitationsPlaceholder": "ej. dolor lumbar, sin press por encima de la cabeza, rodilla izquierda mal...",
+    "saved": "Tu perfil de entrenamiento se actualizó. RepAI planificará en base a él.",
+    "saveFailed": "No se pudo guardar"
+  },
+  "equipment": {
+    "barbell": "Barra",
+    "dumbbell": "Mancuernas",
+    "kettlebell": "Pesa rusa",
+    "ez_bar": "Barra EZ",
+    "trap_bar": "Barra hexagonal",
+    "plate": "Disco",
+    "machine": "Máquinas",
+    "cable": "Polea",
+    "smith": "Máquina Smith",
+    "rack": "Rack de sentadillas",
+    "bench": "Banco",
+    "pullup_bar": "Barra de dominadas",
+    "dip_bars": "Paralelas",
+    "band": "Banda elástica",
+    "box": "Cajón pliométrico",
+    "medicine_ball": "Balón medicinal",
+    "ab_wheel": "Rueda abdominal",
+    "jump_rope": "Comba",
+    "cardio_machine": "Máquinas de cardio",
+    "battle_ropes": "Cuerdas de batalla",
+    "sled": "Trineo",
+    "pool": "Piscina"
   }
 }

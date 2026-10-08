@@ -12,6 +12,7 @@ import { AIGeneratedExercise, AIGeneratedWorkout } from '../types';
 import { useTranslation } from 'react-i18next';
 import { getExerciseName } from '../constants/exercises';
 import { useTheme } from '../context/ThemeContext';
+import { useUnits } from '../context/UnitsContext';
 import { StorageService } from '../services/storage';
 import { generateId } from '../utils/generateId';
 import { PlayCircle, Sparkles, RefreshCw, Trash2, ChevronLeft, Zap } from 'lucide-react-native';
@@ -24,7 +25,8 @@ export const AIWorkoutPreviewScreen = ({ route, navigation }: any) => {
     const { t } = useTranslation();
     const { colors } = useTheme();
     const styles = createStyles(colors);
-    const { currentWorkout, startWorkout, addExerciseToWorkout } = useWorkout();
+    const { currentWorkout, startPlannedWorkout, refreshData } = useWorkout();
+    const { weightUnit, displayWeight } = useUnits();
     const generateWorkoutAction = useAction(api.aiWorkout.generateWorkout);
 
     const convexUser = useQuery(api.users.me);
@@ -87,11 +89,8 @@ export const AIWorkoutPreviewScreen = ({ route, navigation }: any) => {
     const handleRegenerate = useCallback(async () => {
         if (!convexUser?._id || regenerating) return;
         setRegenerating(true);
-        const comment = route.params?.userComment?.trim();
         try {
-            const result = await generateWorkoutAction({
-                ...(comment ? { userComment: comment } : {}),
-            });
+            const result = await generateWorkoutAction(route.params?.options ?? {});
             setWorkout(result as AIGeneratedWorkout);
         } catch (error) {
             showModal(
@@ -101,7 +100,7 @@ export const AIWorkoutPreviewScreen = ({ route, navigation }: any) => {
         } finally {
             setRegenerating(false);
         }
-    }, [convexUser, regenerating, generateWorkoutAction, t, route.params?.userComment]);
+    }, [convexUser, regenerating, generateWorkoutAction, t, route.params?.options]);
 
     // ── Start the workout ──
     const handleStartWorkout = useCallback(async () => {
@@ -115,40 +114,45 @@ export const AIWorkoutPreviewScreen = ({ route, navigation }: any) => {
 
         if (workout.exercises.length === 0) return;
 
-        // 1. Auto-create custom exercises for any "isNew" exercises
+        // 1. Save exercises the coach invented as custom exercises
+        const resolved: { id: string; ex: AIGeneratedExercise }[] = [];
+        let addedCustom = false;
         for (const ex of workout.exercises) {
-            if (ex.isNew) {
+            if (ex.isNew || !ex.exerciseId) {
                 const customExercise = {
                     id: `custom-ai-${generateId()}`,
                     name: ex.exerciseName,
                     category: (ex.category as 'strength' | 'cardio' | 'flexibility') || 'strength',
-                    muscleGroup: ex.muscleGroup || 'Other',
+                    muscleGroup: ex.muscleGroup || 'My Exercises',
                     isCustom: true,
                 };
                 await StorageService.addCustomExercise(customExercise);
-                // Update the exercise in our local workout data with the new ID
-                ex.exerciseId = customExercise.id;
-                ex.isNew = false;
+                addedCustom = true;
+                resolved.push({ id: customExercise.id, ex });
+            } else {
+                resolved.push({ id: ex.exerciseId, ex });
             }
         }
+        if (addedCustom) await refreshData();
 
-        // 2. Start the workout
-        startWorkout(workout.workoutName);
-
-        // 3. Add exercises (small delay to ensure workout is created)
-        setTimeout(() => {
-            workout.exercises.forEach(ex => {
-                addExerciseToWorkout({
-                    id: ex.exerciseId || `custom-ai-${generateId()}`,
-                    name: ex.exerciseName,
-                    category: (ex.category as 'strength' | 'cardio' | 'flexibility') || 'strength',
-                    muscleGroup: ex.muscleGroup || '',
-                    isCustom: !!ex.isNew,
-                });
-            });
-            navigation.replace('WorkoutSession');
-        }, 100);
-    }, [currentWorkout, workout, startWorkout, addExerciseToWorkout, navigation, t]);
+        // 2. Start the session with the plan attached, so the coach can compare plan vs. actual later
+        startPlannedWorkout(
+            workout.workoutName,
+            { type: 'ai', reasoning: workout.reasoning },
+            resolved.map(({ id, ex }) => ({
+                exercise: { id, name: ex.exerciseName },
+                supersetGroup: ex.supersetGroup,
+                target: {
+                    sets: ex.sets,
+                    reps: ex.reps,
+                    restSeconds: ex.restSeconds,
+                    ...(ex.targetWeight ? { weight: ex.targetWeight } : {}),
+                    ...(ex.notes ? { notes: ex.notes } : {}),
+                },
+            })),
+        );
+        navigation.replace('WorkoutSession');
+    }, [currentWorkout, workout, startPlannedWorkout, refreshData, navigation, t]);
 
     const totalExercises = workout.exercises.length;
     const totalSets = workout.exercises.reduce((acc, ex) => acc + ex.sets, 0);
@@ -200,6 +204,14 @@ export const AIWorkoutPreviewScreen = ({ route, navigation }: any) => {
                                     {t('common.sets')}
                                 </Typography>
                             </View>
+                            {!!workout.estimatedMinutes && (
+                                <View style={styles.statBox}>
+                                    <Typography variant="h2" color={AI_COLOR}>{workout.estimatedMinutes}</Typography>
+                                    <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 10 }}>
+                                        {t('common.min')}
+                                    </Typography>
+                                </View>
+                            )}
                         </View>
 
                         {/* Reasoning */}
@@ -211,6 +223,17 @@ export const AIWorkoutPreviewScreen = ({ route, navigation }: any) => {
                                 {workout.reasoning}
                             </Typography>
                         </View>
+
+                        {!!workout.warmup && (
+                            <View style={[styles.reasoningBox, { marginTop: 10 }]}>
+                                <Typography variant="label" color={AI_COLOR} style={{ marginBottom: 6, fontSize: 11 }}>
+                                    🔥 {t('aiWorkout.warmup')}
+                                </Typography>
+                                <Typography variant="body" color={colors.textSecondary} style={{ lineHeight: 20, fontSize: 13 }}>
+                                    {workout.warmup}
+                                </Typography>
+                            </View>
+                        )}
                     </View>
                 </Card>
 
@@ -239,6 +262,13 @@ export const AIWorkoutPreviewScreen = ({ route, navigation }: any) => {
                                             <Typography variant="bodySmall" numberOfLines={2} style={{ flex: 1 }}>
                                                 {ex.isNew ? ex.exerciseName : getExerciseName(ex.exerciseId || '', t, ex.exerciseName)}
                                             </Typography>
+                                            {!!ex.supersetGroup && (
+                                                <View style={[styles.newBadge, { backgroundColor: colors.secondary }]}>
+                                                    <Typography variant="caption" color="#fff" bold style={{ fontSize: 8 }}>
+                                                        {ex.supersetGroup}
+                                                    </Typography>
+                                                </View>
+                                            )}
                                             {ex.isNew && (
                                                 <View style={styles.newBadge}>
                                                     <Typography variant="caption" color="#fff" bold style={{ fontSize: 8 }}>
@@ -277,11 +307,18 @@ export const AIWorkoutPreviewScreen = ({ route, navigation }: any) => {
                                     <Trash2 color={colors.error} size={16} />
                                 </TouchableOpacity>
                             </View>
-                            {ex.notes && (
+                            {(!!ex.notes || !!ex.targetWeight) && (
                                 <View style={styles.noteRow}>
-                                    <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 10, fontStyle: 'italic' }}>
-                                        💡 {ex.notes}
-                                    </Typography>
+                                    {!!ex.targetWeight && (
+                                        <Typography variant="caption" color={AI_COLOR} bold style={{ fontSize: 11 }}>
+                                            🎯 {t('aiWorkout.targetLoad', { weight: `${Math.round(displayWeight(ex.targetWeight) * 2) / 2} ${weightUnit}` })}
+                                        </Typography>
+                                    )}
+                                    {!!ex.notes && (
+                                        <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 10, fontStyle: 'italic' }}>
+                                            💡 {ex.notes}
+                                        </Typography>
+                                    )}
                                 </View>
                             )}
                         </View>

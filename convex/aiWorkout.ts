@@ -3,297 +3,288 @@
 import { v } from "convex/values";
 import { action } from "./_generated/server";
 import { internal } from "./_generated/api";
+import type { Doc } from "./_generated/dataModel";
 import { requireUserInAction } from "./users";
 import { requireAIAccess } from "./entitlements";
 import OpenAI from "openai";
+import type { CoachData } from "./coachData";
+import { analyzeRecovery, buildCoachContext, lastPerformanceBlock, unitsOf } from "./coachPrompt";
+import { EXERCISE_CATALOG, exercisesForEquipment } from "../src/constants/exerciseCatalog";
+import type { Equipment, Exercise } from "../src/types";
 
-// ── Exercise catalog (core 42 exercises) ─────────────────
-// Compact format to minimize token usage in the AI prompt
-const CORE_EXERCISES = [
-  { id: "ex-bench-press", name: "Barbell Bench Press", muscle: "Chest" },
-  { id: "ex-incline-db", name: "Incline Dumbbell Press", muscle: "Chest" },
-  { id: "ex-cable-cross", name: "Cable Crossovers", muscle: "Chest" },
-  { id: "ex-chest-dips", name: "Chest Dips", muscle: "Chest" },
-  { id: "ex-db-fly", name: "Dumbbell Fly", muscle: "Chest" },
-  { id: "ex-decline-bench", name: "Decline Bench Press", muscle: "Chest" },
-  { id: "ex-deadlift", name: "Deadlift", muscle: "Back" },
-  { id: "ex-pull-ups", name: "Pull Ups", muscle: "Back" },
-  { id: "ex-bent-rows", name: "Bent Over Rows", muscle: "Back" },
-  { id: "ex-lat-pulldown", name: "Lat Pulldown", muscle: "Back" },
-  { id: "ex-seated-row", name: "Seated Cable Row", muscle: "Back" },
-  { id: "ex-tbar-row", name: "T-Bar Row", muscle: "Back" },
-  { id: "ex-chinups", name: "Chin Ups", muscle: "Back" },
-  { id: "ex-squat", name: "Barbell Squat", muscle: "Legs" },
-  { id: "ex-leg-press", name: "Leg Press", muscle: "Legs" },
-  { id: "ex-lunges", name: "Lunges", muscle: "Legs" },
-  { id: "ex-leg-curl", name: "Leg Curl", muscle: "Legs" },
-  { id: "ex-leg-ext", name: "Leg Extension", muscle: "Legs" },
-  { id: "ex-calf-raise", name: "Calf Raise", muscle: "Legs" },
-  { id: "ex-rdl", name: "Romanian Deadlift", muscle: "Legs" },
-  { id: "ex-hack-squat", name: "Hack Squat", muscle: "Legs" },
-  { id: "ex-bulgarian", name: "Bulgarian Split Squat", muscle: "Legs" },
-  { id: "ex-ohp", name: "Overhead Press", muscle: "Shoulders" },
-  { id: "ex-lateral-raise", name: "Lateral Raise", muscle: "Shoulders" },
-  { id: "ex-face-pull", name: "Face Pull", muscle: "Shoulders" },
-  { id: "ex-front-raise", name: "Front Raise", muscle: "Shoulders" },
-  { id: "ex-rear-delt-fly", name: "Rear Delt Fly", muscle: "Shoulders" },
-  { id: "ex-arnold-press", name: "Arnold Press", muscle: "Shoulders" },
-  { id: "ex-bb-curl", name: "Barbell Curl", muscle: "Biceps" },
-  { id: "ex-hammer-curl", name: "Hammer Curl", muscle: "Biceps" },
-  { id: "ex-preacher-curl", name: "Preacher Curl", muscle: "Biceps" },
-  { id: "ex-concentration", name: "Concentration Curl", muscle: "Biceps" },
-  { id: "ex-tri-pushdown", name: "Tricep Pushdown", muscle: "Triceps" },
-  { id: "ex-skull-crusher", name: "Skull Crushers", muscle: "Triceps" },
-  { id: "ex-tri-dips", name: "Tricep Dips", muscle: "Triceps" },
-  { id: "ex-overhead-ext", name: "Overhead Tricep Extension", muscle: "Triceps" },
-  { id: "ex-plank", name: "Plank", muscle: "Core" },
-  { id: "ex-cable-crunch", name: "Cable Crunch", muscle: "Core" },
-  { id: "ex-hanging-raise", name: "Hanging Leg Raise", muscle: "Core" },
-  { id: "ex-ab-rollout", name: "Ab Rollout", muscle: "Core" },
-  { id: "ex-treadmill", name: "Treadmill Run", muscle: "Cardio" },
-  { id: "ex-rowing", name: "Rowing Machine", muscle: "Cardio" },
-  { id: "ex-cycling", name: "Cycling", muscle: "Cardio" },
-  { id: "ex-elliptical", name: "Elliptical", muscle: "Cardio" },
-  { id: "ex-stairmaster", name: "Stairmaster", muscle: "Cardio" },
-  { id: "ex-jump-rope", name: "Jump Rope", muscle: "Cardio" },
-];
+const WORKOUT_MODEL = "gpt-5.1";
+const NEW_EXERCISE = "NEW";
+
+const MUSCLE_GROUPS = ["Chest", "Back", "Legs", "Glutes", "Shoulders", "Biceps", "Triceps", "Forearms", "Core", "Full Body", "Cardio", "Mobility"];
+
+interface CatalogEntry {
+  id: string;
+  name: string;
+  muscleGroup: string;
+  category: string;
+  tracking: string;
+  line: string;
+}
+
+/** Exercises the user can do with the equipment they have, plus their own custom exercises. */
+function buildCatalog(available: Equipment[] | undefined, customs: CoachData["customExercises"]): CatalogEntry[] {
+  const list: CatalogEntry[] = exercisesForEquipment(available, EXERCISE_CATALOG).map((e: Exercise) => ({
+    id: e.id,
+    name: e.name,
+    muscleGroup: e.muscleGroup,
+    category: e.category,
+    tracking: e.tracking ?? "weight_reps",
+    line: `${e.id} | ${e.name} | ${(e.primaryMuscles ?? []).join("+")} | ${e.equipment?.length ? e.equipment.join("+") : "no equipment"} | ${e.level}${e.mechanic === "compound" ? ", compound" : ""} | log: ${e.tracking}`,
+  }));
+  for (const c of customs.slice(0, 60)) {
+    list.push({
+      id: c.id,
+      name: c.name,
+      muscleGroup: c.muscleGroup,
+      category: c.category,
+      tracking: c.category === "cardio" ? "cardio" : "weight_reps",
+      line: `${c.id} | ${c.name} | ${c.muscleGroup} | user's custom exercise`,
+    });
+  }
+  return list;
+}
+
+function catalogText(catalog: CatalogEntry[]): string {
+  const byGroup = new Map<string, string[]>();
+  for (const e of catalog) {
+    const rows = byGroup.get(e.muscleGroup) ?? [];
+    rows.push(`  ${e.line}`);
+    byGroup.set(e.muscleGroup, rows);
+  }
+  return [...byGroup.entries()].map(([g, rows]) => `${g.toUpperCase()}:\n${rows.join("\n")}`).join("\n");
+}
+
+/** Strict JSON schema: exercise IDs are limited to the catalog (or "NEW"). */
+function responseSchema(ids: string[]) {
+  return {
+    type: "object",
+    additionalProperties: false,
+    required: ["workoutName", "reasoning", "estimatedMinutes", "warmup", "exercises"],
+    properties: {
+      workoutName: { type: "string" },
+      reasoning: { type: "string" },
+      estimatedMinutes: { type: "number" },
+      warmup: { type: "string" },
+      exercises: {
+        type: "array",
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["exerciseId", "newExercise", "sets", "reps", "restSeconds", "targetWeightKg", "supersetGroup", "notes"],
+          properties: {
+            exerciseId: { type: "string", enum: [...ids, NEW_EXERCISE] },
+            newExercise: {
+              anyOf: [
+                { type: "null" },
+                {
+                  type: "object",
+                  additionalProperties: false,
+                  required: ["name", "muscleGroup", "category"],
+                  properties: {
+                    name: { type: "string" },
+                    muscleGroup: { type: "string", enum: MUSCLE_GROUPS },
+                    category: { type: "string", enum: ["strength", "cardio", "flexibility"] },
+                  },
+                },
+              ],
+            },
+            sets: { type: "integer" },
+            reps: { type: "string" },
+            restSeconds: { type: "integer" },
+            targetWeightKg: { anyOf: [{ type: "number" }, { type: "null" }] },
+            supersetGroup: { anyOf: [{ type: "string" }, { type: "null" }] },
+            notes: { type: "string" },
+          },
+        },
+      },
+    },
+  };
+}
+
+const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
+
+function equipmentFor(user: Doc<"users">, override?: string[]): Equipment[] | undefined {
+  const list = override ?? user.equipment;
+  return list ? (list as Equipment[]) : undefined;
+}
 
 /**
  * AI Workout Generation Action
- * Analyzes the user's training history and generates a smart next workout.
+ * Builds the user's next session from their profile, equipment, recovery,
+ * recent performance and today's request.
  */
 export const generateWorkout = action({
   args: {
     userComment: v.optional(v.string()),
+    /** Minutes available today (overrides the profile's session length). */
+    sessionMinutes: v.optional(v.float64()),
+    /** Equipment available today (overrides the profile, e.g. training at home). */
+    equipment: v.optional(v.array(v.string())),
+    /** Muscle groups to focus on today. */
+    focus: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-    // ── 1. Resolve the signed-in user's profile ──
     const user = await requireUserInAction(ctx);
     await requireAIAccess(ctx, user);
-    const userId = user._id;
 
-    // ── 2. Fetch recent workouts (last 30 days, capped at 30) ──
-    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
-    const workouts = await ctx.runQuery(internal.workouts.getWorkoutsByUser, {
-      userId,
-      limit: 30,
-      sinceTimestamp: thirtyDaysAgo,
-    });
+    const data: CoachData = await ctx.runQuery(internal.coachData.getCoachData, { userId: user._id, days: 45, maxWorkouts: 30 });
+    const units = unitsOf(user);
+    const now = Date.now();
 
-    // ── 3. Fetch exercise details for the 15 most recent workouts ──
-    const workoutSummaries = await Promise.all(
-      workouts.slice(0, 15).map(async (workout: any) => {
-        const exerciseLogs = await ctx.runQuery(internal.workouts.getExerciseLogsByWorkout, {
-          workoutId: workout._id,
-        });
+    const equipment = equipmentFor(user, args.equipment?.slice(0, 40));
+    const catalog = buildCatalog(equipment, data.customExercises);
+    const byId = new Map(catalog.map((e) => [e.id, e]));
 
-        const exerciseSummaries = await Promise.all(
-          exerciseLogs.map(async (log: any) => {
-            const sets = await ctx.runQuery(internal.workouts.getSetsByExerciseLog, {
-              exerciseLogId: log._id,
-            });
-            const normalSets = sets.filter((s: any) => s.type === "normal");
-            const bestSet = normalSets.reduce(
-              (best: any, s: any) => (s.weight > (best?.weight || 0) ? s : best),
-              normalSets[0]
-            );
-            return {
-              exercise: log.exerciseName,
-              exerciseId: log.exerciseId,
-              muscle: CORE_EXERCISES.find(e => e.id === log.exerciseId)?.muscle || "Other",
-              sets: normalSets.length,
-              bestWeight: bestSet?.weight || 0,
-              bestReps: bestSet?.reps || 0,
-            };
-          })
-        );
+    const minutes = clamp(Math.round(args.sessionMinutes ?? user.sessionMinutes ?? 60), 15, 180);
+    const context = buildCoachContext(user, data, { detailed: 6 });
+    const recovery = analyzeRecovery(data.workouts, data.customExercises, now);
+    const fresh = recovery
+      .filter((r) => !r.lastTrained || now - r.lastTrained > 48 * 3600000)
+      .map((r) => r.group);
 
-        const duration = workout.endTime
-          ? Math.round((workout.endTime - workout.startTime) / 60000)
-          : null;
+    const todaySection = [
+      `- Time available: ${minutes} minutes (including warm-up)`,
+      args.equipment ? `- Equipment today: ${args.equipment.length ? args.equipment.join(", ") : "none (bodyweight only)"}` : null,
+      args.focus?.length ? `- Requested focus: ${args.focus.slice(0, 6).join(", ")}` : null,
+      args.userComment?.trim() ? `- User says: "${args.userComment.trim().slice(0, 300)}"` : null,
+      `- Muscle groups rested 48h+: ${fresh.length ? fresh.join(", ") : "none — everything was trained in the last 2 days"}`,
+    ].filter(Boolean).join("\n");
 
-        return {
-          name: workout.name,
-          date: new Date(workout.startTime).toISOString().split("T")[0],
-          daysSinceToday: Math.round((Date.now() - workout.startTime) / (24 * 60 * 60 * 1000)),
-          duration: duration ? `${duration} min` : "unknown",
-          mood: workout.mood,
-          exercises: exerciseSummaries,
-        };
-      })
-    );
+    const systemPrompt = `You are an elite strength & conditioning coach. Design the user's NEXT training session.
 
-    // ── 4. Fetch user's custom exercises from Convex ──
-    const customExercises = await ctx.runQuery(internal.aiHelpers.getCustomExercises, {
-      userId,
-    });
+AVAILABLE EXERCISES (id | name | primary muscles | equipment | level | how it's logged). Only these fit the user's equipment:
+${catalogText(catalog)}
 
-    // ── 5. Fetch yearly stats ──
-    const yearlyStats = await ctx.runQuery(internal.aiHelpers.getYearlyStats, { userId });
+HOW TO DESIGN THE SESSION:
+1. Pick the focus: honor an explicit request first. Otherwise choose muscle groups that are recovered (48h+ since trained) and furthest below a sensible weekly volume, keeping the week balanced (push/pull/legs or upper/lower patterns). Use their history to continue the split they're following.
+2. Fit the time: about 8-12 min per compound exercise with 3-4 sets, 5-7 min per isolation exercise, include the warm-up. Typically 4-7 exercises for 45-75 min; fewer for short sessions. Report a realistic estimatedMinutes ≤ the time available.
+3. Order: big compound lifts first, then accessories, core/conditioning last.
+4. Match the goal and experience:
+   - strength: 3-6 reps, 2-4 min rest on main lifts
+   - hypertrophy / muscle: 6-12 reps (12-20 for small muscles), 60-120s rest
+   - fat loss / conditioning / general fitness: 10-15 reps, 30-75s rest, supersets or circuits welcome
+   - beginners: simple, stable movements, 2-3 sets, technique notes; avoid advanced lifts
+5. Loads: use "LAST PERFORMANCE" to set targetWeightKg (always in KILOGRAMS, even if the user uses pounds). Apply progressive overload: if they hit the top of the rep range last time, add ~2.5-5% (upper) or ~5-10% (lower); if they missed reps, keep or reduce. Use null for bodyweight, timed and cardio exercises, or when there's no history.
+6. Reps format: a range like "8-10", a number like "5", "AMRAP", or seconds like "45s" for timed holds, or minutes like "20min" for cardio — match the exercise's "log" type.
+7. Respect injuries/limitations: skip or substitute anything that could aggravate them, and say so in a note.
+8. supersetGroup: give two or three non-competing exercises the same letter ("A", "B") to pair them when it saves time; otherwise null.
+9. Use catalog IDs exactly. Use "${NEW_EXERCISE}" with newExercise filled in ONLY if the user explicitly asks for a specific exercise that isn't in the list; otherwise newExercise is null.
+10. warmup: one short sentence (e.g. "5 min easy bike, then 2 light sets of the first lift").
+11. reasoning: 2-3 sentences referencing their data (what they trained recently, recovery, progress) and today's request.
+12. notes: one short cue per exercise (form tip or load guidance); write workoutName, reasoning, warmup and notes in the language the user wrote their request in, or English if none.
 
-    // ── 6. Fetch personal records ──
-    const prs = await ctx.runQuery(internal.aiHelpers.getPersonalRecords, { userId });
+USER DATA:
+${context}
 
-    // ── 7. Build the exercise catalog string ──
-    const catalogLines = CORE_EXERCISES.map(
-      e => `  - ID: ${e.id} | ${e.name} | ${e.muscle}`
-    );
+LAST PERFORMANCE PER EXERCISE (newest first):
+${lastPerformanceBlock(data.workouts, units, now)}
 
-    if (customExercises.length > 0) {
-      catalogLines.push("  --- User's Custom Exercises ---");
-      customExercises.forEach((e: any) => {
-        catalogLines.push(`  - ID: ${e.localId} | ${e.name} | ${e.muscleGroup}`);
-      });
-    }
+TODAY:
+${todaySection}`;
 
-    // ── 8. Build user context ──
-    const age = user.dateOfBirth
-      ? Math.floor((Date.now() - new Date(user.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
-      : null;
+    const messages: OpenAI.ChatCompletionMessageParam[] = [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: "Generate my next workout session." },
+    ];
 
-    const unitSystem = user.unitPreference === "imperial" ? "Imperial (lbs)" : "Metric (kg)";
-
-    const userContext = `
-USER PROFILE:
-- Name: ${user.name}
-- Age: ${age ? `${age} years old` : "unknown"}
-- Gender: ${user.gender || "unknown"}
-- Weight: ${user.weight ? `${user.weight}kg` : "unknown"}
-- Height: ${user.height ? `${user.height}cm` : "unknown"}
-- Body Fat: ${user.bodyFat ? `${user.bodyFat}%` : "unknown"}
-- Fitness Goal: ${user.goal || "not specified"}
-- Unit System: ${unitSystem}
-
-TRAINING FREQUENCY: ${yearlyStats.totalWorkouts > 0 ? `${yearlyStats.sessionsPerWeek} sessions/week` : "No data"}
-
-RECENT WORKOUTS (last 30 days):
-${workoutSummaries.length > 0
-  ? workoutSummaries.map((w: any) => {
-      const muscles = [...new Set(w.exercises.map((e: any) => e.muscle))].join(", ");
-      const exerciseList = w.exercises.map((e: any) => `${e.exercise} (${e.bestWeight}kg×${e.bestReps})`).join(", ");
-      return `  📅 ${w.date} (${w.daysSinceToday}d ago) — "${w.name}" [${muscles}]: ${exerciseList}`;
-    }).join("\n")
-  : "  No workouts in the last 30 days."
-}
-
-PERSONAL RECORDS:
-${prs.length > 0
-  ? prs.slice(0, 15).map((pr: any) =>
-      `  • ${pr.exerciseName}: ${pr.type === "max_weight" ? `${pr.value}kg × ${pr.reps || "?"}reps` : pr.type === "est_1rm" ? `est 1RM ${pr.value}kg` : `volume ${pr.value}kg`}`
-    ).join("\n")
-  : "  No PRs recorded yet."
-}`.trim();
-
-    // ── 9. Build the user comment section (if provided) ──
-    const userCommentSection = args.userComment?.trim()
-      ? `\nUSER'S CURRENT MOOD / REQUEST:\n"${args.userComment.trim()}"\nTake this into account when designing the workout. For example, if the user says they are tired, reduce volume/intensity. If they want to focus on a specific area, prioritize that.\n`
-      : '';
-
-    // ── 10. Build the system prompt ──
-    const systemPrompt = `You are an elite personal fitness coach with deep expertise in exercise programming. Your job is to generate the NEXT optimal workout session for this user based on their training history, recovery status, and goals.
-
-AVAILABLE EXERCISES (you MUST use these):
-${catalogLines.join("\n")}
-
-RULES:
-1. Analyze what muscle groups were recently trained and when. Avoid training the same major muscle group within 48 hours unless the program calls for it.
-2. Consider the user's fitness goal when selecting exercises, rep ranges, and volume.
-3. Select 4-7 exercises for the workout. Quality over quantity.
-4. You MUST use exercises from the AVAILABLE EXERCISES list above. Use their exact "ID" values. The catalog above covers all major movement patterns — there is almost never a reason to create a new exercise.
-5. Creating a new exercise ("isNew": true) is ONLY allowed as an absolute last resort when the user explicitly requests a very specific exercise that has no equivalent in the catalog. In 99% of cases, you should NOT create new exercises.
-6. Set realistic sets (2-5), reps (based on goal), and rest times (30-180 seconds).
-7. Use the user's preferred unit system for any weight references in notes.
-8. Give the workout a short, descriptive name (e.g., "Heavy Pull Day", "Upper Body Hypertrophy").
-9. Write a brief "reasoning" (2-3 sentences) explaining WHY you chose this workout today.
-
-${userContext}
-${userCommentSection}
-Return ONLY a JSON object with this exact structure:
-{
-  "workoutName": "string",
-  "reasoning": "string explaining why this workout was chosen",
-  "exercises": [
-    {
-      "isNew": false,
-      "exerciseId": "ex-bench-press",
-      "exerciseName": "Barbell Bench Press",
-      "sets": 4,
-      "reps": "8-10",
-      "restSeconds": 120,
-      "notes": "optional coaching note"
-    }
-  ]
-}
-
-For NEW exercises (isNew: true), also include:
-- "muscleGroup": "Chest" (or Back, Legs, Shoulders, Biceps, Triceps, Core, Cardio)
-- "category": "strength" (or "cardio", "flexibility")
-- Do NOT include "exerciseId" for new exercises.
-
-Do NOT wrap the response in markdown. Return raw JSON only.`;
-
-    // ── 11. Call OpenAI ──
+    let content: string | null | undefined;
     try {
       const response = await openai.chat.completions.create({
-        model: "gpt-5.1",
+        model: WORKOUT_MODEL,
+        messages,
+        temperature: 0.5,
+        max_completion_tokens: 2500,
+        response_format: {
+          type: "json_schema",
+          json_schema: { name: "workout", strict: true, schema: responseSchema(catalog.map((e) => e.id)) },
+        },
+      });
+      content = response.choices[0]?.message?.content;
+    } catch (e) {
+      // Some models / accounts reject large strict schemas: fall back to plain JSON mode.
+      console.warn("[AI Workout] Structured output failed, retrying with JSON mode:", e);
+      const response = await openai.chat.completions.create({
+        model: WORKOUT_MODEL,
         messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: "Generate my next workout session based on my training history and goals." },
+          ...messages,
+          {
+            role: "system",
+            content: `Return ONLY a JSON object: {"workoutName": string, "reasoning": string, "estimatedMinutes": number, "warmup": string, "exercises": [{"exerciseId": string, "newExercise": null | {"name": string, "muscleGroup": string, "category": "strength"|"cardio"|"flexibility"}, "sets": number, "reps": string, "restSeconds": number, "targetWeightKg": number|null, "supersetGroup": string|null, "notes": string}]}`,
+          },
         ],
-        temperature: 0.6,
-        max_completion_tokens: 1500,
+        temperature: 0.5,
+        max_completion_tokens: 2500,
         response_format: { type: "json_object" },
       });
+      content = response.choices[0]?.message?.content;
+    }
 
-      const content = response.choices[0]?.message?.content;
+    try {
       if (!content) throw new Error("No content generated");
-
       const parsed = JSON.parse(content);
+      if (!parsed.workoutName || !Array.isArray(parsed.exercises)) throw new Error("Invalid workout structure from AI");
 
-      // Validate structure
-      if (!parsed.workoutName || !Array.isArray(parsed.exercises) || parsed.exercises.length === 0) {
-        throw new Error("Invalid workout structure from AI");
-      }
-
-      // Validate exercise IDs for non-new exercises
-      const validIds = new Set(CORE_EXERCISES.map(e => e.id));
-      const customIds = new Set(customExercises.map((e: any) => e.localId));
-
-      const validatedExercises = parsed.exercises.map((ex: any) => {
-        if (!ex.isNew && ex.exerciseId) {
-          // Check if exerciseId exists in catalog or custom
-          if (!validIds.has(ex.exerciseId) && !customIds.has(ex.exerciseId)) {
-            // AI hallucinated an ID — try to find a match by name
-            const match = CORE_EXERCISES.find(
-              e => e.name.toLowerCase() === ex.exerciseName?.toLowerCase()
-            );
-            if (match) {
-              ex.exerciseId = match.id;
-            } else {
-              // Convert to a new exercise
-              ex.isNew = true;
-              ex.muscleGroup = ex.muscleGroup || "Other";
-              ex.category = ex.category || "strength";
-              delete ex.exerciseId;
-            }
-          }
+      const seen = new Set<string>();
+      const nameIndex = new Map(catalog.map((e) => [e.name.toLowerCase(), e]));
+      const exercises = [];
+      for (const raw of parsed.exercises.slice(0, 12)) {
+        let entry = byId.get(String(raw.exerciseId));
+        // Tolerate a hallucinated ID when the name matches a catalog exercise.
+        if (!entry && raw.exerciseId !== NEW_EXERCISE) {
+          entry = nameIndex.get(String(raw.exerciseName ?? raw.newExercise?.name ?? "").toLowerCase());
         }
-        return ex;
-      });
+        const sets = clamp(Math.round(Number(raw.sets) || 3), 1, 8);
+        const restSeconds = clamp(Math.round(Number(raw.restSeconds) || 90), 15, 300);
+        const reps = String(raw.reps ?? "8-12").slice(0, 12) || "8-12";
+        const weight = Number(raw.targetWeightKg);
+        const targetWeight = Number.isFinite(weight) && weight > 0 && weight < 600 ? Math.round(weight * 2) / 2 : undefined;
+        const supersetGroup = typeof raw.supersetGroup === "string" && raw.supersetGroup.trim() ? raw.supersetGroup.trim().slice(0, 3) : undefined;
+        const notes = typeof raw.notes === "string" && raw.notes.trim() ? raw.notes.trim().slice(0, 200) : undefined;
 
+        if (entry) {
+          if (seen.has(entry.id)) continue;
+          seen.add(entry.id);
+          exercises.push({
+            isNew: false,
+            exerciseId: entry.id,
+            exerciseName: entry.name,
+            muscleGroup: entry.muscleGroup,
+            category: entry.category,
+            sets, reps, restSeconds, targetWeight, supersetGroup, notes,
+          });
+        } else if (raw.newExercise?.name) {
+          const name = String(raw.newExercise.name).trim().slice(0, 60);
+          if (!name || seen.has(name.toLowerCase())) continue;
+          seen.add(name.toLowerCase());
+          exercises.push({
+            isNew: true,
+            exerciseName: name,
+            muscleGroup: MUSCLE_GROUPS.includes(raw.newExercise.muscleGroup) ? raw.newExercise.muscleGroup : "Full Body",
+            category: ["strength", "cardio", "flexibility"].includes(raw.newExercise.category) ? raw.newExercise.category : "strength",
+            sets, reps, restSeconds, targetWeight, supersetGroup, notes,
+          });
+        }
+      }
+      if (exercises.length === 0) throw new Error("No valid exercises in AI workout");
+
+      const estimated = Number(parsed.estimatedMinutes);
       return {
-        workoutName: parsed.workoutName,
-        reasoning: parsed.reasoning || "Workout generated based on your training history.",
-        exercises: validatedExercises,
+        workoutName: String(parsed.workoutName).slice(0, 60),
+        reasoning: String(parsed.reasoning || "Workout generated from your training history.").slice(0, 600),
+        estimatedMinutes: Number.isFinite(estimated) && estimated > 0 ? Math.round(estimated) : undefined,
+        warmup: typeof parsed.warmup === "string" && parsed.warmup.trim() ? parsed.warmup.trim().slice(0, 300) : undefined,
+        exercises,
       };
     } catch (e: any) {
-      console.error("[AI Workout] Generation failed:", e);
+      console.error("[AI Workout] Generation failed:", e, content);
       throw new Error("Failed to generate workout. Please try again.");
     }
   },
 });
-

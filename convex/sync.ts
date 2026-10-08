@@ -9,6 +9,7 @@ import {
   tablesForScope,
 } from "./users";
 import { hasActiveAI, subscriptionRequiredError } from "./entitlements";
+import { workoutValidator } from "./validators";
 
 /**
  * Two-way sync between the device's local store and the cloud.
@@ -29,42 +30,6 @@ async function requireSyncAccess(ctx: QueryCtx | MutationCtx): Promise<Doc<"user
   if (!hasActiveAI(user)) throw subscriptionRequiredError();
   return user;
 }
-
-const setType = v.union(
-  v.literal("warmup"),
-  v.literal("normal"),
-  v.literal("failure"),
-  v.literal("drop")
-);
-
-const workoutValidator = v.object({
-  id: v.string(),
-  name: v.string(),
-  startTime: v.float64(),
-  endTime: v.optional(v.float64()),
-  notes: v.optional(v.string()),
-  bodyWeight: v.optional(v.float64()),
-  mood: v.optional(v.float64()),
-  exercises: v.array(
-    v.object({
-      id: v.string(),
-      exerciseId: v.string(),
-      exerciseName: v.string(),
-      notes: v.optional(v.string()),
-      supersetGroupId: v.optional(v.string()),
-      sets: v.array(
-        v.object({
-          id: v.string(),
-          weight: v.float64(),
-          reps: v.float64(),
-          rpe: v.optional(v.float64()),
-          completed: v.boolean(),
-          type: setType,
-        })
-      ),
-    })
-  ),
-});
 
 const customExerciseValidator = v.object({
   id: v.string(),
@@ -208,6 +173,7 @@ export const getWorkouts = query({
           exerciseName: log.exerciseName,
           notes: log.notes,
           supersetGroupId: log.supersetGroupId,
+          target: log.target,
           sets: sets.map((s) => ({
             id: s._id as string,
             weight: s.weight,
@@ -215,6 +181,9 @@ export const getWorkouts = query({
             rpe: s.rpe,
             completed: s.completed,
             type: s.type,
+            durationSec: s.durationSec,
+            distance: s.distance,
+            completedAt: s.completedAt,
           })),
         });
       }
@@ -228,6 +197,7 @@ export const getWorkouts = query({
         notes: w.notes,
         bodyWeight: w.bodyWeight,
         mood: w.mood,
+        source: w.source,
         exercises,
       });
     }
@@ -264,6 +234,7 @@ export const pushWorkouts = mutation({
         notes: w.notes,
         bodyWeight: w.bodyWeight,
         mood: w.mood,
+        source: w.source,
       });
 
       for (let exIdx = 0; exIdx < w.exercises.length; exIdx++) {
@@ -276,6 +247,7 @@ export const pushWorkouts = mutation({
           exerciseName: ex.exerciseName,
           notes: ex.notes,
           supersetGroupId: ex.supersetGroupId,
+          target: ex.target,
           order: exIdx,
         });
         for (let setIdx = 0; setIdx < ex.sets.length; setIdx++) {
@@ -289,6 +261,9 @@ export const pushWorkouts = mutation({
             completed: s.completed,
             type: s.type,
             order: setIdx,
+            durationSec: s.durationSec,
+            distance: s.distance,
+            completedAt: s.completedAt,
           });
         }
       }

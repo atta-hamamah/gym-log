@@ -34,7 +34,7 @@ export const ProgramDetailScreen = ({ route, navigation }: any) => {
     const styles = createStyles(colors);
     const { programId } = route.params;
     const program = PROGRAMS.find(p => p.id === programId);
-    const { currentWorkout, startWorkout, addExerciseToWorkout } = useWorkout();
+    const { currentWorkout, startPlannedWorkout } = useWorkout();
     const [expandedDay, setExpandedDay] = useState<number>(0);
 
     const [infoModalVisible, setInfoModalVisible] = useState(false);
@@ -103,21 +103,20 @@ export const ProgramDetailScreen = ({ route, navigation }: any) => {
         }
 
         const workoutName = `${program.name} — ${day.name}`;
-        startWorkout(workoutName);
-
-        // Small delay to ensure workout is created before adding exercises
-        setTimeout(() => {
-            day.exercises.forEach(ex => {
-                addExerciseToWorkout({
-                    id: ex.exerciseId,
-                    name: ex.exerciseName,
-                    category: 'strength',
-                    muscleGroup: '',
-                    isCustom: false,
-                });
-            });
-            navigation.navigate('WorkoutSession');
-        }, 100);
+        startPlannedWorkout(
+            workoutName,
+            { type: 'program', programId: program.id, dayName: day.name },
+            day.exercises.map(ex => ({
+                exercise: { id: ex.exerciseId, name: ex.exerciseName },
+                target: {
+                    sets: ex.sets,
+                    reps: ex.reps,
+                    restSeconds: ex.restSeconds,
+                    ...(ex.notes ? { notes: ex.notes } : {}),
+                },
+            })),
+        );
+        navigation.navigate('WorkoutSession');
     };
 
     const totalExercises = program.days.reduce((acc, d) => acc + d.exercises.length, 0);

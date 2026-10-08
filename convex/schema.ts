@@ -14,6 +14,12 @@ export default defineSchema({
     height: v.optional(v.float64()),       // cm
     goal: v.optional(v.string()),          // fitness goal text
     unitPreference: v.optional(v.union(v.literal("metric"), v.literal("imperial"))),
+    // Training profile the AI coach plans around
+    experience: v.optional(v.union(v.literal("beginner"), v.literal("intermediate"), v.literal("advanced"))),
+    equipment: v.optional(v.array(v.string())),   // available equipment (see exerciseCatalog.ts)
+    trainingDays: v.optional(v.float64()),        // sessions per week
+    sessionMinutes: v.optional(v.float64()),      // preferred session length
+    limitations: v.optional(v.string()),          // injuries / things to avoid
     createdAt: v.float64(),
     migrationComplete: v.boolean(),
     // Bumped on every cloud data change so other devices know to pull.
@@ -38,6 +44,13 @@ export default defineSchema({
     mood: v.optional(v.float64()),
     auraTitle: v.optional(v.string()),
     auraDescription: v.optional(v.string()),
+    // Where the session came from (AI coach, program, manual)
+    source: v.optional(v.object({
+      type: v.union(v.literal("manual"), v.literal("ai"), v.literal("program")),
+      programId: v.optional(v.string()),
+      dayName: v.optional(v.string()),
+      reasoning: v.optional(v.string()),
+    })),
   })
     .index("by_userId", ["userId"])
     .index("by_userId_startTime", ["userId", "startTime"])
@@ -53,6 +66,14 @@ export default defineSchema({
     notes: v.optional(v.string()),
     supersetGroupId: v.optional(v.string()),
     order: v.float64(),
+    // What the plan prescribed for this exercise
+    target: v.optional(v.object({
+      sets: v.float64(),
+      reps: v.string(),
+      restSeconds: v.float64(),
+      weight: v.optional(v.float64()),
+      notes: v.optional(v.string()),
+    })),
   })
     .index("by_workoutId", ["workoutId"])
     .index("by_userId", ["userId"])
@@ -73,6 +94,9 @@ export default defineSchema({
       v.literal("drop")
     ),
     order: v.float64(),
+    durationSec: v.optional(v.float64()),   // timed holds / cardio
+    distance: v.optional(v.float64()),      // km
+    completedAt: v.optional(v.float64()),   // when the set was logged (for rest times)
   })
     .index("by_exerciseLogId", ["exerciseLogId"])
     .index("by_userId", ["userId"]),

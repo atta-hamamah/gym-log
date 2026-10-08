@@ -21,8 +21,8 @@
     "cardioType": "Cardio",
     "all": "Tout",
     "rpe": "RPE",
-    "finish":"Terminer",
-    "continue":"Continuer"
+    "finish": "Terminer",
+    "continue": "Continuer"
   },
   "tabs": {
     "dashboard": "Accueil",
@@ -117,7 +117,12 @@
     "howFeeling": "Comment vous sentez-vous ?",
     "addNote": "Ajouter une note",
     "hideNotes": "Masquer la note",
-    "exerciseNotePlaceholder": "ex. me suis senti fort, douleur épaule gauche..."
+    "exerciseNotePlaceholder": "ex. me suis senti fort, douleur épaule gauche...",
+    "plan": "Plan",
+    "lastTime": "Dernière fois",
+    "restShort": "repos",
+    "time": "TEMPS",
+    "seconds": "s"
   },
   "workoutDetails": {
     "workoutNotFound": "Séance introuvable",
@@ -281,7 +286,11 @@
     "Biceps": "Biceps",
     "Triceps": "Triceps",
     "Core": "Bassin",
-    "Cardio": "Cardio"
+    "Cardio": "Cardio",
+    "Glutes": "Fessiers",
+    "Forearms": "Avant-bras",
+    "Full Body": "Corps entier",
+    "Mobility": "Mobilité"
   },
   "subscription": {
     "statusTitle": "Abonnement",
@@ -529,7 +538,17 @@
     "commentTitle": "Comment vous sentez-vous ?",
     "commentDesc": "Ajoutez une note pour votre coach AI (optionnel)",
     "commentPlaceholder": "ex. Je suis fatigué aujourd'hui, focus sur le haut du corps...",
-    "generate": "Générer"
+    "generate": "Générer",
+    "sheetDesc": "Dites à votre coach comment se passe votre journée. Il connaît déjà votre historique, votre récupération et votre matériel.",
+    "timeAvailable": "Temps disponible",
+    "whereToday": "Où vous entraînez-vous ?",
+    "placeProfile": "Mon matériel",
+    "placeGym": "Salle complète",
+    "placeBodyweight": "Sans matériel",
+    "focus": "Objectif",
+    "focusAuto": "Le coach décide",
+    "warmup": "Échauffement",
+    "targetLoad": "Objectif : {{weight}}"
   },
   "account": {
     "title": "Compte et synchronisation",
@@ -565,5 +584,48 @@
     "aiBillingIssue": "Problème de paiement — mettez à jour votre moyen de paiement dans Google Play pour garder le Coach IA.",
     "proFromAI": "Inclus à vie avec votre abonnement Coach IA.",
     "resubscribeAI": "Se réabonner au Coach IA"
+  },
+  "trainingProfile": {
+    "title": "Profil d'entraînement",
+    "subtitle": "Expérience, planning, matériel, blessures",
+    "description": "RepAI utilise ces informations pour choisir des exercices réalisables et planifier des séances adaptées à votre semaine.",
+    "experience": "Niveau d'expérience",
+    "level_beginner": "Débutant",
+    "level_intermediate": "Intermédiaire",
+    "level_advanced": "Avancé",
+    "daysPerWeek": "Jours d'entraînement par semaine",
+    "sessionLength": "Durée de séance",
+    "equipment": "Votre matériel",
+    "preset_gym": "Salle complète",
+    "preset_home": "Salle à domicile",
+    "preset_bodyweight": "Sans matériel",
+    "limitations": "Blessures ou limitations",
+    "limitationsPlaceholder": "ex. bas du dos sensible, pas de développé au-dessus de la tête, genou gauche fragile...",
+    "saved": "Votre profil d'entraînement a été mis à jour. RepAI planifiera en conséquence.",
+    "saveFailed": "Impossible d'enregistrer"
+  },
+  "equipment": {
+    "barbell": "Barre",
+    "dumbbell": "Haltères",
+    "kettlebell": "Kettlebell",
+    "ez_bar": "Barre EZ",
+    "trap_bar": "Trap bar",
+    "plate": "Disque",
+    "machine": "Machines",
+    "cable": "Poulie",
+    "smith": "Smith machine",
+    "rack": "Rack à squat",
+    "bench": "Banc",
+    "pullup_bar": "Barre de traction",
+    "dip_bars": "Barres parallèles",
+    "band": "Élastique",
+    "box": "Box de saut",
+    "medicine_ball": "Medecine ball",
+    "ab_wheel": "Roue abdominale",
+    "jump_rope": "Corde à sauter",
+    "cardio_machine": "Machines cardio",
+    "battle_ropes": "Cordes ondulatoires",
+    "sled": "Traîneau",
+    "pool": "Piscine"
   }
 }

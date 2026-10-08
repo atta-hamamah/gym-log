@@ -11,10 +11,13 @@
 import type * as ai from "../ai.js";
 import type * as aiHelpers from "../aiHelpers.js";
 import type * as aiWorkout from "../aiWorkout.js";
+import type * as coachData from "../coachData.js";
+import type * as coachPrompt from "../coachPrompt.js";
 import type * as entitlements from "../entitlements.js";
 import type * as http from "../http.js";
 import type * as sync from "../sync.js";
 import type * as users from "../users.js";
+import type * as validators from "../validators.js";
 import type * as workouts from "../workouts.js";
 
 import type {
@@ -27,10 +30,13 @@ declare const fullApi: ApiFromModules<{
   ai: typeof ai;
   aiHelpers: typeof aiHelpers;
   aiWorkout: typeof aiWorkout;
+  coachData: typeof coachData;
+  coachPrompt: typeof coachPrompt;
   entitlements: typeof entitlements;
   http: typeof http;
   sync: typeof sync;
   users: typeof users;
+  validators: typeof validators;
   workouts: typeof workouts;
 }>;
 

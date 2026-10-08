@@ -21,8 +21,8 @@
     "cardioType": "Cardio",
     "all": "All",
     "rpe": "RPE",
-    "finish":"Finish",
-    "continue":"Continue"
+    "finish": "Finish",
+    "continue": "Continue"
   },
   "tabs": {
     "dashboard": "Dashboard",
@@ -117,7 +117,12 @@
     "howFeeling": "How are you feeling?",
     "addNote": "Add note",
     "hideNotes": "Hide note",
-    "exerciseNotePlaceholder": "e.g. felt strong, left shoulder sore..."
+    "exerciseNotePlaceholder": "e.g. felt strong, left shoulder sore...",
+    "plan": "Plan",
+    "lastTime": "Last time",
+    "restShort": "rest",
+    "time": "TIME",
+    "seconds": "sec"
   },
   "workoutDetails": {
     "workoutNotFound": "Workout not found",
@@ -281,7 +286,11 @@
     "Biceps": "Biceps",
     "Triceps": "Triceps",
     "Core": "Core",
-    "Cardio": "Cardio"
+    "Cardio": "Cardio",
+    "Glutes": "Glutes",
+    "Forearms": "Forearms",
+    "Full Body": "Full Body",
+    "Mobility": "Mobility"
   },
   "subscription": {
     "statusTitle": "Subscription",
@@ -529,7 +538,17 @@
     "commentTitle": "How are you feeling?",
     "commentDesc": "Add a note for your AI coach (optional)",
     "commentPlaceholder": "e.g. I feel tired today, focus on upper body...",
-    "generate": "Generate"
+    "generate": "Generate",
+    "sheetDesc": "Tell your coach about today. It already knows your history, recovery and equipment.",
+    "timeAvailable": "Time available",
+    "whereToday": "Where are you training?",
+    "placeProfile": "My equipment",
+    "placeGym": "Full gym",
+    "placeBodyweight": "No equipment",
+    "focus": "Focus",
+    "focusAuto": "Coach decides",
+    "warmup": "Warm-up",
+    "targetLoad": "Target: {{weight}}"
   },
   "account": {
     "title": "Account & Sync",
@@ -565,5 +584,48 @@
     "aiBillingIssue": "Payment problem — update your payment method in Google Play to keep AI Coach.",
     "proFromAI": "Included for life with your AI Coach subscription.",
     "resubscribeAI": "Resubscribe to AI Coach"
+  },
+  "trainingProfile": {
+    "title": "Training profile",
+    "subtitle": "Experience, schedule, equipment, injuries",
+    "description": "RepAI uses this to pick exercises you can do and plan sessions that fit your week.",
+    "experience": "Experience level",
+    "level_beginner": "Beginner",
+    "level_intermediate": "Intermediate",
+    "level_advanced": "Advanced",
+    "daysPerWeek": "Training days per week",
+    "sessionLength": "Session length",
+    "equipment": "Equipment you have",
+    "preset_gym": "Full gym",
+    "preset_home": "Home gym",
+    "preset_bodyweight": "No equipment",
+    "limitations": "Injuries or limitations",
+    "limitationsPlaceholder": "e.g. sore lower back, no overhead pressing, bad left knee...",
+    "saved": "Your training profile was updated. RepAI will plan around it.",
+    "saveFailed": "Could not save"
+  },
+  "equipment": {
+    "barbell": "Barbell",
+    "dumbbell": "Dumbbells",
+    "kettlebell": "Kettlebell",
+    "ez_bar": "EZ bar",
+    "trap_bar": "Trap bar",
+    "plate": "Weight plate",
+    "machine": "Machines",
+    "cable": "Cable machine",
+    "smith": "Smith machine",
+    "rack": "Squat rack",
+    "bench": "Bench",
+    "pullup_bar": "Pull-up bar",
+    "dip_bars": "Dip bars",
+    "band": "Resistance band",
+    "box": "Plyo box",
+    "medicine_ball": "Medicine ball",
+    "ab_wheel": "Ab wheel",
+    "jump_rope": "Jump rope",
+    "cardio_machine": "Cardio machines",
+    "battle_ropes": "Battle ropes",
+    "sled": "Sled",
+    "pool": "Pool"
   }
 }

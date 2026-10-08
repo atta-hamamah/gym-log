@@ -10,7 +10,9 @@ import { RestTimer } from '../components/RestTimer';
 import { ConfirmationModal } from '../components/ConfirmationModal';
 import { PRCelebration } from '../components/PRCelebration';
 import { borderRadius, spacing } from '../theme/colors';
-import { ExerciseLog, Set as WorkoutSet } from '../types';
+import { Exercise, ExerciseLog, Set as WorkoutSet, TrackingType, WorkoutSession } from '../types';
+import { ExerciseInfoModal } from '../components/ExerciseInfoModal';
+import { PlayCircle } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import {
     getSupersetType,
@@ -19,7 +21,7 @@ import {
     getSupersetPositionLabel,
     getExerciseGroups,
 } from '../utils/supersetUtils';
-import { getExerciseName } from '../constants/exercises';
+import { getExerciseName, EXERCISE_BY_ID } from '../constants/exercises';
 import { useTheme } from '../context/ThemeContext';
 import { useUnits } from '../context/UnitsContext';
 import { useFeatureAccess } from '../hooks/useFeatureAccess';
@@ -129,9 +131,12 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
         return `${sign}${m}:${s.toString().padStart(2, '0')}`;
     }, []);
 
-    const handleSetLogged = useCallback(() => {
+    // Rest after a set: the plan's rest for that exercise, otherwise the last chosen duration.
+    const handleSetLogged = useCallback((plannedRest?: number) => {
+        const duration = plannedRest && plannedRest > 0 ? plannedRest : restDuration;
+        if (plannedRest && plannedRest > 0) setRestDuration(plannedRest);
         setShowRestTimer(true);
-        setRestCountdown(restDuration);
+        setRestCountdown(duration);
     }, [restDuration]);
 
     const handleDismissRest = useCallback(() => {
@@ -662,6 +667,31 @@ function buildRenderList(exercises: ExerciseLog[]): RenderItem[] {
     return result;
 }
 
+/** How sets of this exercise are logged (custom cardio exercises log time + distance). */
+function getTracking(exerciseId: string, exercises: Exercise[]): TrackingType {
+    const known = EXERCISE_BY_ID[exerciseId];
+    if (known?.tracking) return known.tracking;
+    const custom = exercises.find(e => e.id === exerciseId);
+    if (custom?.tracking) return custom.tracking;
+    return custom?.category === 'cardio' ? 'cardio' : 'weight_reps';
+}
+
+/** Working sets from the most recent finished workout that included this exercise. */
+function findLastSets(exerciseId: string, workouts: WorkoutSession[]): WorkoutSet[] | null {
+    for (const w of workouts) {
+        const log = w.exercises.find(e => e.exerciseId === exerciseId && e.sets.some(s => s.type !== 'warmup'));
+        if (log) return log.sets.filter(s => s.type !== 'warmup');
+    }
+    return null;
+}
+
+function formatClock(totalSeconds: number): string {
+    const s = Math.round(totalSeconds);
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return m > 0 ? `${m}:${r.toString().padStart(2, '0')}` : `${r}s`;
+}
+
 // RPE Color based on exertion level
 const getRpeColor = (rpe: number, colors: any): string => {
     if (rpe <= 5) return colors.success;
@@ -685,7 +715,7 @@ const ExerciseCard = ({
 }: {
     log: ExerciseLog;
     index: number;
-    onSetLogged: () => void;
+    onSetLogged: (plannedRest?: number) => void;
     showModal: (title: string, message: string, onConfirm?: () => void, variant?: any) => void;
     positionLabel: string | null;
     supersetColor: string | undefined;
@@ -699,34 +729,92 @@ const ExerciseCard = ({
     const { colors } = useTheme();
     const styles = createStyles(colors);
     const { weightUnit, displayWeight, toMetricWeight } = useUnits();
-    const { logSet, deleteSet, removeExerciseFromWorkout, updateExerciseNotes } = useWorkout();
-    const [weight, setWeight] = useState('');
+    const { logSet, deleteSet, removeExerciseFromWorkout, updateExerciseNotes, workouts, exercises } = useWorkout();
+    const tracking = useMemo(() => getTracking(log.exerciseId, exercises), [log.exerciseId, exercises]);
+    const lastSets = useMemo(() => findLastSets(log.exerciseId, workouts), [log.exerciseId, workouts]);
+    const target = log.target;
+
+    // Start from the plan's load, otherwise last time's top set.
+    const initialWeight = (() => {
+        const kg = target?.weight ?? lastSets?.reduce((m, s) => Math.max(m, s.weight), 0);
+        return kg && kg > 0 ? String(Math.round(displayWeight(kg) * 2) / 2) : '';
+    })();
+    const [weight, setWeight] = useState(initialWeight);
     const [reps, setReps] = useState('');
+    const [duration, setDuration] = useState('');   // seconds (time) or minutes (cardio)
+    const [distance, setDistance] = useState('');
     const [rpe, setRpe] = useState<number | null>(null);
     const [showRpeSelector, setShowRpeSelector] = useState(false);
     const [showPlateCalc, setShowPlateCalc] = useState(false);
+    const [showInfo, setShowInfo] = useState(false);
     const [showNotes, setShowNotes] = useState(!!log.notes);
     const [exerciseNotes, setExerciseNotes] = useState(log.notes || '');
 
-    const handleAddSet = () => {
-        const w = parseFloat(weight);
-        const r = parseFloat(reps);
+    const invalid = () =>
+        showModal(t('workoutSession.invalidInput'), t('workoutSession.invalidInputMessage'), undefined, 'danger');
 
-        if (isNaN(w) || isNaN(r) || w < 0 || r <= 0) {
-            showModal(t('workoutSession.invalidInput'), t('workoutSession.invalidInputMessage'), undefined, 'danger');
-            return;
+    const handleAddSet = () => {
+        const w = weight.trim() === '' ? 0 : parseFloat(weight);
+        const extra = rpe !== null ? { rpe } : {};
+
+        if (tracking === 'cardio') {
+            const minutes = parseFloat(duration);
+            const km = distance.trim() === '' ? undefined : parseFloat(distance);
+            if (isNaN(minutes) || minutes <= 0 || (km !== undefined && (isNaN(km) || km < 0))) return invalid();
+            logSet(log.id, {
+                weight: 0,
+                reps: 0,
+                type: 'normal',
+                durationSec: Math.round(minutes * 60),
+                ...(km ? { distance: toMetricDistance(km) } : {}),
+                ...extra,
+            });
+            setDuration('');
+            setDistance('');
+            setRpe(null);
+            return; // no rest timer after cardio
         }
 
-        logSet(log.id, {
-            weight: toMetricWeight(w),
-            reps: r,
-            type: 'normal',
-            ...(rpe !== null ? { rpe } : {}),
-        });
-        setReps('');
+        if (tracking === 'time') {
+            const seconds = parseFloat(duration);
+            if (isNaN(seconds) || seconds <= 0 || isNaN(w) || w < 0) return invalid();
+            logSet(log.id, { weight: toMetricWeight(w), reps: 0, type: 'normal', durationSec: Math.round(seconds), ...extra });
+            setDuration('');
+        } else {
+            const r = parseFloat(reps);
+            // Weight is required for loaded lifts; bodyweight exercises allow 0 / empty.
+            if (isNaN(w) || isNaN(r) || w < 0 || r <= 0 || (tracking === 'weight_reps' && weight.trim() === '')) return invalid();
+            logSet(log.id, { weight: toMetricWeight(w), reps: r, type: 'normal', ...extra });
+            setReps('');
+        }
         setRpe(null);
-        onSetLogged(); // trigger rest timer
+        onSetLogged(target?.restSeconds); // trigger rest timer
     };
+
+    const toMetricDistance = (value: number) => (weightUnit === 'lbs' ? value / 0.621371 : value);
+    const distanceUnit = weightUnit === 'lbs' ? 'mi' : 'km';
+
+    const formatSetValue = (set: WorkoutSet) => {
+        if (set.durationSec && tracking === 'cardio') {
+            const km = set.distance ? ` · ${Math.round((weightUnit === 'lbs' ? set.distance * 0.621371 : set.distance) * 100) / 100} ${distanceUnit}` : '';
+            return `${formatClock(set.durationSec)}${km}`;
+        }
+        if (set.durationSec) return `${formatClock(set.durationSec)}${set.weight > 0 ? ` +${displayWeight(set.weight)}` : ''}`;
+        return null;
+    };
+
+    const planText = target
+        ? [
+            `${target.sets} × ${target.reps}`,
+            target.weight ? `${Math.round(displayWeight(target.weight) * 2) / 2} ${weightUnit}` : null,
+            `${t('workoutSession.restShort')} ${formatClock(target.restSeconds)}`,
+        ].filter(Boolean).join(' · ')
+        : null;
+    const lastText = lastSets && lastSets.length
+        ? lastSets.slice(0, 4).map(s => s.durationSec
+            ? formatClock(s.durationSec)
+            : `${s.weight > 0 ? displayWeight(s.weight) : 'BW'}×${s.reps}`).join(', ')
+        : null;
 
     const plateCalcWeight = parseFloat(weight) || (log.sets.length > 0 ? log.sets[log.sets.length - 1].weight : 0);
 
@@ -756,12 +844,20 @@ const ExerciseCard = ({
                         <Typography variant="h3">{getExerciseName(log.exerciseId, t, log.exerciseName)}</Typography>
                         {log.sets.length > 0 && (
                             <Typography variant="caption" style={{ marginTop: 2 }}>
-                                {log.sets.length} {t('common.sets')} • {Math.round(displayWeight(exerciseVolume))} {weightUnit}
+                                {log.sets.length}{target ? `/${target.sets}` : ''} {t('common.sets')}
+                                {exerciseVolume > 0 ? ` • ${Math.round(displayWeight(exerciseVolume))} ${weightUnit}` : ''}
                             </Typography>
                         )}
                     </View>
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <TouchableOpacity
+                        onPress={() => setShowInfo(true)}
+                        style={styles.infoBtn}
+                        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                    >
+                        <PlayCircle color={colors.primary} size={18} />
+                    </TouchableOpacity>
                     {onUnlink && (
                         <TouchableOpacity
                             onPress={onUnlink}
@@ -783,11 +879,46 @@ const ExerciseCard = ({
                 </View>
             </View>
 
+            {/* Plan and last time */}
+            {(planText || lastText) && (
+                <View style={styles.planBox}>
+                    {planText && (
+                        <Typography variant="caption" color={colors.primary} bold style={{ fontSize: 12 }}>
+                            🎯 {t('workoutSession.plan')}: {planText}
+                        </Typography>
+                    )}
+                    {target?.notes ? (
+                        <Typography variant="caption" color={colors.textSecondary} style={{ fontSize: 11, marginTop: 2 }}>
+                            💡 {target.notes}
+                        </Typography>
+                    ) : null}
+                    {lastText && (
+                        <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 11, marginTop: 2 }}>
+                            🕘 {t('workoutSession.lastTime')}: {lastText}
+                        </Typography>
+                    )}
+                </View>
+            )}
+
             {/* Table Header */}
             <View style={[styles.row, styles.tableHeader]}>
                 <Typography variant="label" style={styles.colSet}>{t('common.set')}</Typography>
-                <Typography variant="label" style={styles.colVal}>{weightUnit}</Typography>
-                <Typography variant="label" style={styles.colVal}>{t('common.repsLabel')}</Typography>
+                {tracking === 'cardio' ? (
+                    <>
+                        <Typography variant="label" style={styles.colVal}>{t('common.min')}</Typography>
+                        <Typography variant="label" style={styles.colVal}>{distanceUnit}</Typography>
+                    </>
+                ) : tracking === 'time' ? (
+                    <>
+                        <Typography variant="label" style={styles.colVal}>{t('workoutSession.time')}</Typography>
+                        <Typography variant="label" style={styles.colVal}>+{weightUnit}</Typography>
+                    </>
+                ) : (
+                    <>
+                        <Typography variant="label" style={styles.colVal}>{tracking === 'reps' ? `+${weightUnit}` : weightUnit}</Typography>
+                        <Typography variant="label" style={styles.colVal}>{t('common.repsLabel')}</Typography>
+                    </>
+                )}
                 <Typography variant="label" style={styles.colRpe}>{t('common.rpe')}</Typography>
                 <View style={{ width: 36 }} />
             </View>
@@ -800,8 +931,14 @@ const ExerciseCard = ({
                             {i + 1}
                         </Typography>
                     </View>
-                    <Typography variant="body" style={styles.colVal} bold>{displayWeight(set.weight)}</Typography>
-                    <Typography variant="body" style={styles.colVal}>{set.reps}</Typography>
+                    {formatSetValue(set) !== null ? (
+                        <Typography variant="body" style={[styles.colVal, { flex: 2 }]} bold>{formatSetValue(set)}</Typography>
+                    ) : (
+                        <>
+                            <Typography variant="body" style={styles.colVal} bold>{set.weight > 0 ? displayWeight(set.weight) : (tracking === 'weight_reps' ? 0 : 'BW')}</Typography>
+                            <Typography variant="body" style={styles.colVal}>{set.reps}</Typography>
+                        </>
+                    )}
                     <View style={styles.colRpe}>
                         {set.rpe ? (
                             <View style={[styles.rpeBadge, { backgroundColor: getRpeColor(set.rpe, colors) + '20', borderColor: getRpeColor(set.rpe, colors) + '50' }]}>
@@ -831,25 +968,70 @@ const ExerciseCard = ({
                     </Typography>
                 </View>
 
-                <TextInput
-                    style={styles.input}
-                    placeholder={weightUnit}
-                    keyboardType="numeric"
-                    placeholderTextColor={colors.textMuted}
-                    value={weight}
-                    onChangeText={setWeight}
-                />
-
-                <TextInput
-                    style={styles.input}
-                    placeholder={t('common.reps')}
-                    keyboardType="numeric"
-                    placeholderTextColor={colors.textMuted}
-                    value={reps}
-                    onChangeText={setReps}
-                    onSubmitEditing={handleAddSet}
-                    returnKeyType="done"
-                />
+                {tracking === 'cardio' ? (
+                    <>
+                        <TextInput
+                            style={styles.input}
+                            placeholder={t('common.min')}
+                            keyboardType="numeric"
+                            placeholderTextColor={colors.textMuted}
+                            value={duration}
+                            onChangeText={setDuration}
+                        />
+                        <TextInput
+                            style={styles.input}
+                            placeholder={distanceUnit}
+                            keyboardType="numeric"
+                            placeholderTextColor={colors.textMuted}
+                            value={distance}
+                            onChangeText={setDistance}
+                            onSubmitEditing={handleAddSet}
+                            returnKeyType="done"
+                        />
+                    </>
+                ) : tracking === 'time' ? (
+                    <>
+                        <TextInput
+                            style={styles.input}
+                            placeholder={t('workoutSession.seconds')}
+                            keyboardType="numeric"
+                            placeholderTextColor={colors.textMuted}
+                            value={duration}
+                            onChangeText={setDuration}
+                        />
+                        <TextInput
+                            style={styles.input}
+                            placeholder={`+${weightUnit}`}
+                            keyboardType="numeric"
+                            placeholderTextColor={colors.textMuted}
+                            value={weight}
+                            onChangeText={setWeight}
+                            onSubmitEditing={handleAddSet}
+                            returnKeyType="done"
+                        />
+                    </>
+                ) : (
+                    <>
+                        <TextInput
+                            style={styles.input}
+                            placeholder={tracking === 'reps' ? `+${weightUnit}` : weightUnit}
+                            keyboardType="numeric"
+                            placeholderTextColor={colors.textMuted}
+                            value={weight}
+                            onChangeText={setWeight}
+                        />
+                        <TextInput
+                            style={styles.input}
+                            placeholder={t('common.reps')}
+                            keyboardType="numeric"
+                            placeholderTextColor={colors.textMuted}
+                            value={reps}
+                            onChangeText={setReps}
+                            onSubmitEditing={handleAddSet}
+                            returnKeyType="done"
+                        />
+                    </>
+                )}
 
                 {/* RPE Button */}
                 {canAccessRpe ? (
@@ -922,6 +1104,7 @@ const ExerciseCard = ({
             )}
 
             {/* Plate Calculator — full width */}
+            {tracking === 'weight_reps' && (
             <TouchableOpacity
                 onPress={() => setShowPlateCalc(true)}
                 style={styles.plateCalcRow}
@@ -932,6 +1115,7 @@ const ExerciseCard = ({
                     {t('plateCalculator.title')}
                 </Typography>
             </TouchableOpacity>
+            )}
 
             {/* Per-Exercise Notes */}
             <TouchableOpacity
@@ -968,6 +1152,13 @@ const ExerciseCard = ({
                 visible={showPlateCalc}
                 onClose={() => setShowPlateCalc(false)}
                 weight={plateCalcWeight}
+            />
+
+            <ExerciseInfoModal
+                visible={showInfo}
+                exerciseId={log.exerciseId}
+                exerciseName={getExerciseName(log.exerciseId, t, log.exerciseName)}
+                onClose={() => setShowInfo(false)}
             />
         </Card>
     );
@@ -1028,6 +1219,23 @@ const createStyles = (colors: any) => StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'flex-start',
         marginBottom: 14,
+    },
+    infoBtn: {
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: colors.primary + '12',
+    },
+    planBox: {
+        marginBottom: 10,
+        paddingVertical: 8,
+        paddingHorizontal: 10,
+        borderRadius: borderRadius.s,
+        backgroundColor: colors.primary + '0D',
+        borderWidth: 1,
+        borderColor: colors.primary + '25',
     },
     removeBtn: {
         paddingHorizontal: 10,

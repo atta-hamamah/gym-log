@@ -24,6 +24,8 @@ import { useCloudSync } from '../context/CloudSyncContext';
 import { useTheme } from '../context/ThemeContext';
 import { useWorkout } from '../context/WorkoutContext';
 import { isProfileComplete } from '../utils/profile';
+import { TrainingProfileForm, trainingProfileArgs, trainingProfileOf } from '../components/TrainingProfileForm';
+import type { TrainingProfile } from '../types';
 import type { SyncProgress, SyncReport } from '../services/cloudSync';
 
 /**
@@ -120,6 +122,7 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [gender, setGender] = useState<'male' | 'female' | 'other' | ''>('');
   const [goal, setGoal] = useState('');
+  const [training, setTraining] = useState<TrainingProfile>({});
 
   // ── Sync State ──
   const [syncProgress, setSyncProgress] = useState<SyncProgress | null>(null);
@@ -403,6 +406,7 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
     }
     if (profile.gender && !gender) setGender(profile.gender);
     if (profile.goal && !goal) setGoal(profile.goal);
+    setTraining(prev => ({ ...trainingProfileOf(profile), ...prev }));
   }, [step, profile]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ══════════════════════════════════════════════════════
@@ -455,6 +459,7 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
         dateOfBirth,
         gender,
         goal: goal.trim() || undefined,
+        ...trainingProfileArgs(training),
       });
       setStep('syncing');
     } catch (err: any) {
@@ -463,7 +468,7 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
     } finally {
       setLoading(false);
     }
-  }, [gender, dateOfBirth, goal, updateProfile, t]);
+  }, [gender, dateOfBirth, goal, training, updateProfile, t]);
 
   const handleResolveConflict = useCallback(async (choice: 'merge' | 'replace') => {
     setLoading(true);
@@ -982,6 +987,9 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
         maxLength={200}
         textAlignVertical="top"
       />
+
+      {/* Training profile: what the coach plans around */}
+      <TrainingProfileForm value={training} onChange={setTraining} />
 
       {error ? (
         <Typography variant="caption" color={colors.error} style={{ marginTop: 8 }}>

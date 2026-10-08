@@ -154,9 +154,22 @@ export const updateProfile = mutation({
     height: v.optional(v.float64()),
     goal: v.optional(v.string()),
     unitPreference: v.optional(v.union(v.literal("metric"), v.literal("imperial"))),
+    experience: v.optional(v.union(v.literal("beginner"), v.literal("intermediate"), v.literal("advanced"))),
+    equipment: v.optional(v.array(v.string())),
+    trainingDays: v.optional(v.float64()),
+    sessionMinutes: v.optional(v.float64()),
+    limitations: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const user = await requireCurrentUser(ctx);
+    if (args.equipment && args.equipment.length > 40) throw new Error("Too many equipment items");
+    if (args.limitations && args.limitations.length > 500) throw new Error("Limitations text too long");
+    if (args.trainingDays !== undefined && (args.trainingDays < 1 || args.trainingDays > 7)) {
+      throw new Error("Training days must be between 1 and 7");
+    }
+    if (args.sessionMinutes !== undefined && (args.sessionMinutes < 10 || args.sessionMinutes > 240)) {
+      throw new Error("Session length must be between 10 and 240 minutes");
+    }
     const cleaned = Object.fromEntries(
       Object.entries(args).filter(([_, value]) => value !== undefined)
     );
