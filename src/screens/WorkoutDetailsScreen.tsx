@@ -7,7 +7,7 @@ import { Card } from '../components/Card';
 import { StatTile } from '../components/StatTile';
 import { Clock, Layers, Repeat, Weight, Trophy, Link2, NotebookPen, Trash2 } from 'lucide-react-native';
 import { Button } from '../components/Button';
-import { format } from 'date-fns';
+import { formatDate } from '../utils/dates';
 import { borderRadius, ThemeColors } from '../theme/colors';
 import { WorkoutSession, ExerciseLog, Set as WorkoutSet } from '../types';
 import { useTranslation } from 'react-i18next';
@@ -174,11 +174,11 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
 
                 {/* Table */}
                 <View style={styles.tableHeader}>
-                    <Typography variant="label" style={styles.colSet}>{t('common.set')}</Typography>
-                    <Typography variant="label" style={styles.colData}>{weightUnit}</Typography>
-                    <Typography variant="label" style={styles.colData}>{t('common.repsLabel')}</Typography>
-                    <Typography variant="label" style={styles.colData}>{t('common.rpe')}</Typography>
-                    <Typography variant="label" style={[styles.colData, { textAlign: 'right' }]}>{t('common.vol')}</Typography>
+                    <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.colSet}>{t('common.set')}</Typography>
+                    <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.colData}>{weightUnit}</Typography>
+                    <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.colData}>{t('common.repsLabel')}</Typography>
+                    <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.colData}>{t('common.rpe')}</Typography>
+                    <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={[styles.colData, { textAlign: 'right' }]}>{t('common.vol')}</Typography>
                 </View>
 
                 {log.sets.map((set: WorkoutSet, index: number) => (
@@ -234,7 +234,7 @@ export const WorkoutDetailsScreen = ({ route, navigation }: any) => {
                 {/* Title */}
                 <Typography variant="h1" style={{ marginBottom: 4 }}>{workout.name}</Typography>
                 <Typography variant="bodySmall" color={colors.textSecondary} style={{ marginBottom: 12 }}>
-                    {format(workout.startTime, 'EEEE, MMM dd, yyyy · HH:mm')}
+                    {formatDate(workout.startTime, 'EEEE, MMM dd, yyyy · HH:mm')}
                 </Typography>
 
                 {/* Mood Badge */}
@@ -383,7 +383,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         backgroundColor: colors.surfaceLight + '80',
     },
     colSet: {
-        width: 36,
+        width: 40,
         textAlign: 'center',
     },
     colData: {

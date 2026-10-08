@@ -20,7 +20,9 @@ import { generateId } from '../utils/generateId';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-import { Crown, Sparkles, CreditCard, LogOut, LogIn, Sun, Moon, Target, Ruler, Cloud, CloudOff, RefreshCw, AlertTriangle, Dumbbell, Globe, Scale, Download, Trash2, UserX, ChevronDown, ChevronUp, ChevronRight } from 'lucide-react-native';
+import { Crown, Sparkles, CreditCard, LogOut, LogIn, Sun, Moon, Target, Ruler, Cloud, CloudOff, RefreshCw, AlertTriangle, Dumbbell, Globe, Scale, Download, Trash2, UserX, ChevronDown, ChevronUp } from 'lucide-react-native';
+import { ForwardChevron } from '../components/DirectionalIcons';
+import { formatDate } from '../utils/dates';
 import { ListGroup, ListRow } from '../components/ListRow';
 import { Chip } from '../components/Chip';
 import { SegmentedControl } from '../components/SegmentedControl';
@@ -401,13 +403,13 @@ export const SettingsScreen = ({ navigation }: any) => {
         }
     };
 
-    const formatDate = (ms: number) => format(ms, 'MMM d, yyyy');
+    const formatPlanDate = (ms: number) => formatDate(ms, 'MMM d, yyyy');
     const aiStatusLine = aiBillingIssue
         ? t('plan.aiBillingIssue')
         : aiExpiresAt
             ? (aiWillRenew
-                ? t('plan.aiRenews', { date: formatDate(aiExpiresAt) })
-                : t('plan.aiEnds', { date: formatDate(aiExpiresAt) }))
+                ? t('plan.aiRenews', { date: formatPlanDate(aiExpiresAt) })
+                : t('plan.aiEnds', { date: formatPlanDate(aiExpiresAt) }))
             : null;
 
     const restoreRow = (
@@ -563,7 +565,7 @@ export const SettingsScreen = ({ navigation }: any) => {
                                     {t('settings.upgradeToAIDesc')}
                                 </Typography>
                             </View>
-                            <ChevronRight color={colors.secondary} size={18} />
+                            <ForwardChevron color={colors.secondary} size={18} />
                         </TouchableOpacity>
                     </Card>
                     <ListGroup>{restoreRow}</ListGroup>
@@ -642,7 +644,7 @@ export const SettingsScreen = ({ navigation }: any) => {
                 : t('account.syncError');
         } else {
             syncText = lastSyncedAt
-                ? t('account.syncedAt', { time: format(lastSyncedAt, 'MMM d, HH:mm') })
+                ? t('account.syncedAt', { time: formatDate(lastSyncedAt, 'MMM d, HH:mm') })
                 : t('account.syncWaiting');
         }
 
@@ -841,7 +843,7 @@ export const SettingsScreen = ({ navigation }: any) => {
                             </View>
                             {userStats?.lastUpdated && (
                                 <Typography variant="caption" color={colors.textMuted} style={{ marginTop: 10 }}>
-                                    {t('settings.lastUpdated', { date: format(userStats.lastUpdated, 'MMM dd, yyyy') })}
+                                    {t('settings.lastUpdated', { date: formatDate(userStats.lastUpdated, 'MMM dd, yyyy') })}
                                 </Typography>
                             )}
                             <Button title={t('settings.saveStats')} onPress={handleSaveStats} variant="secondary" style={{ marginTop: 12 }} />
@@ -883,51 +885,64 @@ export const SettingsScreen = ({ navigation }: any) => {
                                     style={{ marginTop: 12 }}
                                 />
 
-                                {/* Mini history */}
-                                {bodyMeasurements.length > 0 && (
-                                    <View style={{ marginTop: 18 }}>
-                                        <Typography variant="label" style={{ marginBottom: 6 }}>
-                                            {t('measurements.history')}
-                                        </Typography>
-                                        {bodyMeasurements.slice(0, 5).map((m, i) => {
-                                            const prev = bodyMeasurements[i + 1];
-                                            return (
-                                                <View key={m.id} style={styles.measureHistoryRow}>
-                                                    <Typography variant="caption" color={colors.textSecondary} style={{ width: 56 }}>
-                                                        {format(m.date, 'MMM dd')}
+                                {/* Mini history: one column per tracked measurement */}
+                                {bodyMeasurements.length > 0 && (() => {
+                                    const recent = bodyMeasurements.slice(0, 5);
+                                    const cols = MEASUREMENT_FIELDS.filter(field => recent.some(m => m[field.key]));
+                                    return (
+                                        <View style={styles.measureTable}>
+                                            <Typography variant="label" style={{ marginBottom: 8 }}>
+                                                {t('measurements.history')}
+                                            </Typography>
+                                            <View style={styles.measureTableHead}>
+                                                <View style={styles.measureDateCol} />
+                                                {cols.map(field => (
+                                                    <Typography
+                                                        key={field.key}
+                                                        variant="label"
+                                                        numberOfLines={1}
+                                                        adjustsFontSizeToFit
+                                                        minimumFontScale={0.7}
+                                                        style={styles.measureCell}
+                                                    >
+                                                        {field.label}
                                                     </Typography>
-                                                    <View style={styles.measureHistoryValues}>
-                                                        {MEASUREMENT_FIELDS.map(f => {
-                                                            const val = m[f.key];
-                                                            const prevVal = prev?.[f.key];
-                                                            if (!val) return null;
-                                                            const diff = prevVal ? val - prevVal : 0;
+                                                ))}
+                                            </View>
+                                            {recent.map((m, i) => {
+                                                const prev = bodyMeasurements[i + 1];
+                                                return (
+                                                    <View key={m.id} style={[styles.measureTableRow, i === recent.length - 1 && styles.measureTableRowLast]}>
+                                                        <Typography variant="caption" color={colors.textSecondary} style={styles.measureDateCol}>
+                                                            {formatDate(m.date, 'MMM dd')}
+                                                        </Typography>
+                                                        {cols.map(field => {
+                                                            const val = m[field.key];
+                                                            const prevVal = prev?.[field.key];
+                                                            const diff = val && prevVal ? val - prevVal : 0;
                                                             return (
-                                                                <View key={f.key} style={styles.measureHistoryChip}>
-                                                                    <Typography variant="caption" color={colors.textMuted} style={{ fontSize: 10, lineHeight: 13 }}>
-                                                                        {f.label}
+                                                                <View key={field.key} style={styles.measureCell}>
+                                                                    <Typography variant="bodySmall" bold color={val ? colors.text : colors.textMuted} style={styles.measureValue}>
+                                                                        {val ? displayLength(val) : '—'}
                                                                     </Typography>
-                                                                    <Typography variant="caption" bold color={colors.text} style={{ fontSize: 12, lineHeight: 16 }}>
-                                                                        {displayLength(val)}
-                                                                        {diff !== 0 && (
-                                                                            <Typography
-                                                                                variant="caption"
-                                                                                color={diff > 0 ? colors.warning : colors.success}
-                                                                                style={{ fontSize: 10 }}
-                                                                            >
-                                                                                {' '}{diff > 0 ? '↑' : '↓'}{Math.abs(displayLength(diff)).toFixed(1)}
-                                                                            </Typography>
-                                                                        )}
-                                                                    </Typography>
+                                                                    {diff !== 0 && (
+                                                                        <Typography
+                                                                            variant="caption"
+                                                                            color={diff > 0 ? colors.warning : colors.success}
+                                                                            style={styles.measureDelta}
+                                                                        >
+                                                                            {diff > 0 ? '↑' : '↓'}{Math.abs(displayLength(diff)).toFixed(1)}
+                                                                        </Typography>
+                                                                    )}
                                                                 </View>
                                                             );
                                                         })}
                                                     </View>
-                                                </View>
-                                            );
-                                        })}
-                                    </View>
-                                )}
+                                                );
+                                            })}
+                                        </View>
+                                    );
+                                })()}
                             </View>
                         )}
                     </ProFeatureGate>
@@ -955,7 +970,7 @@ export const SettingsScreen = ({ navigation }: any) => {
 
                 {/* Data Management */}
                 <ListGroup title={t('settings.dataManagement')} footer={t('settings.dataManagementDescription')}>
-                    <ProFeatureGate feature="csvExport" inline>
+                    <ProFeatureGate feature="csvExport">
                         <ListRow
                             title={t('settings.exportCSV')}
                             icon={c => <Download color={c} size={17} />}
@@ -1220,24 +1235,41 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         width: '30%',
         flexGrow: 1,
     },
-    measureHistoryRow: {
+    measureTable: {
+        marginTop: 20,
+    },
+    measureTableHead: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingBottom: 6,
+        borderBottomWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: colors.border,
+    },
+    measureTableRow: {
         flexDirection: 'row',
         alignItems: 'center',
         paddingVertical: 8,
         borderBottomWidth: StyleSheet.hairlineWidth,
         borderBottomColor: colors.border,
     },
-    measureHistoryValues: {
-        flex: 1,
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 6,
+    measureTableRowLast: {
+        borderBottomWidth: 0,
+        paddingBottom: 2,
     },
-    measureHistoryChip: {
+    measureDateCol: {
+        width: 52,
+    },
+    measureCell: {
+        flex: 1,
         alignItems: 'center',
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        backgroundColor: colors.surfaceLight,
-        borderRadius: borderRadius.s,
+        textAlign: 'center',
+    },
+    measureValue: {
+        fontVariant: ['tabular-nums'],
+    },
+    measureDelta: {
+        fontSize: 10.5,
+        lineHeight: 13,
+        fontVariant: ['tabular-nums'],
     },
 });

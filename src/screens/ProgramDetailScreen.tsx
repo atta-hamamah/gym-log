@@ -11,7 +11,8 @@ import { PROGRAMS } from '../constants/programs';
 import { ProgramDay, ProgramExercise, WorkoutProgram } from '../types';
 import { useTranslation } from 'react-i18next';
 import { getExerciseName } from '../constants/exercises';
-import { PlayCircle, ArrowLeft, ChevronDown, Lightbulb, Play, CalendarDays, ListChecks, Clock } from 'lucide-react-native';
+import { PlayCircle, ChevronDown, Lightbulb, Play, CalendarDays, ListChecks, Clock } from 'lucide-react-native';
+import { BackArrow } from '../components/DirectionalIcons';
 import { IconButton } from '../components/IconButton';
 import { StatTile } from '../components/StatTile';
 import { GoalIcon, LevelDots, goalTone } from '../components/ProgramVisuals';
@@ -119,7 +120,7 @@ export const ProgramDetailScreen = ({ route, navigation }: any) => {
                 {/* Back Button */}
                 <View style={styles.topBar}>
                     <IconButton
-                        icon={c => <ArrowLeft color={c} size={20} />}
+                        icon={c => <BackArrow color={c} size={20} />}
                         onPress={() => navigation.goBack()}
                         accessibilityLabel={t('common.goBack')}
                     />
@@ -176,7 +177,7 @@ export const ProgramDetailScreen = ({ route, navigation }: any) => {
                             >
                                 <View style={[styles.dayBadge, { backgroundColor: tone.soft }]}>
                                     <Typography variant="caption" color={tone.fg} bold style={{ fontSize: 11 }}>
-                                        {day.dayLabel}
+                                        {t('programs.dayN', { n: dayIndex + 1, defaultValue: day.dayLabel })}
                                     </Typography>
                                 </View>
                                 <View style={{ flex: 1, marginLeft: 10 }}>
@@ -195,10 +196,10 @@ export const ProgramDetailScreen = ({ route, navigation }: any) => {
                                 <View style={styles.exerciseList}>
                                     {/* Table Header */}
                                     <View style={styles.tableHeader}>
-                                        <Typography variant="label" style={styles.colExercise}>{t('programs.exercise')}</Typography>
-                                        <Typography variant="label" style={styles.colSets}>{t('common.sets')}</Typography>
-                                        <Typography variant="label" style={styles.colReps}>{t('common.reps')}</Typography>
-                                        <Typography variant="label" style={styles.colRest}>{t('programs.rest')}</Typography>
+                                        <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.colExercise}>{t('programs.exercise')}</Typography>
+                                        <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.colSets}>{t('common.sets')}</Typography>
+                                        <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.colReps}>{t('common.reps')}</Typography>
+                                        <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.colRest}>{t('programs.rest')}</Typography>
                                     </View>
 
                                     {/* Exercise Rows */}
@@ -364,7 +365,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         flex: 3,
     },
     colSets: {
-        width: 36,
+        width: 44,
         textAlign: 'center',
     },
     colReps: {

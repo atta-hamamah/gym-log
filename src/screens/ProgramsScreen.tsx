@@ -4,7 +4,8 @@ import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { Card } from '../components/Card';
 import { borderRadius, ThemeColors } from '../theme/colors';
-import { ChevronRight } from 'lucide-react-native';
+
+import { ForwardChevron } from '../components/DirectionalIcons';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { Chip } from '../components/Chip';
 import { GoalIcon, LevelDots, goalTone } from '../components/ProgramVisuals';
@@ -60,7 +61,7 @@ export const ProgramsScreen = ({ navigation }: any) => {
                                 </View>
                             </View>
                         </View>
-                        <ChevronRight color={colors.textMuted} size={18} />
+                        <ForwardChevron color={colors.textMuted} size={18} />
                     </View>
 
                     {/* Description */}

@@ -6,7 +6,8 @@ import { ProgressChart } from '../components/ProgressChart';
 import { StatTile } from '../components/StatTile';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { SegmentedControl } from '../components/SegmentedControl';
-import { Trophy, TrendingUp, ArrowUpRight, Percent, Dumbbell, Weight, Layers, Clock, BarChart3, ChevronRight, Check, LineChart } from 'lucide-react-native';
+import { Trophy, TrendingUp, ArrowUpRight, Percent, Dumbbell, Weight, Layers, Clock, BarChart3, Check, LineChart } from 'lucide-react-native';
+import { ForwardChevron } from '../components/DirectionalIcons';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { borderRadius, spacing, ThemeColors } from '../theme/colors';
@@ -409,7 +410,7 @@ export const ProgressScreen = () => {
                                     {t('progress.drillDownHint')}
                                 </Typography>
                             </View>
-                            <ChevronRight color={colors.textMuted} size={18} />
+                            <ForwardChevron color={colors.textMuted} size={18} />
                         </TouchableOpacity>
                     </View>
                 ) : (

@@ -18,7 +18,8 @@ import { useAction, useQuery } from 'convex/react';
 import { ConvexError } from 'convex/values';
 import { api } from '../../convex/_generated/api';
 import { useSubscription } from '../context/SubscriptionContext';
-import { ArrowUp, Sparkles, MessageCircle, ChevronRight } from 'lucide-react-native';
+import { ArrowUp, Sparkles, MessageCircle } from 'lucide-react-native';
+import { ForwardChevron } from '../components/DirectionalIcons';
 import { Button } from '../components/Button';
 import { AIGeneratedWorkout } from '../types';
 import { useWorkout } from '../context/WorkoutContext';
@@ -216,7 +217,7 @@ export const AIChatScreen = ({ navigation }: any) => {
             <Typography variant="bodySmall" color={colors.text} style={{ flex: 1 }}>
               {suggestion}
             </Typography>
-            <ChevronRight color={colors.textMuted} size={16} />
+            <ForwardChevron color={colors.textMuted} size={16} />
           </TouchableOpacity>
         ))}
       </View>
@@ -312,7 +313,7 @@ export const AIChatScreen = ({ navigation }: any) => {
                 onPress={sendMessage}
                 disabled={!canSend}
                 accessibilityRole="button"
-                accessibilityLabel={t('aiChat.placeholder')}
+                accessibilityLabel={t('aiChat.send', 'Send')}
               >
                 <ArrowUp color={canSend ? colors.onPrimary : colors.textMuted} size={19} strokeWidth={2.6} />
               </TouchableOpacity>

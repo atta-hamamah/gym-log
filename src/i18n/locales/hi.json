@@ -79,7 +79,8 @@
       "hypertrophy": "मांसपेशी वृद्धि",
       "general": "सामान्य",
       "fat_loss": "वसा हानि"
-    }
+    },
+    "dayN": "दिन {{n}}"
   },
   "history": {
     "title": "इतिहास",
@@ -444,7 +445,8 @@
     "unlockPro": "प्रो से अनलॉक करें",
     "proFeature": "प्रो सुविधा",
     "upgradeMessage": "इस सुविधा को अनलॉक करने के लिए प्रो में अपग्रेड करें — एकमुश्त भुगतान",
-    "upgrade": "प्रो में अपग्रेड करें"
+    "upgrade": "प्रो में अपग्रेड करें",
+    "badge": "प्रो"
   },
   "aiGate": {
     "title": "अपने AI कोच से मिलें",
@@ -625,7 +627,8 @@
     "suggestion2": "इस हफ्ते मैंने कितनी बार ट्रेनिंग की?",
     "suggestion3": "क्या मैं किसी मांसपेशी को ओवरट्रेन कर रहा हूं?",
     "suggestion4": "आज के लिए वर्कआउट सुझाएं",
-    "subscriptionRequired": "आपकी AI कोच सदस्यता अब सक्रिय नहीं है। चैट जारी रखने के लिए इसे नवीनीकृत करें।"
+    "subscriptionRequired": "आपकी AI कोच सदस्यता अब सक्रिय नहीं है। चैट जारी रखने के लिए इसे नवीनीकृत करें।",
+    "send": "भेजें"
   },
   "aura": {
     "consulting": "जिम के दिग्गजों से सलाह ले रहे हैं...",
@@ -645,19 +648,19 @@
     "goToAI": "AI Coach अनलॉक करें"
   },
   "aiWorkout": {
-    "generateBtn": "Generate Workout",
-    "generating": "Creating your workout...",
-    "previewTitle": "Your AI Workout",
-    "aiGenerated": "AI Generated",
-    "reasoning": "Why this workout?",
-    "startWorkout": "Start This Workout",
-    "regenerate": "Regenerate",
-    "removeExercise": "Remove",
+    "generateBtn": "वर्कआउट बनाएं",
+    "generating": "आपका वर्कआउट बनाया जा रहा है...",
+    "previewTitle": "आपका AI वर्कआउट",
+    "aiGenerated": "AI द्वारा बनाया गया",
+    "reasoning": "यह वर्कआउट क्यों?",
+    "startWorkout": "यह वर्कआउट शुरू करें",
+    "regenerate": "फिर से बनाएं",
+    "removeExercise": "हटाएं",
     "newExercise": "NEW",
-    "errorTitle": "Generation Failed",
-    "errorMessage": "Could not generate a workout. Please try again.",
-    "workoutActiveTitle": "Workout in Progress",
-    "workoutActiveMessage": "Finish or cancel your current workout before starting a new one.",
+    "errorTitle": "बनाया नहीं जा सका",
+    "errorMessage": "वर्कआउट नहीं बन सका। कृपया फिर से कोशिश करें।",
+    "workoutActiveTitle": "वर्कआउट चल रहा है",
+    "workoutActiveMessage": "नया वर्कआउट शुरू करने से पहले मौजूदा वर्कआउट पूरा या रद्द करें।",
     "commentTitle": "आप कैसा महसूस कर रहे हैं?",
     "commentDesc": "अपने AI कोच के लिए एक नोट जोड़ें (वैकल्पिक)",
     "commentPlaceholder": "जैसे: आज थकान है, ऊपरी शरीर पर ध्यान दें...",

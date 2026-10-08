@@ -849,7 +849,7 @@ const ExerciseCard = ({
                         tone="primary"
                         size={34}
                         onPress={() => setShowInfo(true)}
-                        accessibilityLabel={t('common.animationNotAvailable', 'Exercise info')}
+                        accessibilityLabel={getExerciseName(log.exerciseId, t, log.exerciseName)}
                     />
                     {onUnlink && (
                         <IconButton
@@ -904,24 +904,24 @@ const ExerciseCard = ({
 
             {/* Table Header */}
             <View style={[styles.row, styles.tableHeader]}>
-                <Typography variant="label" style={styles.colSet}>{t('common.set')}</Typography>
+                <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.colSet}>{t('common.set')}</Typography>
                 {tracking === 'cardio' ? (
                     <>
-                        <Typography variant="label" style={styles.colVal}>{t('common.min')}</Typography>
-                        <Typography variant="label" style={styles.colVal}>{distanceUnit}</Typography>
+                        <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.colVal}>{t('common.min')}</Typography>
+                        <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.colVal}>{distanceUnit}</Typography>
                     </>
                 ) : tracking === 'time' ? (
                     <>
-                        <Typography variant="label" style={styles.colVal}>{t('workoutSession.time')}</Typography>
-                        <Typography variant="label" style={styles.colVal}>+{weightUnit}</Typography>
+                        <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.colVal}>{t('workoutSession.time')}</Typography>
+                        <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.colVal}>+{weightUnit}</Typography>
                     </>
                 ) : (
                     <>
-                        <Typography variant="label" style={styles.colVal}>{tracking === 'reps' ? `+${weightUnit}` : weightUnit}</Typography>
-                        <Typography variant="label" style={styles.colVal}>{t('common.repsLabel')}</Typography>
+                        <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.colVal}>{tracking === 'reps' ? `+${weightUnit}` : weightUnit}</Typography>
+                        <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.colVal}>{t('common.repsLabel')}</Typography>
                     </>
                 )}
-                <Typography variant="label" style={styles.colRpe}>{t('common.rpe')}</Typography>
+                <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.colRpe}>{t('common.rpe')}</Typography>
                 <View style={{ width: 36 }} />
             </View>
 
@@ -1283,7 +1283,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         marginBottom: 4,
     },
     colSet: {
-        width: 32,
+        width: 36,
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 8,

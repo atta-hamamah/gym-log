@@ -79,7 +79,8 @@
       "hypertrophy": "Hipertrofia",
       "general": "General",
       "fat_loss": "Quema de grasa"
-    }
+    },
+    "dayN": "Día {{n}}"
   },
   "history": {
     "title": "Historial",
@@ -444,7 +445,8 @@
     "unlockPro": "Desbloquear con Pro",
     "proFeature": "Función Pro",
     "upgradeMessage": "Mejora a Pro para desbloquear esta función — pago único",
-    "upgrade": "Mejorar a Pro"
+    "upgrade": "Mejorar a Pro",
+    "badge": "Pro"
   },
   "aiGate": {
     "title": "Conoce a tu Coach IA",
@@ -625,7 +627,8 @@
     "suggestion2": "¿Cuántas veces entrené esta semana?",
     "suggestion3": "¿Estoy sobreentrenando algún músculo?",
     "suggestion4": "Sugiere un entrenamiento para hoy",
-    "subscriptionRequired": "Tu suscripción al Coach IA ya no está activa. Renuévala para seguir chateando."
+    "subscriptionRequired": "Tu suscripción al Coach IA ya no está activa. Renuévala para seguir chateando.",
+    "send": "Enviar"
   },
   "aura": {
     "consulting": "Consultando al oráculo del gimnasio...",
@@ -645,19 +648,19 @@
     "goToAI": "Desbloquear AI Coach"
   },
   "aiWorkout": {
-    "generateBtn": "Generate Workout",
-    "generating": "Creating your workout...",
-    "previewTitle": "Your AI Workout",
-    "aiGenerated": "AI Generated",
-    "reasoning": "Why this workout?",
-    "startWorkout": "Start This Workout",
-    "regenerate": "Regenerate",
-    "removeExercise": "Remove",
+    "generateBtn": "Generar entrenamiento",
+    "generating": "Creando tu entrenamiento...",
+    "previewTitle": "Tu entrenamiento con IA",
+    "aiGenerated": "Generado por IA",
+    "reasoning": "¿Por qué este entrenamiento?",
+    "startWorkout": "Empezar este entrenamiento",
+    "regenerate": "Generar otro",
+    "removeExercise": "Quitar",
     "newExercise": "NEW",
-    "errorTitle": "Generation Failed",
-    "errorMessage": "Could not generate a workout. Please try again.",
-    "workoutActiveTitle": "Workout in Progress",
-    "workoutActiveMessage": "Finish or cancel your current workout before starting a new one.",
+    "errorTitle": "No se pudo generar",
+    "errorMessage": "No se pudo generar un entrenamiento. Inténtalo de nuevo.",
+    "workoutActiveTitle": "Entrenamiento en curso",
+    "workoutActiveMessage": "Termina o cancela tu entrenamiento actual antes de empezar uno nuevo.",
     "commentTitle": "¿Cómo te sientes?",
     "commentDesc": "Agrega una nota para tu coach AI (opcional)",
     "commentPlaceholder": "ej. Estoy cansado hoy, enfócate en el tren superior...",

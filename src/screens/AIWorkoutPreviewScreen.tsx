@@ -15,7 +15,8 @@ import { useTheme } from '../context/ThemeContext';
 import { useUnits } from '../context/UnitsContext';
 import { StorageService } from '../services/storage';
 import { generateId } from '../utils/generateId';
-import { PlayCircle, Sparkles, RefreshCw, Trash2, ArrowLeft, Lightbulb, Flame, Target, Play, ListChecks, Layers, Clock } from 'lucide-react-native';
+import { PlayCircle, Sparkles, RefreshCw, Trash2, Lightbulb, Flame, Target, Play, ListChecks, Layers, Clock } from 'lucide-react-native';
+import { BackArrow } from '../components/DirectionalIcons';
 import { IconButton } from '../components/IconButton';
 import { StatTile } from '../components/StatTile';
 import { useAction, useQuery } from 'convex/react';
@@ -163,7 +164,7 @@ export const AIWorkoutPreviewScreen = ({ route, navigation }: any) => {
                 {/* Back Button */}
                 <View style={styles.topBar}>
                     <IconButton
-                        icon={c => <ArrowLeft color={c} size={20} />}
+                        icon={c => <BackArrow color={c} size={20} />}
                         onPress={() => navigation.goBack()}
                         accessibilityLabel={t('common.goBack')}
                     />
@@ -229,10 +230,10 @@ export const AIWorkoutPreviewScreen = ({ route, navigation }: any) => {
                 <Card style={styles.exerciseCard}>
                     {/* Table Header */}
                     <View style={styles.tableHeader}>
-                        <Typography variant="label" style={styles.colExercise}>{t('programs.exercise')}</Typography>
-                        <Typography variant="label" style={styles.colSets}>{t('common.sets')}</Typography>
-                        <Typography variant="label" style={styles.colReps}>{t('common.reps')}</Typography>
-                        <Typography variant="label" style={styles.colRest}>{t('programs.rest')}</Typography>
+                        <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.colExercise}>{t('programs.exercise')}</Typography>
+                        <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.colSets}>{t('common.sets')}</Typography>
+                        <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.colReps}>{t('common.reps')}</Typography>
+                        <Typography variant="label" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={styles.colRest}>{t('programs.rest')}</Typography>
                         <View style={{ width: 36 }} />
                     </View>
 
@@ -439,7 +440,7 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         flex: 3,
     },
     colSets: {
-        width: 36,
+        width: 44,
         textAlign: 'center',
     },
     colReps: {

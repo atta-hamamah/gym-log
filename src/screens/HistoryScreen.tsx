@@ -1,13 +1,14 @@
 import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { FlatList, TouchableOpacity, View, Alert, StyleSheet, ActivityIndicator } from 'react-native';
-import { Trash2, ChevronRight, NotebookPen, History as HistoryIcon } from 'lucide-react-native';
+import { Trash2, NotebookPen, History as HistoryIcon } from 'lucide-react-native';
+import { ForwardChevron } from '../components/DirectionalIcons';
 import { IconButton } from '../components/IconButton';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { useWorkout } from '../context/WorkoutContext';
 import { Card } from '../components/Card';
-import { format } from 'date-fns';
+import { formatDate } from '../utils/dates';
 import { borderRadius, ThemeColors } from '../theme/colors';
 import { WorkoutSession } from '../types';
 import { useTranslation } from 'react-i18next';
@@ -139,19 +140,19 @@ export const HistoryScreen = ({ navigation }: any) => {
                     <View style={styles.titleRow}>
                         <View style={styles.dayBadge}>
                             <Typography variant="caption" color={colors.primary} bold style={styles.dayName}>
-                                {format(item.startTime, 'EEE')}
+                                {formatDate(item.startTime, 'EEE')}
                             </Typography>
                             <Typography variant="body" bold style={styles.dayNum}>
-                                {format(item.startTime, 'dd')}
+                                {formatDate(item.startTime, 'dd')}
                             </Typography>
                         </View>
                         <View style={{ flex: 1, marginLeft: 14 }}>
                             <Typography variant="body" bold>{item.name}</Typography>
                             <Typography variant="caption" color={colors.textSecondary} style={{ marginTop: 2 }}>
-                                {format(item.startTime, 'MMM yyyy · HH:mm')}
+                                {formatDate(item.startTime, 'MMM yyyy · HH:mm')}
                             </Typography>
                         </View>
-                        <ChevronRight color={colors.textMuted} size={18} />
+                        <ForwardChevron color={colors.textMuted} size={18} />
                     </View>
 
                     {/* Stats Row */}

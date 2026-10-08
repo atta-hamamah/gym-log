@@ -54,36 +54,28 @@ export const ProFeatureGate: React.FC<ProFeatureGateProps> = ({
     );
   }
 
-  // Overlay mode: render children dimmed with a lock overlay on top
+  // Overlay mode: children stay visible but dimmed, with a small Pro pill on top.
+  // The pill fits inside a single row, so it never covers neighbouring free content.
   return (
     <View style={styles.container}>
-      {/* Dimmed children (still visible but not interactive) */}
       <View style={styles.dimmedContent} pointerEvents="none">
         {children}
       </View>
 
-      {/* Lock overlay */}
       <TouchableOpacity
-        style={[styles.overlay, { backgroundColor: colors.background + 'E8' }]}
+        style={styles.overlay}
         onPress={() => navigation.navigate('Paywall')}
-        activeOpacity={0.9}
+        activeOpacity={0.7}
+        accessibilityRole="button"
+        accessibilityLabel={t('proGate.proFeature', 'Pro Feature')}
+        accessibilityHint={message || t('proGate.upgradeMessage', 'Upgrade to Pro to unlock this feature — one-time payment')}
       >
-        <View style={[styles.lockBadge, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <Crown color={colors.primary} size={22} />
-          <Typography variant="body" bold color={colors.text} style={{ marginTop: 8 }}>
-            {t('proGate.proFeature', 'Pro Feature')}
-          </Typography>
-          <Typography
-            variant="caption"
-            color={colors.textSecondary}
-            align="center"
-            style={{ marginTop: 4, paddingHorizontal: 8 }}
-          >
-            {message || t('proGate.upgradeMessage', 'Upgrade to Pro to unlock this feature — one-time payment')}
-          </Typography>
-          <View style={[styles.upgradeBtn, { backgroundColor: colors.primary }]}>
-            <Typography variant="bodySmall" color={colors.onPrimary} bold>
-              {t('proGate.upgrade', 'Upgrade to Pro')}
+        {/* Opaque backing so the dimmed row's own trailing icon doesn't show through the tint */}
+        <View style={[styles.proPillBacking, { backgroundColor: colors.surface }]}>
+          <View style={[styles.proPill, { backgroundColor: colors.primarySoft }]}>
+            <Crown color={colors.primary} size={13} />
+            <Typography variant="caption" color={colors.primary} bold style={styles.proPillText}>
+              {t('proGate.badge', 'Pro')}
             </Typography>
           </View>
         </View>
@@ -97,26 +89,28 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   dimmedContent: {
-    opacity: 0.3,
+    opacity: 0.4,
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
     alignItems: 'center',
-    borderRadius: borderRadius.m,
+    paddingHorizontal: 14,
   },
-  lockBadge: {
-    alignItems: 'center',
-    paddingVertical: 20,
-    paddingHorizontal: 24,
-    borderRadius: borderRadius.l,
-    borderWidth: 1,
-  },
-  upgradeBtn: {
-    marginTop: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 8,
+  proPillBacking: {
     borderRadius: borderRadius.full,
+  },
+  proPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    height: 26,
+    paddingHorizontal: 9,
+    borderRadius: borderRadius.full,
+  },
+  proPillText: {
+    fontSize: 12,
   },
   inlineLock: {
     flexDirection: 'row',

@@ -79,7 +79,8 @@
       "hypertrophy": "Hypertrophie",
       "general": "Général",
       "fat_loss": "Perte de gras"
-    }
+    },
+    "dayN": "Jour {{n}}"
   },
   "history": {
     "title": "Historique",
@@ -444,7 +445,8 @@
     "unlockPro": "Débloquer avec Pro",
     "proFeature": "Fonction Pro",
     "upgradeMessage": "Passez à Pro pour débloquer cette fonction — paiement unique",
-    "upgrade": "Passer à Pro"
+    "upgrade": "Passer à Pro",
+    "badge": "Pro"
   },
   "aiGate": {
     "title": "Rencontrez votre Coach IA",
@@ -625,7 +627,8 @@
     "suggestion2": "Combien de fois me suis-je entraîné cette semaine ?",
     "suggestion3": "Est-ce que je surentraîne un muscle ?",
     "suggestion4": "Suggère un entraînement pour aujourd'hui",
-    "subscriptionRequired": "Votre abonnement Coach IA n'est plus actif. Renouvelez-le pour continuer à discuter."
+    "subscriptionRequired": "Votre abonnement Coach IA n'est plus actif. Renouvelez-le pour continuer à discuter.",
+    "send": "Envoyer"
   },
   "aura": {
     "consulting": "Consultation de l'oracle de la muscu...",
@@ -645,19 +648,19 @@
     "goToAI": "Débloquer AI Coach"
   },
   "aiWorkout": {
-    "generateBtn": "Generate Workout",
-    "generating": "Creating your workout...",
-    "previewTitle": "Your AI Workout",
-    "aiGenerated": "AI Generated",
-    "reasoning": "Why this workout?",
-    "startWorkout": "Start This Workout",
-    "regenerate": "Regenerate",
-    "removeExercise": "Remove",
+    "generateBtn": "Générer une séance",
+    "generating": "Création de votre séance...",
+    "previewTitle": "Votre séance IA",
+    "aiGenerated": "Généré par l'IA",
+    "reasoning": "Pourquoi cette séance ?",
+    "startWorkout": "Commencer cette séance",
+    "regenerate": "Régénérer",
+    "removeExercise": "Retirer",
     "newExercise": "NEW",
-    "errorTitle": "Generation Failed",
-    "errorMessage": "Could not generate a workout. Please try again.",
-    "workoutActiveTitle": "Workout in Progress",
-    "workoutActiveMessage": "Finish or cancel your current workout before starting a new one.",
+    "errorTitle": "Échec de la génération",
+    "errorMessage": "Impossible de générer une séance. Veuillez réessayer.",
+    "workoutActiveTitle": "Séance en cours",
+    "workoutActiveMessage": "Terminez ou annulez votre séance en cours avant d'en commencer une nouvelle.",
     "commentTitle": "Comment vous sentez-vous ?",
     "commentDesc": "Ajoutez une note pour votre coach AI (optionnel)",
     "commentPlaceholder": "ex. Je suis fatigué aujourd'hui, focus sur le haut du corps...",

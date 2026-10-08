@@ -3,7 +3,8 @@ import { View, StyleSheet, TouchableOpacity, Animated, Vibration } from 'react-n
 import { Typography } from './Typography';
 import { Button } from './Button';
 import { borderRadius, ThemeColors } from '../theme/colors';
-import { Check, SkipForward, Timer } from 'lucide-react-native';
+import { Check, Timer } from 'lucide-react-native';
+import { SkipAhead } from './DirectionalIcons';
 import { useAudioPlayer } from 'expo-audio';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
@@ -206,7 +207,7 @@ export const RestTimer: React.FC<RestTimerProps> = ({ visible, defaultDuration, 
                         variant={isFinished ? 'primary' : 'outline'}
                         size="small"
                         onPress={handleDismiss}
-                        iconRight={isFinished ? undefined : c => <SkipForward color={c} size={14} />}
+                        iconRight={isFinished ? undefined : c => <SkipAhead color={c} size={14} />}
                     />
                 </View>
             </View>

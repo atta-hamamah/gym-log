@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { View, ScrollView, TouchableOpacity, StyleSheet, TextInput, Modal, Image } from 'react-native';
-import { Sparkles, Dumbbell, Layers, Clock, Weight, ChevronRight, Play, Plus } from 'lucide-react-native';
+import { Sparkles, Dumbbell, Layers, Clock, Weight, Play, Plus } from 'lucide-react-native';
+import { ForwardChevron } from '../components/DirectionalIcons';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { StatTile } from '../components/StatTile';
 import { ScreenLayout } from '../components/ScreenLayout';
@@ -11,7 +12,8 @@ import { useSubscription } from '../context/SubscriptionContext';
 import { useAuth } from '@clerk/clerk-expo';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
-import { format, isThisWeek } from 'date-fns';
+import { isThisWeek } from 'date-fns';
+import { formatDate } from '../utils/dates';
 import { borderRadius, ThemeColors } from '../theme/colors';
 import { WorkoutSession } from '../types';
 import { useTranslation } from 'react-i18next';
@@ -171,10 +173,10 @@ export const HomeScreen = ({ navigation }: any) => {
                                 >
                                     <View style={styles.dateTile}>
                                         <Typography variant="caption" color={colors.primary} bold style={styles.dateDay}>
-                                            {format(workout.startTime, 'EEE')}
+                                            {formatDate(workout.startTime, 'EEE')}
                                         </Typography>
                                         <Typography variant="body" bold style={styles.dateNum}>
-                                            {format(workout.startTime, 'dd')}
+                                            {formatDate(workout.startTime, 'dd')}
                                         </Typography>
                                     </View>
                                     <View style={{ flex: 1 }}>
@@ -186,7 +188,7 @@ export const HomeScreen = ({ navigation }: any) => {
                                             {volume > 0 ? ` · ${formatVolume(volume)} ${weightUnit}` : ''}
                                         </Typography>
                                     </View>
-                                    <ChevronRight color={colors.textMuted} size={18} />
+                                    <ForwardChevron color={colors.textMuted} size={18} />
                                 </TouchableOpacity>
                             );
                         })}
@@ -259,7 +261,7 @@ export const HomeScreen = ({ navigation }: any) => {
                                     </Typography>
                                 )}
                             </View>
-                            {aiAvailable && <ChevronRight color={colors.secondary} size={18} />}
+                            {aiAvailable && <ForwardChevron color={colors.secondary} size={18} />}
                         </TouchableOpacity>
                     </View>
                 </View>

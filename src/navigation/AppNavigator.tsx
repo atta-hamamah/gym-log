@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, Platform, ActivityIndicator } from 'react-native';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -59,13 +59,17 @@ const TabNavigator = () => {
                 },
                 tabBarActiveTintColor: colors.primary,
                 tabBarInactiveTintColor: colors.textMuted,
-                tabBarLabelStyle: {
-                    fontSize: 10,
-                    lineHeight: 14,
-                    fontWeight: '600',
-                    letterSpacing: 0,
-                    marginTop: 2,
-                },
+                // Long translations shrink to fit instead of being cut off on narrow phones.
+                tabBarLabel: ({ color, position, children }) => (
+                    <Text
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.75}
+                        style={[styles.tabLabel, position === 'beside-icon' && styles.tabLabelBeside, { color }]}
+                    >
+                        {children}
+                    </Text>
+                ),
             }}
         >
             <Tab.Screen
@@ -73,7 +77,7 @@ const TabNavigator = () => {
                 component={HomeScreen}
                 options={{
                     tabBarIcon: ({ color, focused }) => <Home color={color} size={22} strokeWidth={focused ? 2.2 : 1.8} />,
-                    tabBarLabel: t('tabs.dashboard'),
+                    title: t('tabs.dashboard'),
                 }}
             />
             <Tab.Screen
@@ -81,7 +85,7 @@ const TabNavigator = () => {
                 component={ProgramsScreen}
                 options={{
                     tabBarIcon: ({ color, focused }) => <BookOpen color={color} size={22} strokeWidth={focused ? 2.2 : 1.8} />,
-                    tabBarLabel: t('tabs.programs'),
+                    title: t('tabs.programs'),
                 }}
             />
             <Tab.Screen
@@ -89,7 +93,7 @@ const TabNavigator = () => {
                 component={HistoryScreen}
                 options={{
                     tabBarIcon: ({ color, focused }) => <History color={color} size={22} strokeWidth={focused ? 2.2 : 1.8} />,
-                    tabBarLabel: t('tabs.history'),
+                    title: t('tabs.history'),
                 }}
             />
             <Tab.Screen
@@ -97,7 +101,7 @@ const TabNavigator = () => {
                 component={ProgressScreen}
                 options={{
                     tabBarIcon: ({ color, focused }) => <TrendingUp color={color} size={22} strokeWidth={focused ? 2.2 : 1.8} />,
-                    tabBarLabel: t('tabs.progress'),
+                    title: t('tabs.progress'),
                 }}
             />
             <Tab.Screen
@@ -105,7 +109,7 @@ const TabNavigator = () => {
                 component={AITabScreen}
                 options={{
                     tabBarIcon: ({ color, focused }) => <Sparkles color={color} size={22} strokeWidth={focused ? 2.2 : 1.8} />,
-                    tabBarLabel: t('tabs.ai'),
+                    title: t('tabs.ai'),
                 }}
             />
             <Tab.Screen
@@ -113,7 +117,7 @@ const TabNavigator = () => {
                 component={SettingsScreen}
                 options={{
                     tabBarIcon: ({ color, focused }) => <Settings color={color} size={22} strokeWidth={focused ? 2.2 : 1.8} />,
-                    tabBarLabel: t('tabs.settings'),
+                    title: t('tabs.settings'),
                 }}
             />
         </Tab.Navigator>
@@ -271,6 +275,18 @@ export const AppNavigator = () => {
 };
 
 const styles = StyleSheet.create({
+    tabLabel: {
+        fontSize: 10,
+        lineHeight: 14,
+        fontWeight: '600',
+        textAlign: 'center',
+        marginTop: 2,
+    },
+    tabLabelBeside: {
+        marginTop: 0,
+        marginStart: 16,
+        fontSize: 12,
+    },
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',

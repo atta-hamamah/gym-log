@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleProp, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
-import { ChevronRight } from 'lucide-react-native';
+import { ForwardChevron } from './DirectionalIcons';
+import { Typography } from './Typography';
 import { useTheme } from '../context/ThemeContext';
 import { borderRadius } from '../theme/colors';
 import { IconProp, Tone, renderIcon, toneColors } from '../theme/tones';
@@ -20,7 +21,7 @@ export const ListGroup: React.FC<ListGroupProps> = ({ title, footer, children, s
     const rows = React.Children.toArray(children).filter(Boolean);
     return (
         <View style={[styles.groupWrap, style]}>
-            {title ? <Text style={[styles.groupTitle, { color: colors.textMuted }]}>{title}</Text> : null}
+            {title ? <Typography variant="label" style={styles.groupTitle}>{title}</Typography> : null}
             <View style={[styles.group, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 {rows.map((row, i) => (
                     <React.Fragment key={i}>
@@ -83,7 +84,7 @@ export const ListRow: React.FC<ListRowProps> = ({
             {right ?? (
                 <View style={styles.trailing}>
                     {value ? <Text style={[styles.value, { color: colors.textSecondary }]} numberOfLines={1}>{value}</Text> : null}
-                    {(showChevron ?? !!onPress) && !destructive ? <ChevronRight color={colors.textMuted} size={18} /> : null}
+                    {(showChevron ?? !!onPress) && !destructive ? <ForwardChevron color={colors.textMuted} size={18} /> : null}
                 </View>
             )}
         </>
@@ -108,9 +109,8 @@ const styles = StyleSheet.create({
     },
     groupTitle: {
         fontSize: 12,
-        fontWeight: '600',
+        lineHeight: 16,
         letterSpacing: 0.6,
-        textTransform: 'uppercase',
         marginLeft: 4,
         marginBottom: 8,
     },

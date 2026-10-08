@@ -79,7 +79,8 @@
       "hypertrophy": "Hypertrophy",
       "general": "General",
       "fat_loss": "Fat Loss"
-    }
+    },
+    "dayN": "Day {{n}}"
   },
   "history": {
     "title": "History",
@@ -444,7 +445,8 @@
     "unlockPro": "Unlock with Pro",
     "proFeature": "Pro Feature",
     "upgradeMessage": "Upgrade to Pro to unlock this feature — one-time payment",
-    "upgrade": "Upgrade to Pro"
+    "upgrade": "Upgrade to Pro",
+    "badge": "Pro"
   },
   "aiGate": {
     "title": "Meet Your AI Coach",
@@ -625,7 +627,8 @@
     "suggestion2": "How many times did I train this week?",
     "suggestion3": "Am I overtraining any muscle?",
     "suggestion4": "Suggest a workout for today",
-    "subscriptionRequired": "Your AI Coach subscription is no longer active. Renew it to keep chatting."
+    "subscriptionRequired": "Your AI Coach subscription is no longer active. Renew it to keep chatting.",
+    "send": "Send"
   },
   "aura": {
     "consulting": "Consulting the iron oracle...",

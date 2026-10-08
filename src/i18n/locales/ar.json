@@ -79,7 +79,8 @@
       "hypertrophy": "تضخم",
       "general": "عام",
       "fat_loss": "حرق دهون"
-    }
+    },
+    "dayN": "اليوم {{n}}"
   },
   "history": {
     "title": "السجل",
@@ -444,7 +445,8 @@
     "unlockPro": "افتح مع برو",
     "proFeature": "ميزة برو",
     "upgradeMessage": "ترقية إلى برو لفتح هذه الميزة — دفعة واحدة",
-    "upgrade": "ترقية إلى برو"
+    "upgrade": "ترقية إلى برو",
+    "badge": "برو"
   },
   "aiGate": {
     "title": "تعرّف على مدربك الذكي",
@@ -625,7 +627,8 @@
     "suggestion2": "كم مرة تدربت هذا الأسبوع؟",
     "suggestion3": "هل أبالغ في تدريب أي عضلة؟",
     "suggestion4": "اقترح تمريناً لليوم",
-    "subscriptionRequired": "اشتراكك في المدرب الذكي لم يعد فعّالاً. جدّده لمتابعة المحادثة."
+    "subscriptionRequired": "اشتراكك في المدرب الذكي لم يعد فعّالاً. جدّده لمتابعة المحادثة.",
+    "send": "إرسال"
   },
   "aura": {
     "consulting": "بنسأل أساطير الجيم...",
@@ -645,19 +648,19 @@
     "goToAI": "فتح مدرب AI"
   },
   "aiWorkout": {
-    "generateBtn": "Generate Workout",
-    "generating": "Creating your workout...",
-    "previewTitle": "Your AI Workout",
-    "aiGenerated": "AI Generated",
-    "reasoning": "Why this workout?",
-    "startWorkout": "Start This Workout",
-    "regenerate": "Regenerate",
-    "removeExercise": "Remove",
+    "generateBtn": "إنشاء تمرين",
+    "generating": "جارٍ إنشاء تمرينك...",
+    "previewTitle": "تمرينك من المدرب الذكي",
+    "aiGenerated": "من إنشاء الذكاء الاصطناعي",
+    "reasoning": "لماذا هذا التمرين؟",
+    "startWorkout": "ابدأ هذا التمرين",
+    "regenerate": "إنشاء تمرين آخر",
+    "removeExercise": "إزالة",
     "newExercise": "NEW",
-    "errorTitle": "Generation Failed",
-    "errorMessage": "Could not generate a workout. Please try again.",
-    "workoutActiveTitle": "Workout in Progress",
-    "workoutActiveMessage": "Finish or cancel your current workout before starting a new one.",
+    "errorTitle": "تعذّر الإنشاء",
+    "errorMessage": "تعذّر إنشاء تمرين. حاول مرة أخرى.",
+    "workoutActiveTitle": "لديك تمرين جارٍ",
+    "workoutActiveMessage": "أنهِ تمرينك الحالي أو ألغِه قبل بدء تمرين جديد.",
     "commentTitle": "كيف تشعر؟",
     "commentDesc": "أضف ملاحظة لمدربك AI (اختياري)",
     "commentPlaceholder": "مثلاً: أشعر بالتعب اليوم، ركز على الجزء العلوي...",

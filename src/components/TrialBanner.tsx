@@ -4,7 +4,8 @@ import { Typography } from './Typography';
 import { useSubscription } from '../context/SubscriptionContext';
 import { borderRadius, ThemeColors } from '../theme/colors';
 import { useTranslation } from 'react-i18next';
-import { Clock, ChevronRight, Crown, Sparkles } from 'lucide-react-native';
+import { Clock, Crown, Sparkles } from 'lucide-react-native';
+import { ForwardChevron } from './DirectionalIcons';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
 
@@ -40,7 +41,7 @@ export const TrialBanner: React.FC<TrialBannerProps> = ({ onPress }) => {
           </Typography>
         </View>
 
-        <ChevronRight color={colors.textMuted} size={18} />
+        <ForwardChevron color={colors.textMuted} size={18} />
       </TouchableOpacity>
     );
   }
@@ -71,7 +72,7 @@ export const TrialBanner: React.FC<TrialBannerProps> = ({ onPress }) => {
           </Typography>
         </View>
 
-        <ChevronRight color={colors.textMuted} size={18} />
+        <ForwardChevron color={colors.textMuted} size={18} />
       </TouchableOpacity>
     );
   }
@@ -97,7 +98,7 @@ export const TrialBanner: React.FC<TrialBannerProps> = ({ onPress }) => {
           </Typography>
         </View>
 
-        <ChevronRight color={colors.textMuted} size={18} />
+        <ForwardChevron color={colors.textMuted} size={18} />
       </TouchableOpacity>
     );
   }

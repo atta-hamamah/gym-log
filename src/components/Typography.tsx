@@ -1,6 +1,11 @@
 import React from 'react';
 import { Text, StyleSheet, TextProps, TextStyle } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import i18n from '../i18n';
+
+// Tracking breaks Arabic letter joins and the Devanagari headline, so these scripts render untracked.
+const UNTRACKED_LANGUAGES = new Set(['ar', 'hi']);
+const untracked = { letterSpacing: 0 };
 
 interface TypographyProps extends TextProps {
     variant?: 'h1' | 'h2' | 'h3' | 'body' | 'bodySmall' | 'caption' | 'label' | 'number';
@@ -34,6 +39,7 @@ export const Typography: React.FC<TypographyProps> = ({
                 align && { textAlign: align },
                 bold && { fontWeight: '700' },
                 style,
+                UNTRACKED_LANGUAGES.has(i18n.language) && untracked,
             ]}
             {...props}
         >
