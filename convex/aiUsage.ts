@@ -19,6 +19,8 @@ export const AI_LIMITS = {
   workout: { day: 10, month: 60 },
   /** Post-workout summaries; switching character (Coach / Chad / Kevin) is another call. */
   aura: { day: 30, month: 200 },
+  /** Training plans: building one (~$0.03) and weekly check-ins (~$0.01, about 4 a month). */
+  plan: { day: 5, month: 20 },
 } as const;
 
 export type AIFeature = keyof typeof AI_LIMITS;
@@ -39,7 +41,7 @@ export const dayKey = (t: number) => new Date(t).toISOString().slice(0, 10);
 export const consume = internalMutation({
   args: {
     userId: v.id("users"),
-    feature: v.union(v.literal("chat"), v.literal("workout"), v.literal("aura")),
+    feature: v.union(v.literal("chat"), v.literal("workout"), v.literal("aura"), v.literal("plan")),
   },
   handler: async (ctx, { userId, feature }): Promise<{ ok: true } | { ok: false; period: "day" | "month"; limit: number }> => {
     const today = dayKey(Date.now());

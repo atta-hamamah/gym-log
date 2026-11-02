@@ -66,15 +66,16 @@ export function lastTopSet(workouts: CoachWorkout[], exerciseId: string, units: 
 const PLATE_LOADED = new Set(["barbell", "ez_bar", "trap_bar", "smith", "plate"]);
 
 /**
- * The smallest load change possible for this exercise, in display units:
- * 2.5 kg / 5 lb for plate-loaded bars, 0.5 kg / 2.5 lb otherwise (dumbbell
- * racks and stacks vary too much to guess). Users with microplates log finer
- * jumps, so their history can make the step smaller, never larger: how much
- * they usually add is a coaching choice, not a loading limit.
+ * The loads the user can actually pick for this exercise, in display units,
+ * as grid steps: a load is loadable when it's a multiple of any of them.
+ * Plate-loaded bars go up in 2.5 kg / 5 lb. Dumbbells, cables and machines
+ * come in whole kg or 2.5 kg steps (10, 12, 12.5…, never 10.5), or 2.5 lb.
+ * Users with microplates log finer jumps, so their history can make the grid
+ * finer, never coarser: how much they usually add is a coaching choice.
  */
-export function loadStep(workouts: CoachWorkout[], exerciseId: string, units: Units): number {
+export function loadGrid(workouts: CoachWorkout[], exerciseId: string, units: Units): number[] {
   const plateLoaded = (EXERCISE_BY_ID[exerciseId]?.equipment ?? []).some((e) => PLATE_LOADED.has(e));
-  const standard = units === "imperial" ? (plateLoaded ? 5 : 2.5) : plateLoaded ? 2.5 : 0.5;
+  const standard = units === "imperial" ? (plateLoaded ? [5] : [2.5]) : plateLoaded ? [2.5] : [1, 2.5];
   const weights = new Set<number>();
   for (const w of workouts) {
     for (const ex of w.exercises) {
@@ -85,8 +86,25 @@ export function loadStep(workouts: CoachWorkout[], exerciseId: string, units: Un
   const sorted = [...weights].sort((a, b) => a - b);
   let smallest = Infinity;
   for (let i = 1; i < sorted.length; i++) smallest = Math.min(smallest, sorted[i] - sorted[i - 1]);
-  return smallest >= 0.25 && smallest < standard ? smallest : standard;
+  return smallest >= 0.25 && smallest < Math.min(...standard) ? [smallest] : standard;
 }
+
+const tidy = (n: number) => Math.round(n * 1e6) / 1e6;
+
+/** Nearest loadable weight on the grid; exact ties go down (237.5 lb on a 5 lb grid → 235), the safer side. */
+function nearestOnGrid(value: number, grid: number[]): number {
+  let best = NaN;
+  for (const step of grid) {
+    const candidate = tidy(Math.ceil(value / step - 0.5) * step);
+    const d = Math.abs(candidate - value);
+    const bestD = Math.abs(best - value);
+    if (Number.isNaN(best) || d < bestD - 1e-9 || (Math.abs(d - bestD) <= 1e-9 && candidate < best)) best = candidate;
+  }
+  return best;
+}
+
+/** Heaviest loadable weight not above `value`. */
+const floorOnGrid = (value: number, grid: number[]) => Math.max(...grid.map((step) => tidy(Math.floor(value / step + 1e-9) * step)));
 
 export interface LoadChange {
   kind: "rounded" | "capped" | "dropped" | "low";
@@ -127,12 +145,12 @@ export function guardLoad(opts: {
   }
 
   const changes: LoadChange[] = [];
-  const step = loadStep(workouts, exerciseId, units);
+  const grid = loadGrid(workouts, exerciseId, units);
+  /** The smallest jump that changes the weight on every grid (e.g. 2.5 kg for dumbbells). */
+  const step = Math.max(...grid);
   const last = lastTopSet(workouts, exerciseId, units, now);
   let target = value;
-  // Nearest loadable weight; exact ties go down (237.5 lb on a 5 lb grid → 235), the safer side.
-  const nearest = (v: number) => Math.ceil(v / step - 0.5) * step;
-  let snapped = nearest(target) || step;
+  let snapped = nearestOnGrid(target, grid) || Math.min(...grid);
 
   if (last) {
     const afterBreak = last.daysAgo > BREAK_DAYS;
@@ -151,9 +169,9 @@ export function guardLoad(opts: {
       });
       target = cap;
     }
-    snapped = nearest(target);
-    if (snapped > cap + 1e-9) snapped = Math.floor(cap / step) * step;
-    if (snapped <= 0) snapped = step;
+    snapped = nearestOnGrid(target, grid);
+    if (snapped > cap + 1e-9) snapped = floorOnGrid(cap, grid);
+    if (snapped <= 0) snapped = Math.min(...grid);
     if (snapped < last.weight * 0.6 && !afterBreak) {
       changes.push({ kind: "low", from: value, detail: `${fmt(snapped)}${unit} is far below last top set ${fmt(last.weight)}${unit}×${last.reps}` });
     }
@@ -162,7 +180,7 @@ export function guardLoad(opts: {
   if (Math.abs(snapped - value) > 1e-6) {
     const capped = changes.find((c) => c.kind === "capped");
     if (capped) capped.to = snapped;
-    else changes.push({ kind: "rounded", from: value, to: snapped, detail: `${fmt(value)} → ${fmt(snapped)}${unit} (steps of ${fmt(step)}${unit})` });
+    else changes.push({ kind: "rounded", from: value, to: snapped, detail: `${fmt(value)} → ${fmt(snapped)}${unit} (steps of ${grid.map(fmt).join(" or ")}${unit})` });
   }
 
   const kg = fromDisplay(snapped, units);

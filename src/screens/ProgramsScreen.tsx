@@ -15,11 +15,16 @@ import { WorkoutProgram } from '../types';
 import { programDescription, programDuration, programName } from '../utils/programText';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
+import { Sparkles } from 'lucide-react-native';
+import { usePlan } from '../context/PlanContext';
+import { usePlanNavigation } from '../components/PlanHomeCard';
 
 export const ProgramsScreen = ({ navigation }: any) => {
     const { t } = useTranslation();
     const { colors } = useTheme();
     const styles = createStyles(colors);
+    const { plan, progress } = usePlan();
+    const openPlan = usePlanNavigation();
     const [selectedLevel, setSelectedLevel] = useState<string>('all');
     const [selectedGoal, setSelectedGoal] = useState<string>('all');
 
@@ -98,6 +103,26 @@ export const ProgramsScreen = ({ navigation }: any) => {
             <View style={styles.filterContainer}>
                 <ScreenHeader title={t('programs.title')} subtitle={t('programs.subtitle')} />
 
+                {/* AI training plan: the user's own, or the option to have one built */}
+                <TouchableOpacity activeOpacity={0.8} onPress={openPlan} style={styles.planEntry} accessibilityRole="button">
+                    <View style={styles.planIcon}>
+                        <Sparkles color={colors.secondary} size={18} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <Typography variant="body" bold numberOfLines={1}>
+                            {plan ? plan.name : t('aiPlan.programsTitle')}
+                        </Typography>
+                        <Typography variant="caption" color={colors.textSecondary} numberOfLines={1}>
+                            {plan && progress
+                                ? progress.finished
+                                    ? t('aiPlan.complete')
+                                    : t('aiPlan.weekOf', { week: progress.currentWeek, total: plan.weeks })
+                                : t('aiPlan.programsDesc')}
+                        </Typography>
+                    </View>
+                    <ForwardChevron color={colors.secondary} size={18} />
+                </TouchableOpacity>
+
                 {/* Level Filter */}
                 <ScrollView
                     horizontal
@@ -160,6 +185,25 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
     filterContainer: {
         flexShrink: 0,
         marginBottom: 10,
+    },
+    planEntry: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        padding: 12,
+        marginBottom: 12,
+        borderRadius: borderRadius.l,
+        borderWidth: 1,
+        borderColor: colors.secondary + '40',
+        backgroundColor: colors.secondarySoft,
+    },
+    planIcon: {
+        width: 38,
+        height: 38,
+        borderRadius: 12,
+        backgroundColor: colors.surface,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     filterScroll: {
         flexGrow: 0,

@@ -18,9 +18,11 @@ import { useAction, useQuery } from 'convex/react';
 import { ConvexError } from 'convex/values';
 import { api } from '../../convex/_generated/api';
 import { useSubscription } from '../context/SubscriptionContext';
-import { ArrowUp, Sparkles, MessageCircle } from 'lucide-react-native';
+import { ArrowUp, Sparkles, MessageCircle, CalendarDays } from 'lucide-react-native';
 import { ForwardChevron } from '../components/DirectionalIcons';
 import { Button } from '../components/Button';
+import { IconButton } from '../components/IconButton';
+import { usePlanNavigation } from '../components/PlanHomeCard';
 import { AIGeneratedWorkout } from '../types';
 import { useWorkout } from '../context/WorkoutContext';
 import { toCloudWorkout } from '../services/cloudSync';
@@ -46,6 +48,7 @@ export const AIChatScreen = ({ navigation }: any) => {
   const [generating, setGenerating] = useState(false);
   const [commentModalVisible, setCommentModalVisible] = useState(false);
   const { currentWorkout } = useWorkout();
+  const openPlan = usePlanNavigation();
 
   // Signed-in user's cloud profile (the AI actions resolve the user from auth)
   const convexUser = useQuery(api.users.me);
@@ -247,15 +250,26 @@ export const AIChatScreen = ({ navigation }: any) => {
               </View>
             </View>
           </View>
-          <Button
-            title={t('aiWorkout.generateBtn')}
-            variant="ai"
-            size="small"
-            loading={generating}
-            icon={c => <Sparkles color={c} size={15} />}
-            onPress={handleGenerateWorkoutPress}
-            disabled={generating}
-          />
+          <View style={styles.headerActions}>
+            <IconButton
+              icon={c => <CalendarDays color={c} size={18} />}
+              variant="tonal"
+              tone="secondary"
+              size={36}
+              square
+              onPress={openPlan}
+              accessibilityLabel={t('aiPlan.title')}
+            />
+            <Button
+              title={t('aiWorkout.generateBtn')}
+              variant="ai"
+              size="small"
+              loading={generating}
+              icon={c => <Sparkles color={c} size={15} />}
+              onPress={handleGenerateWorkoutPress}
+              disabled={generating}
+            />
+          </View>
         </View>
 
         {/* Messages */}
@@ -355,6 +369,11 @@ const createStyles = (colors: ThemeColors, bottomInset: number = 0) => StyleShee
     alignItems: 'center',
     gap: 12,
     flexShrink: 1,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   headerIcon: {
     width: 40,

@@ -8,8 +8,9 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "build:android": "eas build -p android",
-    "test": "tsx --test evals/ai.test.ts",
-    "eval": "tsx evals/run.ts"
+    "test": "tsx --test evals/ai.test.ts evals/plan.test.ts",
+    "eval": "tsx evals/run.ts",
+    "eval:plan": "tsx evals/plan-smoke.ts"
   },
   "dependencies": {
     "@clerk/clerk-expo": "^2.19.31",

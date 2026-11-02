@@ -7,6 +7,7 @@ import { StatTile } from '../components/StatTile';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { TrialBanner } from '../components/TrialBanner';
+import { PlanHomeCard } from '../components/PlanHomeCard';
 import { useWorkout } from '../context/WorkoutContext';
 import { useSubscription } from '../context/SubscriptionContext';
 import { useAuth } from '@clerk/clerk-expo';
@@ -131,6 +132,9 @@ export const HomeScreen = ({ navigation }: any) => {
                         style={{ marginTop: 18 }}
                     />
                 </Card>
+
+                {/* AI training plan: next session, or an invitation to build one */}
+                <PlanHomeCard />
 
                 {/* Weekly Stats */}
                 <Typography variant="h3" style={styles.sectionTitle}>{t('home.thisWeek')}</Typography>

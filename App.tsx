@@ -10,6 +10,7 @@ import { tokenCache } from './src/services/auth';
 import { SubscriptionProvider } from './src/context/SubscriptionContext';
 import { CloudSyncProvider } from './src/context/CloudSyncContext';
 import { WorkoutProvider } from './src/context/WorkoutContext';
+import { PlanProvider } from './src/context/PlanContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { UnitsProvider } from './src/context/UnitsContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
@@ -41,9 +42,11 @@ const AppContent = () => {
                     <SubscriptionProvider>
                         <CloudSyncProvider>
                             <WorkoutProvider>
-                                <UnitsProvider>
-                                    <AppNavigator />
-                                </UnitsProvider>
+                                <PlanProvider>
+                                    <UnitsProvider>
+                                        <AppNavigator />
+                                    </UnitsProvider>
+                                </PlanProvider>
                             </WorkoutProvider>
                         </CloudSyncProvider>
                     </SubscriptionProvider>

@@ -1,6 +1,8 @@
 import { v } from "convex/values";
 import { internalQuery } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
+import { activePlanDoc, planFromDoc } from "./plans";
+import type { TrainingPlan } from "../src/types";
 
 /**
  * Everything the AI coach needs about a user, read in one query:
@@ -47,6 +49,8 @@ export interface CoachData {
   measurements: Doc<"bodyMeasurements">[];
   customExercises: { id: string; name: string; muscleGroup: string; category: string }[];
   yearly: { totalWorkouts: number; avgDurationMin: number; sessionsPerWeek: number; firstWorkoutAt: number | null };
+  /** The training plan the user is following, if any. */
+  plan: TrainingPlan | null;
 }
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -138,7 +142,10 @@ export const getCoachData = internalQuery({
     const first = year.length > 0 ? Math.min(...year.map((w) => w.startTime)) : null;
     const weeks = first ? Math.max((Date.now() - first) / (7 * DAY), 1) : 1;
 
+    const planDoc = await activePlanDoc(ctx, args.userId);
+
     return {
+      plan: planDoc ? planFromDoc(planDoc) : null,
       workouts,
       personalRecords,
       measurements,

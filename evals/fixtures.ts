@@ -12,7 +12,7 @@ import type { Doc, Id } from "../convex/_generated/dataModel";
 import type { CoachData, CoachExercise, CoachSet, CoachWorkout } from "../convex/coachData";
 import { est1RM, type Units } from "../convex/coachPrompt";
 import type { WorkoutArgs } from "../convex/workoutPlanner";
-import type { AIGeneratedWorkout } from "../src/types";
+import type { AIGeneratedWorkout, TrainingPlan } from "../src/types";
 import { EXERCISE_BY_ID } from "../src/constants/exerciseCatalog";
 
 export const NOW = Date.now();
@@ -139,12 +139,13 @@ function personalRecords(workouts: CoachWorkout[]): Doc<"personalRecords">[] {
   return [...best.values()];
 }
 
-export function coachData(workouts: CoachWorkout[]): CoachData {
+export function coachData(workouts: CoachWorkout[], plan: TrainingPlan | null = null): CoachData {
   const sorted = [...workouts].sort((a, b) => b.startTime - a.startTime);
   const durations = sorted.filter((w) => w.endTime).map((w) => (w.endTime! - w.startTime) / 60000);
   const first = sorted.length ? sorted[sorted.length - 1].startTime : null;
   const weeks = first ? Math.max((NOW - first) / (7 * DAY), 1) : 1;
   return {
+    plan,
     workouts: sorted,
     personalRecords: personalRecords(sorted),
     measurements: [],

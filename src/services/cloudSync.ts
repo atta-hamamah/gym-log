@@ -83,7 +83,7 @@ const chunk = <T,>(list: T[], size: number): T[][] => {
 const num = (value: unknown) => (typeof value === 'number' && Number.isFinite(value) ? value : undefined);
 const str = (value: unknown) => (typeof value === 'string' ? value : undefined);
 const SET_TYPES: WorkoutSet['type'][] = ['warmup', 'normal', 'failure', 'drop'];
-const SOURCE_TYPES: WorkoutSource['type'][] = ['manual', 'ai', 'program'];
+const SOURCE_TYPES: WorkoutSource['type'][] = ['manual', 'ai', 'program', 'plan'];
 
 function toCloudSource(source: WorkoutSource | undefined) {
   if (!source || !SOURCE_TYPES.includes(source.type)) return undefined;
@@ -92,6 +92,9 @@ function toCloudSource(source: WorkoutSource | undefined) {
     programId: str(source.programId),
     dayName: str(source.dayName),
     reasoning: str(source.reasoning)?.slice(0, 1000),
+    planId: str(source.planId),
+    planWeek: num(source.planWeek),
+    planSessionId: str(source.planSessionId),
   };
 }
 

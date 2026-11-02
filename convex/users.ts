@@ -45,8 +45,10 @@ export async function requireUserInAction(ctx: ActionCtx): Promise<Doc<"users">>
 
 /** Tables that hold per-user data, children first. */
 const HISTORY_TABLES = ["sets", "exerciseLogs", "workouts", "personalRecords"] as const;
-const ALL_DATA_TABLES = [...HISTORY_TABLES, "customExercises", "bodyMeasurements"] as const;
-type UserDataTable = (typeof ALL_DATA_TABLES)[number];
+const ALL_DATA_TABLES = [...HISTORY_TABLES, "customExercises", "bodyMeasurements", "trainingPlans"] as const;
+/** Account deletion also removes the AI usage counters (kept on "clear all data", so limits can't be reset). */
+const ACCOUNT_TABLES = [...ALL_DATA_TABLES, "aiUsage"] as const;
+type UserDataTable = (typeof ACCOUNT_TABLES)[number];
 
 export type WipeScope = "history" | "all";
 
@@ -198,7 +200,7 @@ export const deleteAccount = mutation({
 export const purgeUserData = internalMutation({
   args: { userId: v.id("users") },
   handler: async (ctx, args): Promise<void> => {
-    const done = await deleteUserDocs(ctx, args.userId, ALL_DATA_TABLES, 2000);
+    const done = await deleteUserDocs(ctx, args.userId, ACCOUNT_TABLES, 2000);
     if (!done) {
       await ctx.scheduler.runAfter(0, internal.users.purgeUserData, { userId: args.userId });
     }

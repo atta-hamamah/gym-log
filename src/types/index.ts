@@ -38,7 +38,7 @@ export interface ExerciseTarget {
   notes?: string;
 }
 
-export type WorkoutSourceType = 'manual' | 'ai' | 'program';
+export type WorkoutSourceType = 'manual' | 'ai' | 'program' | 'plan';
 
 /** Where a workout came from, so the coach can compare plan vs. reality. */
 export interface WorkoutSource {
@@ -46,6 +46,10 @@ export interface WorkoutSource {
   programId?: string;
   dayName?: string;
   reasoning?: string;    // the AI's reason for this session
+  /** AI training plan session (type 'plan'). */
+  planId?: string;
+  planWeek?: number;
+  planSessionId?: string;
 }
 
 export interface WorkoutSession {
@@ -208,6 +212,92 @@ export interface AIWorkoutRequest {
   focus?: string[];       // muscle groups to focus on
 }
 
+// ── AI Training Plans ────────────────────────────────────
+/** One exercise of a plan session. */
+export interface PlanExercise {
+  exerciseId: string;
+  exerciseName: string;
+  sets: number;
+  reps: string;
+  restSeconds: number;
+  /** Week-1 load in kg from the plan's design (later weeks get loads from check-ins). */
+  startWeight?: number;
+  supersetGroup?: string;
+  notes?: string;
+}
+
+/** A session of the weekly rotation: the same every week, tuned by check-ins. */
+export interface PlanSession {
+  id: string;              // "s1", "s2", ... in the order they're done each week
+  name: string;
+  focus: string;
+  estimatedMinutes?: number;
+  exercises: PlanExercise[];
+}
+
+/** A block of weeks with one purpose (e.g. Foundation, Build, Deload). */
+export interface PlanPhase {
+  name: string;
+  startWeek: number;
+  endWeek: number;
+  focus: string;
+  deload: boolean;
+}
+
+/** A change the weekly check-in made to one exercise of one session. */
+export interface PlanAdjustment {
+  sessionId: string;
+  exerciseId: string;
+  replaceWith?: string;
+  replaceName?: string;
+  sets?: number;
+  reps?: string;
+  /** This week's load in kg. */
+  targetWeight?: number;
+}
+
+/** The coach's weekly review: a note and this week's changes. */
+export interface PlanCheckIn {
+  week: number;
+  summary: string;
+  adjustments: PlanAdjustment[];
+  checkedInAt: number;
+}
+
+export interface TrainingPlan {
+  id: string;
+  name: string;
+  goal: string;
+  /** The strategy, in a few sentences. */
+  overview: string;
+  /** How loads and reps progress week to week. */
+  progression: string;
+  /** Local date the plan starts, "YYYY-MM-DD". Weeks are 7-day blocks from here. */
+  startDate: string;
+  weeks: number;
+  /** Weekdays the user trains (Date.getDay: 0 = Sunday … 6 = Saturday). */
+  trainingDays: number[];
+  sessionMinutes: number;
+  phases: PlanPhase[];
+  sessions: PlanSession[];
+  checkIns: PlanCheckIn[];
+  createdAt: number;
+}
+
+/** What the user asks for when building a plan. */
+export interface PlanRequest {
+  weeks: number;
+  trainingDays: number[];
+  sessionMinutes: number;
+  startDate: string;
+  goal?: string;
+  focus?: string[];
+  comment?: string;
+  /** App language, for the plan's text. */
+  language?: string;
+}
+// ──────────────────────────────────────────────────────────
+
 /** Training preferences the AI coach plans around (stored in the cloud profile). */
 export interface TrainingProfile {
   experience?: ExperienceLevel;
@@ -225,6 +315,9 @@ export type RootStackParamList = {
   WorkoutDetails: { workoutId: string };
   ProgramDetail: { programId: string };
   AIWorkoutPreview: { workout: AIGeneratedWorkout; options?: AIWorkoutRequest };
+  TrainingPlan: undefined;
+  PlanSession: { week: number; sessionId: string };
+  PlanBuilder: undefined;
   Paywall: undefined;
   AIOnboarding: { mode?: 'signin' | 'signup' } | undefined;
   WorkoutAura: {

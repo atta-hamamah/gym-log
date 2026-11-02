@@ -50,7 +50,7 @@ export interface WorkoutRequest {
 }
 
 /** Exercises the user can do with the equipment they have, plus their own custom exercises. */
-function buildCatalog(available: Equipment[] | undefined, customs: CoachData["customExercises"]): CatalogEntry[] {
+export function buildCatalog(available: Equipment[] | undefined, customs: CoachData["customExercises"]): CatalogEntry[] {
   const list: CatalogEntry[] = exercisesForEquipment(available, EXERCISE_CATALOG).map((e: Exercise) => ({
     id: e.id,
     name: e.name,
@@ -72,7 +72,7 @@ function buildCatalog(available: Equipment[] | undefined, customs: CoachData["cu
   return list;
 }
 
-function catalogText(catalog: CatalogEntry[]): string {
+export function catalogText(catalog: CatalogEntry[]): string {
   const byGroup = new Map<string, string[]>();
   for (const e of catalog) {
     const rows = byGroup.get(e.muscleGroup) ?? [];
@@ -130,6 +130,26 @@ function responseSchema(ids: string[]) {
 }
 
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
+
+/**
+ * Reps in the app's format: "8-10", "5", "AMRAP", "45s", "20min", "8-12/side".
+ * Models sometimes write typographic dashes or words ("30–45 seconds", "per side").
+ */
+export function normalizeReps(value: unknown, fallback = "8-12"): string {
+  if (typeof value !== "string" && typeof value !== "number") return fallback;
+  const reps = String(value)
+    .trim()
+    .replace(/[‐-―]/g, "-")
+    .replace(/\s*-\s*/g, "-")
+    .replace(/\s*(seconds?|secs?)\b\.?/gi, "s")
+    .replace(/\s*(minutes?|mins?)\b\.?/gi, "min")
+    .replace(/\s*(?:per|each)\s+(side|leg|arm)\b/gi, "/$1")
+    .replace(/\s+reps?\b/gi, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 16);
+  return reps || fallback;
+}
 
 function equipmentFor(user: Doc<"users">, override?: string[]): Equipment[] | undefined {
   const list = override ?? user.equipment;
@@ -266,7 +286,7 @@ export function finalizeWorkout(content: string | null | undefined, req: Workout
     }
     const sets = clamp(Math.round(Number(raw.sets) || 3), 1, 8);
     const restSeconds = clamp(Math.round(Number(raw.restSeconds) || 90), 15, 300);
-    const reps = String(raw.reps ?? "8-12").slice(0, 12) || "8-12";
+    const reps = normalizeReps(raw.reps);
     const supersetGroup = typeof raw.supersetGroup === "string" && raw.supersetGroup.trim() ? raw.supersetGroup.trim().slice(0, 3) : undefined;
     const notes = typeof raw.notes === "string" && raw.notes.trim() ? raw.notes.trim().slice(0, 200) : undefined;
     const load = (exerciseId: string, name: string) => {

@@ -1,5 +1,6 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
+import { planFields, sourceValidator } from "./validators";
 
 export default defineSchema({
   // ── User Profile ──────────────────────────────────────
@@ -44,13 +45,8 @@ export default defineSchema({
     mood: v.optional(v.float64()),
     auraTitle: v.optional(v.string()),
     auraDescription: v.optional(v.string()),
-    // Where the session came from (AI coach, program, manual)
-    source: v.optional(v.object({
-      type: v.union(v.literal("manual"), v.literal("ai"), v.literal("program")),
-      programId: v.optional(v.string()),
-      dayName: v.optional(v.string()),
-      reasoning: v.optional(v.string()),
-    })),
+    // Where the session came from (AI coach, program, training plan, manual)
+    source: v.optional(sourceValidator),
   })
     .index("by_userId", ["userId"])
     .index("by_userId_startTime", ["userId", "startTime"])
@@ -158,9 +154,22 @@ export default defineSchema({
   // One row per user, feature and UTC day.
   aiUsage: defineTable({
     userId: v.id("users"),
-    feature: v.union(v.literal("chat"), v.literal("workout"), v.literal("aura")),
+    feature: v.union(v.literal("chat"), v.literal("workout"), v.literal("aura"), v.literal("plan")),
     day: v.string(),   // "2026-11-02" (UTC)
     count: v.float64(),
   })
+    .index("by_userId", ["userId"])
     .index("by_userId_feature_day", ["userId", "feature", "day"]),
+
+  // ── AI training plans (see plans.ts) ──────────────────
+  // At most one "active" plan per user; older ones are kept as "ended".
+  trainingPlans: defineTable({
+    userId: v.id("users"),
+    status: v.union(v.literal("active"), v.literal("ended")),
+    ...planFields,
+    createdAt: v.float64(),
+    updatedAt: v.float64(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_userId_status", ["userId", "status"]),
 });

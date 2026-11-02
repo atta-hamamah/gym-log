@@ -9,6 +9,8 @@
 import type { Doc } from "./_generated/dataModel";
 import type { CoachData, CoachExercise, CoachSet, CoachWorkout } from "./coachData";
 import { EXERCISE_BY_ID, GROUP_MUSCLES } from "../src/constants/exerciseCatalog";
+import { checkInFor, daysBetween, phaseOf, planProgress, sessionKey, sessionStatus, weekSchedule } from "../src/utils/trainingPlan";
+import type { TrainingPlan } from "../src/types";
 
 export type Units = "metric" | "imperial";
 
@@ -188,7 +190,48 @@ function exerciseLine(ex: CoachExercise, units: Units, labels: Map<string, strin
 function sourceText(source: CoachWorkout["source"]): string {
   if (!source || source.type === "manual") return "logged freely";
   if (source.type === "ai") return "planned by RepAI";
+  if (source.type === "plan") return `training plan session "${source.dayName ?? "?"}" (week ${source.planWeek ?? "?"})`;
   return `program day "${source.dayName ?? "?"}"`;
+}
+
+/** The plan the user follows: where they are, this week's sessions, recent adherence and the rotation. */
+export function planBlock(plan: TrainingPlan, workouts: CoachWorkout[], now: number): string {
+  const today = new Date(now);
+  const progress = planProgress(plan, workouts, today);
+  const week = progress.currentWeek;
+  const phase = phaseOf(plan, week);
+  const nextDeload = plan.phases.find((p) => p.deload && p.startWeek > week);
+  const thisWeek = weekSchedule(plan, week)
+    .map((s) => `${WEEKDAYS[s.date.getDay()]} ${s.session.name} (${sessionStatus(s, progress.completions, today)})`)
+    .join(" · ");
+  // Adherence over the last 4 weeks only: older plan workouts may be outside the loaded history.
+  let due = 0;
+  let done = 0;
+  for (let w = Math.max(1, week - 3); w <= week; w++) {
+    for (const s of weekSchedule(plan, w)) {
+      if (daysBetween(s.date, today) < 0) continue;
+      due++;
+      if (progress.completions.has(sessionKey(w, s.session.id))) done++;
+    }
+  }
+  const checkIn = checkInFor(plan, week);
+  const rotation = plan.sessions
+    .map((s) => `    - ${s.name} (${s.focus}): ${s.exercises.map((e) => `${e.exerciseName} ${e.sets}×${e.reps}`).join(", ")}`)
+    .join("\n");
+  const where = progress.finished
+    ? `  - All ${plan.weeks} weeks are over: suggest building the next plan on the Plan screen.`
+    : !progress.started
+      ? `  - Starts ${plan.startDate} (${plan.weeks} weeks)`
+      : `  - Week ${week} of ${plan.weeks}, phase "${phase?.name ?? "?"}"${phase?.deload ? " (DELOAD week)" : ""}: ${phase?.focus ?? ""}${nextDeload && !phase?.deload ? `; next deload: week ${nextDeload.startWeek}` : ""}`;
+  return [
+    `  - "${plan.name}", goal: ${plan.goal}`,
+    where,
+    progress.started && !progress.finished ? `  - This week: ${thisWeek}` : null,
+    due ? `  - Last 4 weeks: ${done}/${due} scheduled sessions done` : null,
+    `  - Progression: ${plan.progression}`,
+    checkIn ? `  - Coach's check-in note for this week: "${checkIn.summary}"` : null,
+    `  - Weekly rotation:\n${rotation}`,
+  ].filter(Boolean).join("\n");
 }
 
 /** Totals for one session. */
@@ -405,6 +448,7 @@ export function buildCoachContext(user: Doc<"users">, data: CoachData, opts: Con
     `TRAINING FREQUENCY:\n${frequencyBlock(workouts, now, data.yearly)}`,
     `MUSCLE RECOVERY & WEEKLY VOLUME (computed from logged sets; ~10-20 hard sets/week per muscle group is a typical hypertrophy range):\n${recoveryBlock(allForAnalysis, data.customExercises, now)}`,
   ];
+  if (data.plan) sections.push(`TRAINING PLAN THEY FOLLOW (built by RepAI; workouts from it show as "training plan session"):\n${planBlock(data.plan, workouts, now)}`);
   if (opts.activeWorkout) sections.push(`CURRENT WORKOUT:\n${activeWorkoutBlock(opts.activeWorkout, units, now)}`);
   sections.push(
     `RECENT SESSIONS, SET BY SET (newest first). Format: weight×reps; "plan" is what was prescribed; rest = measured time between logged sets:\n${recent.length ? recent.map((w) => describeWorkout(w, units, now, "full")).join("\n\n") : "  No workouts in the last 60 days."}`,

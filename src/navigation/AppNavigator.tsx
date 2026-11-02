@@ -18,6 +18,9 @@ import { AIOnboardingScreen } from '../screens/AIOnboardingScreen';
 import { AIChatScreen } from '../screens/AIChatScreen';
 import WorkoutAuraScreen from '../screens/WorkoutAuraScreen';
 import { AIWorkoutPreviewScreen } from '../screens/AIWorkoutPreviewScreen';
+import { TrainingPlanScreen } from '../screens/TrainingPlanScreen';
+import { PlanSessionScreen } from '../screens/PlanSessionScreen';
+import { PlanBuilderScreen } from '../screens/PlanBuilderScreen';
 import { useSubscription } from '../context/SubscriptionContext';
 import { useConvexAuth, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
@@ -242,6 +245,21 @@ export const AppNavigator = () => {
                         headerShown: false,
                         animation: 'slide_from_right',
                     }}
+                />
+                <Stack.Screen
+                    name="TrainingPlan"
+                    component={TrainingPlanScreen}
+                    options={{ presentation: 'card', headerShown: false, animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                    name="PlanSession"
+                    component={PlanSessionScreen}
+                    options={{ presentation: 'card', headerShown: false, animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                    name="PlanBuilder"
+                    component={PlanBuilderScreen}
+                    options={{ presentation: 'card', headerShown: false, animation: 'slide_from_right' }}
                 />
                 <Stack.Screen
                     name="Paywall"

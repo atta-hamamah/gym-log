@@ -6,7 +6,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { guardLoad, lowestReps } from "../convex/loadGuard";
-import { buildWorkoutRequest, finalizeWorkout } from "../convex/workoutPlanner";
+import { buildWorkoutRequest, finalizeWorkout, normalizeReps } from "../convex/workoutPlanner";
 import { chatSystemPrompt } from "../convex/coachChat";
 import type { Units } from "../convex/coachPrompt";
 import { AI_LIMITS, dayKey, quotaDecision } from "../convex/aiUsage";
@@ -29,7 +29,7 @@ test("fair-use limits stay generous and keep the worst case affordable", () => {
   // A heavy real user (~200 messages a month, ~7 a day) must never be blocked.
   assert.ok(AI_LIMITS.chat.month >= 400 && AI_LIMITS.chat.day >= 30);
   // Worst case at GPT-6.1 Terra's measured costs stays under ~$5 a month (price $6.99, ~$5.94 after store fees).
-  const worst = AI_LIMITS.chat.month * 0.006 + AI_LIMITS.workout.month * 0.0075 + AI_LIMITS.aura.month * 0.004;
+  const worst = AI_LIMITS.chat.month * 0.006 + AI_LIMITS.workout.month * 0.0075 + AI_LIMITS.aura.month * 0.004 + AI_LIMITS.plan.month * 0.03;
   assert.ok(worst < 5, `worst case $${worst.toFixed(2)}`);
 });
 
@@ -51,6 +51,28 @@ const bench = (daysAgo: number, sets: string, units?: Units) =>
 
 const guard = (suggested: unknown, workouts: ReturnType<typeof bench>[], extra: { reps?: string; units?: Units; exerciseId?: string } = {}) =>
   guardLoad({ suggested, exerciseId: extra.exerciseId ?? "ex-bench-press", reps: extra.reps ?? "8-10", workouts, units: extra.units ?? "metric", now: NOW });
+
+test("normalizeReps puts the model's reps in the app's format (found by the plan smoke test)", () => {
+  assert.equal(normalizeReps("8–10"), "8-10");
+  assert.equal(normalizeReps("30–45 second"), "30-45s");
+  assert.equal(normalizeReps("8–12 per side"), "8-12/side");
+  assert.equal(normalizeReps("45 sec"), "45s");
+  assert.equal(normalizeReps("20 minutes"), "20min");
+  assert.equal(normalizeReps("10 reps"), "10");
+  assert.equal(normalizeReps("12 - 15"), "12-15");
+  assert.equal(normalizeReps("AMRAP"), "AMRAP");
+  assert.equal(normalizeReps(5), "5");
+  assert.equal(normalizeReps(null), "8-12");
+  assert.equal(normalizeReps("", ""), "");
+});
+
+test("dumbbell and machine loads land on weights that exist (found by the plan smoke test)", () => {
+  // Lateral raise: 10 kg last time; the model asked for 10.5 kg, which isn't a dumbbell.
+  const raises = [session(3, "Push", [e("ex-lateral-raise", "10x15 10x15 10x15")])];
+  assert.equal(guard(10.5, raises, { exerciseId: "ex-lateral-raise", reps: "12-15" }).kg, 10);
+  assert.equal(guard(12.4, raises, { exerciseId: "ex-lateral-raise", reps: "12-15" }).kg, 12.5);
+  assert.equal(guard(11.3, [], { exerciseId: "ex-db-curl", reps: "10" }).kg, 11);
+});
 
 test("lowestReps reads the bottom of a rep prescription", () => {
   assert.equal(lowestReps("8-10"), 8);
@@ -141,7 +163,7 @@ test("ignores missing loads and drops implausible ones", () => {
 
 test("without history, rounds to standard increments", () => {
   assert.equal(guard(61, []).kg, 60);
-  assert.equal(guard(11.3, [], { exerciseId: "ex-db-curl", reps: "10" }).kg, 11.5);
+  assert.equal(guard(11.3, [], { exerciseId: "ex-db-curl", reps: "10" }).kg, 11);
   assert.equal(lbOf(guard(46, [], { exerciseId: "ex-db-curl", reps: "10", units: "imperial" }).kg!), 45);
 });
 
