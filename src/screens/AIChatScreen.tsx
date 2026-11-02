@@ -27,6 +27,7 @@ import { toCloudWorkout } from '../services/cloudSync';
 import { GenerateWorkoutOptions, GenerateWorkoutSheet } from '../components/GenerateWorkoutSheet';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../context/ThemeContext';
+import { aiLimitMessage } from '../utils/aiErrors';
 
 interface ChatMessage {
   id: string;
@@ -50,14 +51,15 @@ export const AIChatScreen = ({ navigation }: any) => {
   const convexUser = useQuery(api.users.me);
   const { refreshSubscriptionState } = useSubscription();
 
-  // The server rejected the request because the subscription isn't active
-  // (e.g. expired or refunded): re-check with the store so the app updates.
-  const subscriptionErrorText = useCallback((error: unknown): string | null => {
+  // Requests the server refused on purpose, with a message for the user:
+  // - subscription not active (expired, refunded): re-check with the store so the app updates;
+  // - fair-use limit reached (convex/aiUsage.ts).
+  const aiErrorText = useCallback((error: unknown): string | null => {
     if (error instanceof ConvexError && (error.data as any)?.code === 'AI_SUBSCRIPTION_REQUIRED') {
       refreshSubscriptionState();
       return t('aiChat.subscriptionRequired');
     }
-    return null;
+    return aiLimitMessage(error, t);
   }, [refreshSubscriptionState, t]);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -124,14 +126,14 @@ export const AIChatScreen = ({ navigation }: any) => {
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: subscriptionErrorText(error) ?? t('aiChat.error'),
+        content: aiErrorText(error) ?? t('aiChat.error'),
         timestamp: Date.now(),
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setLoading(false);
     }
-  }, [input, loading, convexUser, messages, chatAction, scrollToBottom, t, subscriptionErrorText, currentWorkout]);
+  }, [input, loading, convexUser, messages, chatAction, scrollToBottom, t, aiErrorText, currentWorkout]);
 
   // ── Show options sheet before generating ──
   const handleGenerateWorkoutPress = useCallback(() => {
@@ -153,14 +155,14 @@ export const AIChatScreen = ({ navigation }: any) => {
       const errorMessage: ChatMessage = {
         id: Date.now().toString(),
         role: 'assistant',
-        content: subscriptionErrorText(error) ?? t('aiWorkout.errorMessage'),
+        content: aiErrorText(error) ?? t('aiWorkout.errorMessage'),
         timestamp: Date.now(),
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setGenerating(false);
     }
-  }, [generating, convexUser, generateWorkoutAction, navigation, t, subscriptionErrorText]);
+  }, [generating, convexUser, generateWorkoutAction, navigation, t, aiErrorText]);
 
   // ── Render a single message bubble ──
   const renderMessage = useCallback(({ item }: { item: ChatMessage }) => {

@@ -11,7 +11,7 @@ import type { Doc } from "./_generated/dataModel";
 import type { CoachData } from "./coachData";
 import { analyzeRecovery, buildCoachContext, lastPerformanceBlock, unitsOf, type Units } from "./coachPrompt";
 import { guardLoad, type LoadChange } from "./loadGuard";
-import { WORKOUT_MODEL } from "./aiModels";
+import { WORKOUT_MODEL, temperatureFor } from "./aiModels";
 import { EXERCISE_CATALOG, exercisesForEquipment } from "../src/constants/exerciseCatalog";
 import type { AIGeneratedExercise, AIGeneratedWorkout, Equipment, Exercise } from "../src/types";
 
@@ -203,13 +203,13 @@ ${todaySection}`;
   };
 }
 
-/** Ask the model for the plan; returns its raw JSON text. */
-export async function requestWorkout(openai: OpenAI, req: WorkoutRequest): Promise<string | null | undefined> {
+/** Ask the model for the plan; returns its raw JSON text. `model` lets the evals compare models. */
+export async function requestWorkout(openai: OpenAI, req: WorkoutRequest, model = WORKOUT_MODEL): Promise<string | null | undefined> {
   try {
     const response = await openai.chat.completions.create({
-      model: WORKOUT_MODEL,
+      model,
       messages: req.messages,
-      temperature: 0.5,
+      ...temperatureFor(model, 0.5),
       max_completion_tokens: 2500,
       response_format: {
         type: "json_schema",
@@ -221,7 +221,7 @@ export async function requestWorkout(openai: OpenAI, req: WorkoutRequest): Promi
     // Some models / accounts reject large strict schemas: fall back to plain JSON mode.
     console.warn("[AI Workout] Structured output failed, retrying with JSON mode:", e);
     const response = await openai.chat.completions.create({
-      model: WORKOUT_MODEL,
+      model,
       messages: [
         ...req.messages,
         {
@@ -229,7 +229,7 @@ export async function requestWorkout(openai: OpenAI, req: WorkoutRequest): Promi
           content: `Return ONLY a JSON object: {"workoutName": string, "reasoning": string, "estimatedMinutes": number, "warmup": string, "exercises": [{"exerciseId": string, "newExercise": null | {"name": string, "muscleGroup": string, "category": "strength"|"cardio"|"flexibility"}, "sets": number, "reps": string, "restSeconds": number, "targetWeight": number|null, "supersetGroup": string|null, "notes": string}]}`,
         },
       ],
-      temperature: 0.5,
+      ...temperatureFor(model, 0.5),
       max_completion_tokens: 2500,
       response_format: { type: "json_object" },
     });

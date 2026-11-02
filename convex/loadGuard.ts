@@ -130,7 +130,9 @@ export function guardLoad(opts: {
   const step = loadStep(workouts, exerciseId, units);
   const last = lastTopSet(workouts, exerciseId, units, now);
   let target = value;
-  let snapped = Math.round(target / step) * step || step;
+  // Nearest loadable weight; exact ties go down (237.5 lb on a 5 lb grid → 235), the safer side.
+  const nearest = (v: number) => Math.ceil(v / step - 0.5) * step;
+  let snapped = nearest(target) || step;
 
   if (last) {
     const afterBreak = last.daysAgo > BREAK_DAYS;
@@ -149,7 +151,7 @@ export function guardLoad(opts: {
       });
       target = cap;
     }
-    snapped = Math.round(target / step) * step;
+    snapped = nearest(target);
     if (snapped > cap + 1e-9) snapped = Math.floor(cap / step) * step;
     if (snapped <= 0) snapped = step;
     if (snapped < last.weight * 0.6 && !afterBreak) {

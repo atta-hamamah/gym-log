@@ -21,6 +21,7 @@ import { IconButton } from '../components/IconButton';
 import { StatTile } from '../components/StatTile';
 import { useAction, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
+import { aiLimitMessage } from '../utils/aiErrors';
 
 export const AIWorkoutPreviewScreen = ({ route, navigation }: any) => {
     const { t } = useTranslation();
@@ -96,7 +97,7 @@ export const AIWorkoutPreviewScreen = ({ route, navigation }: any) => {
         } catch (error) {
             showModal(
                 t('aiWorkout.errorTitle'),
-                t('aiWorkout.errorMessage'),
+                aiLimitMessage(error, t) ?? t('aiWorkout.errorMessage'),
             );
         } finally {
             setRegenerating(false);

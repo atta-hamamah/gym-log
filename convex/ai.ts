@@ -5,17 +5,18 @@ import { action } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { requireUserInAction } from "./users";
 import { requireAIAccess } from "./entitlements";
+import { consumeAIQuota } from "./aiUsage";
 import OpenAI from "openai";
 import { workoutValidator } from "./validators";
 import type { CoachData } from "./coachData";
 import { analyzeRecovery, describeWorkout, fmtWeight, fromClientWorkout, unitsOf } from "./coachPrompt";
 import { runCoachChat } from "./coachChat";
-import { AURA_MODEL } from "./aiModels";
+import { AURA_MODEL, temperatureFor } from "./aiModels";
 
 /**
  * AI Chat Action
  * Loads the user's training data in one query and answers as the coach
- * (prompt and model routing live in coachChat.ts, shared with the evals).
+ * (the prompt lives in coachChat.ts, shared with the evals).
  */
 export const chat = action({
   args: {
@@ -36,6 +37,7 @@ export const chat = action({
 
     const user = await requireUserInAction(ctx);
     await requireAIAccess(ctx, user);
+    await consumeAIQuota(ctx, user, "chat");
 
     const data: CoachData = await ctx.runQuery(internal.coachData.getCoachData, { userId: user._id });
     const { reply } = await runCoachChat(openai, {
@@ -73,6 +75,8 @@ export const generateWorkoutAura = action({
       workoutId: args.workoutId,
     });
     if (details.workout.userId !== owner._id) throw new Error("Workout not found");
+    // Before the try below: its fallback text would hide the limit from the app.
+    await consumeAIQuota(ctx, owner, "aura");
 
     const durationMin: number | null = details.workout.endTime && details.workout.startTime
       ? Math.round((details.workout.endTime - details.workout.startTime) / 60000)
@@ -191,7 +195,7 @@ Do NOT wrap it in markdown block quotes. Just raw JSON.
       const response = await openai.chat.completions.create({
         model: AURA_MODEL,
         messages: [{ role: "user", content: prompt }],
-        temperature: characterMode === "default" ? 0.6 : 0.8,
+        ...temperatureFor(AURA_MODEL, characterMode === "default" ? 0.6 : 0.8),
         response_format: { type: "json_object" },
       });
 

@@ -19,6 +19,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { Id } from "../../convex/_generated/dataModel";
 import { Share2, X, BarChart3, Lock, Trophy, Sparkles, ShieldCheck, MessageCircleOff } from "lucide-react-native";
 import { useSubscription } from "../context/SubscriptionContext";
+import { aiLimitMessage } from "../utils/aiErrors";
 import { ForceDarkTheme, useTheme } from "../context/ThemeContext";
 import { useUnits } from "../context/UnitsContext";
 import { Typography } from "../components/Typography";
@@ -84,6 +85,8 @@ function WorkoutAuraContent() {
   const [auraCache, setAuraCache] = useState<Record<string, AuraData>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
+  /** Set when the fair-use limit was reached, shown instead of the generic error. */
+  const [limitMessage, setLimitMessage] = useState<string | null>(null);
   const [loadingPhaseIndex, setLoadingPhaseIndex] = useState(0);
   const [characterMode, setCharacterMode] = useState<"default" | "chad" | "kevin">("default");
   const [viewMode, setViewMode] = useState<"aura" | "stats">("stats");
@@ -229,6 +232,7 @@ function WorkoutAuraContent() {
     try {
       setLoading(true);
       setError(false);
+      setLimitMessage(null);
       cardScale.setValue(0.85);
       cardOpacity.setValue(0);
       statsOpacity.setValue(0);
@@ -244,6 +248,7 @@ function WorkoutAuraContent() {
       setTimeout(animateCardIn, 100);
     } catch (e) {
       console.error(e);
+      setLimitMessage(aiLimitMessage(e, t));
       setError(true);
     } finally {
       setLoading(false);
@@ -336,7 +341,7 @@ function WorkoutAuraContent() {
           <View style={styles.errorIcon}>
             <MessageCircleOff color={C.textSecondary} size={30} />
           </View>
-          <Typography style={styles.errorText}>{t("aura.silentGods")}</Typography>
+          <Typography style={styles.errorText}>{limitMessage ?? t("aura.silentGods")}</Typography>
           <Button title={t("common.continue")} variant="outline" size="large" onPress={handleFinish} />
         </View>
       </SafeAreaView>

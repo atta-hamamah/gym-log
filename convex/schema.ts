@@ -153,4 +153,14 @@ export default defineSchema({
     .index("by_userId", ["userId"])
     .index("by_userId_date", ["userId", "date"])
     .index("by_userId_localId", ["userId", "localId"]),
+
+  // ── AI usage (fair-use limits, see aiUsage.ts) ────────
+  // One row per user, feature and UTC day.
+  aiUsage: defineTable({
+    userId: v.id("users"),
+    feature: v.union(v.literal("chat"), v.literal("workout"), v.literal("aura")),
+    day: v.string(),   // "2026-11-02" (UTC)
+    count: v.float64(),
+  })
+    .index("by_userId_feature_day", ["userId", "feature", "day"]),
 });

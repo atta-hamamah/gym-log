@@ -11,6 +11,7 @@
 import type * as ai from "../ai.js";
 import type * as aiHelpers from "../aiHelpers.js";
 import type * as aiModels from "../aiModels.js";
+import type * as aiUsage from "../aiUsage.js";
 import type * as aiWorkout from "../aiWorkout.js";
 import type * as coachChat from "../coachChat.js";
 import type * as coachData from "../coachData.js";
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   ai: typeof ai;
   aiHelpers: typeof aiHelpers;
   aiModels: typeof aiModels;
+  aiUsage: typeof aiUsage;
   aiWorkout: typeof aiWorkout;
   coachChat: typeof coachChat;
   coachData: typeof coachData;

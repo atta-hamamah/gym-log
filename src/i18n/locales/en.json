@@ -635,6 +635,10 @@
     "subscriptionRequired": "Your AI Coach subscription is no longer active. Renew it to keep chatting.",
     "send": "Send"
   },
+  "aiLimit": {
+    "day": "You've reached today's fair-use limit for the AI Coach. It resets within 24 hours.",
+    "month": "You've reached this month's fair-use limit for the AI Coach. It resets on the 1st of next month."
+  },
   "aura": {
     "consulting": "Consulting the iron oracle...",
     "analyzingRest": "Analyzing rest times...",

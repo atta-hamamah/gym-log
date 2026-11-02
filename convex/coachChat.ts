@@ -1,6 +1,6 @@
 /**
- * The AI coach chat, minus the Convex plumbing: model routing, the system
- * prompt and the completion call. Used by the ai.chat action and by the
+ * The AI coach chat, minus the Convex plumbing: the system prompt and the
+ * completion call. Used by the ai.chat action and by the
  * evals (evals/run.ts), so both exercise exactly the same code.
  *
  * Pure apart from the OpenAI calls (no Convex runtime APIs).
@@ -9,48 +9,7 @@ import type OpenAI from "openai";
 import type { Doc } from "./_generated/dataModel";
 import type { CoachData, CoachWorkout } from "./coachData";
 import { buildCoachContext } from "./coachPrompt";
-import { ENABLE_DYNAMIC_MODEL, MODEL_CHEAP, MODEL_SMART } from "./aiModels";
-
-/**
- * Use a tiny, cheap AI call to classify whether the user's message
- * requires the smart model or the cheap one.
- *
- * Cost: ~30 input tokens + 1 output token ≈ $0.00002 per classification.
- * This is far more accurate than keyword matching — it understands intent,
- * slang, misspellings, and works across all languages.
- */
-export async function classifyIntent(openai: OpenAI, message: string): Promise<string> {
-  if (!ENABLE_DYNAMIC_MODEL) return MODEL_CHEAP;
-
-  try {
-    const classification = await openai.chat.completions.create({
-      model: MODEL_CHEAP,
-      messages: [
-        {
-          role: "system",
-          content: `You are a message classifier for a gym tracking app AI assistant. Your job is to decide if a user's message is SIMPLE or COMPLEX.
-
-SIMPLE = quick factual questions, greetings, short answers, definitions, basic tips.
-Examples: "How many sets for chest?", "What is RPE?", "Hi", "Thanks!", "How much protein per day?"
-
-COMPLEX = needs deep analysis of the user's workout data, creating plans, analyzing progress/plateaus, body composition advice, programming recommendations, injury assessment, or any request requiring reasoning over their training history.
-Examples: "Analyze my squat progress", "Why am I not getting stronger?", "Create a PPL routine for me", "Should I bulk or cut?", "Compare my bench to my deadlift ratio", "I have pain in my shoulder when pressing"
-
-Reply with ONLY the single word: SIMPLE or COMPLEX`,
-        },
-        { role: "user", content: message },
-      ],
-      max_completion_tokens: 3,
-      temperature: 0,
-    });
-
-    const result = classification.choices[0]?.message?.content?.trim().toUpperCase();
-    return result === "COMPLEX" ? MODEL_SMART : MODEL_CHEAP;
-  } catch {
-    // If classification fails, fall back to cheap model
-    return MODEL_CHEAP;
-  }
-}
+import { CHAT_MODEL, temperatureFor } from "./aiModels";
 
 /** The coach's system prompt: personality, coaching rules and the user's full training context. */
 export function chatSystemPrompt(user: Doc<"users">, data: CoachData, activeWorkout?: CoachWorkout | null, now?: number): string {
@@ -96,10 +55,12 @@ export async function runCoachChat(
     history: ChatTurn[];
     activeWorkout?: CoachWorkout | null;
     now?: number;
+    /** Overrides CHAT_MODEL (the evals use it to compare models). */
+    model?: string;
   },
 ): Promise<{ reply: string; model: string }> {
   const systemPrompt = chatSystemPrompt(opts.user, opts.data, opts.activeWorkout, opts.now);
-  const model = await classifyIntent(openai, opts.message);
+  const model = opts.model ?? CHAT_MODEL;
 
   const history = opts.history.slice(-20).map((m) => ({
     role: m.role,
@@ -115,8 +76,8 @@ export async function runCoachChat(
   const response = await openai.chat.completions.create({
     model,
     messages,
-    max_completion_tokens: model === MODEL_SMART ? 1500 : 900,
-    temperature: 0.7,
+    max_completion_tokens: 1500,
+    ...temperatureFor(model, 0.7),
   });
 
   return { reply: response.choices[0]?.message?.content || "Sorry, I couldn't generate a response.", model };

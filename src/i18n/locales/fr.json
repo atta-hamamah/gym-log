@@ -635,6 +635,10 @@
     "subscriptionRequired": "Votre abonnement Coach IA n'est plus actif. Renouvelez-le pour continuer à discuter.",
     "send": "Envoyer"
   },
+  "aiLimit": {
+    "day": "Vous avez atteint la limite d'utilisation quotidienne du Coach IA. Elle se réinitialise dans moins de 24 heures.",
+    "month": "Vous avez atteint la limite d'utilisation mensuelle du Coach IA. Elle se réinitialise le 1er du mois prochain."
+  },
   "aura": {
     "consulting": "Consultation de l'oracle de la muscu...",
     "analyzingRest": "Analyse des temps de repos...",

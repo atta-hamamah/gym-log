@@ -38,7 +38,7 @@ export function checksEnabled(): boolean {
 
 let warnedDisabled = false;
 
-function isAllowlisted(email: string | undefined): boolean {
+export function isAllowlisted(email: string | undefined): boolean {
   if (!email) return false;
   const list = String(process.env.AI_ACCESS_EMAILS || "")
     .split(",")

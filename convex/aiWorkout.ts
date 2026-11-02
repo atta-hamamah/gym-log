@@ -5,6 +5,7 @@ import { action } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { requireUserInAction } from "./users";
 import { requireAIAccess } from "./entitlements";
+import { consumeAIQuota } from "./aiUsage";
 import OpenAI from "openai";
 import type { CoachData } from "./coachData";
 import { buildWorkoutRequest, finalizeWorkout, requestWorkout } from "./workoutPlanner";
@@ -30,6 +31,7 @@ export const generateWorkout = action({
 
     const user = await requireUserInAction(ctx);
     await requireAIAccess(ctx, user);
+    await consumeAIQuota(ctx, user, "workout");
 
     const data: CoachData = await ctx.runQuery(internal.coachData.getCoachData, { userId: user._id, days: 45, maxWorkouts: 30 });
     const request = buildWorkoutRequest(user, data, args);

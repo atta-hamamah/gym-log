@@ -635,6 +635,10 @@
     "subscriptionRequired": "Tu suscripción al Coach IA ya no está activa. Renuévala para seguir chateando.",
     "send": "Enviar"
   },
+  "aiLimit": {
+    "day": "Has alcanzado el límite de uso diario del Coach IA. Se restablece en menos de 24 horas.",
+    "month": "Has alcanzado el límite de uso mensual del Coach IA. Se restablece el día 1 del próximo mes."
+  },
   "aura": {
     "consulting": "Consultando al oráculo del gimnasio...",
     "analyzingRest": "Analizando tiempos de descanso...",

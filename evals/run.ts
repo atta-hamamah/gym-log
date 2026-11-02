@@ -8,6 +8,10 @@
  *   npm run eval -- --repeat=3         generate each workout 3 times (variance)
  *   npm run eval -- --no-chat | --no-workout | --no-judge
  *   npm run eval -- --dry              no API calls: just write the prompts
+ *   npm run eval -- --model=gpt-5.1            try another model for workouts and chat
+ *   npm run eval -- --judge-model=gpt-5.1      grade chat with another model (default gpt-6.1-sol)
+ *
+ * The report includes real token usage and cost per workout / chat answer.
  *
  * Needs OPENAI_API_KEY (environment or .env.local). Without it, runs --dry.
  * Reports go to evals/results/<timestamp>/report.md (git-ignored).
@@ -15,12 +19,13 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { AsyncLocalStorage } from "node:async_hooks";
 import OpenAI from "openai";
 import { FIXTURES, NOW, type Check, type Fixture } from "./fixtures";
 import { buildWorkoutRequest, finalizeWorkout, requestWorkout, type FinalizedWorkout, type WorkoutRequest } from "../convex/workoutPlanner";
 import { chatSystemPrompt, runCoachChat } from "../convex/coachChat";
 import { buildCoachContext, unitsOf } from "../convex/coachPrompt";
-import { MODEL_SMART } from "../convex/aiModels";
+import { AI_MODEL, temperatureFor } from "../convex/aiModels";
 import { EXERCISE_BY_ID } from "../src/constants/exerciseCatalog";
 import type { AIGeneratedWorkout } from "../src/types";
 
@@ -48,11 +53,77 @@ const opts = {
   workout: !flag("no-workout"),
   chat: !flag("no-chat"),
   judge: !flag("no-judge"),
+  /** Model for workouts and chat (defaults to what ships). */
+  model: value("model") ?? AI_MODEL,
+  /** A different model grades chat answers, so the coach never grades itself. */
+  judgeModel: value("judge-model") ?? "gpt-6.1-sol",
 };
-const openai = opts.dry ? null : new OpenAI({ apiKey: key });
+
+// ── Token metering ───────────────────────────────────────
+
+/** USD per 1M tokens, standard tier (https://developers.openai.com/api/docs/pricing, Nov 2026). */
+const PRICES: Record<string, { input: number; cached: number; output: number }> = {
+  "gpt-5.1": { input: 1.25, cached: 0.125, output: 10 },
+  "gpt-6.1-terra": { input: 1, cached: 0.05, output: 5 },
+  "gpt-6.1-sol": { input: 2, cached: 0.1, output: 10 },
+  "gpt-4o-mini": { input: 0.15, cached: 0.075, output: 0.6 },
+};
+
+interface Meter {
+  operations: number;
+  calls: number;
+  input: number;
+  output: number;
+  reasoning: number;
+  cost: number;
+  seconds: number;
+}
+const meters: Record<"workout" | "chat", Meter> = {
+  workout: { operations: 0, calls: 0, input: 0, output: 0, reasoning: 0, cost: 0, seconds: 0 },
+  chat: { operations: 0, calls: 0, input: 0, output: 0, reasoning: 0, cost: 0, seconds: 0 },
+};
+const unpriced = new Set<string>();
+const meterScope = new AsyncLocalStorage<keyof typeof meters>();
+
+/** Count tokens and cost of every call the coach code makes (judge calls use their own client). */
+function metered(client: OpenAI): OpenAI {
+  const completions = client.chat.completions;
+  const create = completions.create.bind(completions);
+  completions.create = (async (body: any, options?: any) => {
+    const response: any = await create(body, options);
+    const kind = meterScope.getStore();
+    const u = response?.usage;
+    if (kind && u) {
+      const price = PRICES[body.model];
+      if (!price) unpriced.add(body.model);
+      const cached = u.prompt_tokens_details?.cached_tokens ?? 0;
+      const m = meters[kind];
+      m.calls++;
+      m.input += u.prompt_tokens;
+      m.output += u.completion_tokens;
+      m.reasoning += u.completion_tokens_details?.reasoning_tokens ?? 0;
+      if (price) m.cost += ((u.prompt_tokens - cached) * price.input + cached * price.cached + u.completion_tokens * price.output) / 1e6;
+    }
+    return response;
+  }) as any;
+  return client;
+}
+
+async function measure<T>(kind: keyof typeof meters, fn: () => Promise<T>): Promise<T> {
+  const started = Date.now();
+  try {
+    return await meterScope.run(kind, fn);
+  } finally {
+    meters[kind].operations++;
+    meters[kind].seconds += (Date.now() - started) / 1000;
+  }
+}
+
+const openai = opts.dry ? null : metered(new OpenAI({ apiKey: key }));
+const judgeClient = opts.dry ? null : new OpenAI({ apiKey: key });
 
 const stamp = new Date().toISOString().replace(/[:T]/g, "-").slice(0, 19);
-const outDir = path.join(__dirname, "results", opts.dry ? `${stamp}-dry` : stamp);
+const outDir = path.join(__dirname, "results", opts.dry ? `${stamp}-dry` : `${stamp}-${opts.model}`);
 fs.mkdirSync(outDir, { recursive: true });
 const save = (name: string, text: string) => fs.writeFileSync(path.join(outDir, name), text, "utf8");
 
@@ -99,9 +170,9 @@ interface Verdict {
 }
 
 async function judge(f: Fixture, answer: string): Promise<Verdict> {
-  const response = await openai!.chat.completions.create({
-    model: MODEL_SMART,
-    temperature: 0,
+  const response = await judgeClient!.chat.completions.create({
+    model: opts.judgeModel,
+    ...temperatureFor(opts.judgeModel, 0),
     response_format: { type: "json_object" },
     messages: [
       {
@@ -177,7 +248,7 @@ async function runWorkout(f: Fixture, run: number): Promise<{ checks: Check[]; m
   const started = Date.now();
   let content: string | null | undefined;
   try {
-    content = await requestWorkout(openai!, req);
+    content = await measure("workout", () => requestWorkout(openai!, req, opts.model));
     save(`${f.id}.workout-raw${opts.repeat > 1 ? `-${run}` : ""}.json`, content ?? "");
     const result = finalizeWorkout(content, req, f.data);
     const raw = JSON.parse(content!);
@@ -207,7 +278,9 @@ async function runChat(f: Fixture): Promise<{ checks: Check[]; markdown: string;
   }
   const started = Date.now();
   try {
-    const { reply, model } = await runCoachChat(openai!, { user: f.user, data: f.data, message: c.question, history: [], now: NOW });
+    const { reply, model } = await measure("chat", () =>
+      runCoachChat(openai!, { user: f.user, data: f.data, message: c.question, history: [], now: NOW, model: opts.model }),
+    );
     const checks: Check[] = [
       { name: "reply is concise", pass: reply.length <= 2500, detail: `${reply.length} chars`, soft: true },
       ...(c.checks?.(reply) ?? []),
@@ -215,10 +288,15 @@ async function runChat(f: Fixture): Promise<{ checks: Check[]; markdown: string;
     let judged = "";
     let score: number | undefined;
     if (opts.judge) {
-      const v = await judge(f, reply);
-      score = v.score;
-      checks.push({ name: `judge score ${v.score}/5`, pass: v.score >= 4, soft: v.score === 3, detail: v.verdict });
-      judged = v.issues.length ? `\n**Judge's issues:**\n${v.issues.map((i) => `- ${i}`).join("\n")}\n` : "";
+      // A grader error must not be blamed on the coach's answer.
+      try {
+        const v = await judge(f, reply);
+        score = v.score;
+        checks.push({ name: `judge score ${v.score}/5`, pass: v.score >= 4, soft: v.score === 3, detail: v.verdict });
+        judged = v.issues.length ? `\n**Judge's issues:**\n${v.issues.map((i) => `- ${i}`).join("\n")}\n` : "";
+      } catch (e: any) {
+        checks.push({ name: "judge ran", pass: false, soft: true, detail: e?.message ?? String(e) });
+      }
     }
     const quoted = reply.split("\n").map((l) => `> ${l}`).join("\n");
     return {
@@ -280,9 +358,19 @@ async function main() {
   const loads = results.reduce((a, r) => ({ suggested: a.suggested + r.loads.suggested, rounded: a.rounded + r.loads.rounded, corrected: a.corrected + r.loads.corrected }), { suggested: 0, rounded: 0, corrected: 0 });
   const scores = results.map((r) => r.judgeScore).filter((s): s is number => s !== undefined);
 
+  const usage = (["workout", "chat"] as const)
+    .filter((k) => meters[k].operations > 0)
+    .map((k) => {
+      const m = meters[k];
+      const n = m.operations;
+      return `${k === "workout" ? "Workout" : "Chat answer"}: avg $${(m.cost / n).toFixed(4)}, ${(m.seconds / n).toFixed(1)}s, ${Math.round(m.input / n)} input / ${Math.round(m.output / n)} output tokens${m.reasoning ? ` (${Math.round(m.reasoning / n)} reasoning)` : ""} over ${n}`;
+    });
+
   const summary = [
     `# AI coach eval — ${new Date().toLocaleString()}`,
-    opts.dry ? "**Dry run:** no model calls; prompts saved next to this report." : "",
+    opts.dry ? "**Dry run:** no model calls; prompts saved next to this report." : `Model: **${opts.model}** · judge: ${opts.judgeModel}`,
+    usage.length ? usage.join("\n\n") : "",
+    unpriced.size ? `No price on file for: ${[...unpriced].join(", ")} (cost excludes them).` : "",
     `Checks: ${all.length - failed - warned} passed, ${warned} warnings, ${failed} failed.`,
     loads.suggested ? `AI loads: ${loads.suggested} suggested, ${loads.rounded} rounded to loadable plates, ${loads.corrected} capped/flagged by the safety net.` : "",
     scores.length ? `Chat judge: average ${(scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1)}/5 over ${scores.length} answers.` : "",

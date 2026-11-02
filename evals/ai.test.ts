@@ -9,7 +9,39 @@ import { guardLoad, lowestReps } from "../convex/loadGuard";
 import { buildWorkoutRequest, finalizeWorkout } from "../convex/workoutPlanner";
 import { chatSystemPrompt } from "../convex/coachChat";
 import type { Units } from "../convex/coachPrompt";
+import { AI_LIMITS, dayKey, quotaDecision } from "../convex/aiUsage";
+import { temperatureFor } from "../convex/aiModels";
 import { FIXTURES, NOW, e, session } from "./fixtures";
+
+test("fair-use limits block at the daily or monthly cap", () => {
+  const limit = { day: 50, month: 500 };
+  assert.equal(quotaDecision({ day: 0, month: 0 }, limit), "ok");
+  assert.equal(quotaDecision({ day: 49, month: 300 }, limit), "ok");
+  assert.equal(quotaDecision({ day: 50, month: 300 }, limit), "day");
+  assert.equal(quotaDecision({ day: 3, month: 500 }, limit), "month");
+  assert.equal(quotaDecision({ day: 50, month: 500 }, limit), "month");
+});
+
+test("fair-use limits stay generous and keep the worst case affordable", () => {
+  for (const [feature, l] of Object.entries(AI_LIMITS)) {
+    assert.ok(l.day > 0 && l.month >= l.day, feature);
+  }
+  // A heavy real user (~200 messages a month, ~7 a day) must never be blocked.
+  assert.ok(AI_LIMITS.chat.month >= 400 && AI_LIMITS.chat.day >= 30);
+  // Worst case at GPT-6.1 Terra's measured costs stays under ~$5 a month (price $6.99, ~$5.94 after store fees).
+  const worst = AI_LIMITS.chat.month * 0.006 + AI_LIMITS.workout.month * 0.0075 + AI_LIMITS.aura.month * 0.004;
+  assert.ok(worst < 5, `worst case $${worst.toFixed(2)}`);
+});
+
+test("usage days are UTC", () => {
+  assert.equal(dayKey(Date.UTC(2026, 10, 2, 23, 59)), "2026-11-02");
+  assert.equal(dayKey(Date.UTC(2026, 10, 3, 0, 1)), "2026-11-03");
+});
+
+test("temperature is only sent to models that accept it", () => {
+  assert.deepEqual(temperatureFor("gpt-6.1-terra", 0.5), {});
+  assert.deepEqual(temperatureFor("gpt-5.1", 0.5), { temperature: 0.5 });
+});
 
 /** How the app shows a kg value to a pounds user (UnitsContext + preview rounding). */
 const lbOf = (kg: number) => Math.round(+(kg * 2.20462).toFixed(1) * 2) / 2;
@@ -67,6 +99,9 @@ test("pound loads land on 5 lb steps and display cleanly", () => {
     session(d, "A", [e("ex-squat", Array(5).fill(`${w}x5`).join(" "), { plan: "5x5@180" })], { units: "imperial" });
   const d = guard(231, [squat(2, 225), squat(5, 220)], { exerciseId: "ex-squat", reps: "5", units: "imperial" });
   assert.equal(lbOf(d.kg!), 230);
+  // Exact ties round down, the safer side (Terra suggested 237.5 lb in the model comparison).
+  const tie = guard(237.5, [squat(2, 225), squat(5, 220)], { exerciseId: "ex-squat", reps: "5", units: "imperial" });
+  assert.equal(lbOf(tie.kg!), 235);
 });
 
 test("caps an unrealistic jump from the last session", () => {
