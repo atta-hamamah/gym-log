@@ -10,14 +10,18 @@
 
 import type * as ai from "../ai.js";
 import type * as aiHelpers from "../aiHelpers.js";
+import type * as aiModels from "../aiModels.js";
 import type * as aiWorkout from "../aiWorkout.js";
+import type * as coachChat from "../coachChat.js";
 import type * as coachData from "../coachData.js";
 import type * as coachPrompt from "../coachPrompt.js";
 import type * as entitlements from "../entitlements.js";
 import type * as http from "../http.js";
+import type * as loadGuard from "../loadGuard.js";
 import type * as sync from "../sync.js";
 import type * as users from "../users.js";
 import type * as validators from "../validators.js";
+import type * as workoutPlanner from "../workoutPlanner.js";
 import type * as workouts from "../workouts.js";
 
 import type {
@@ -29,14 +33,18 @@ import type {
 declare const fullApi: ApiFromModules<{
   ai: typeof ai;
   aiHelpers: typeof aiHelpers;
+  aiModels: typeof aiModels;
   aiWorkout: typeof aiWorkout;
+  coachChat: typeof coachChat;
   coachData: typeof coachData;
   coachPrompt: typeof coachPrompt;
   entitlements: typeof entitlements;
   http: typeof http;
+  loadGuard: typeof loadGuard;
   sync: typeof sync;
   users: typeof users;
   validators: typeof validators;
+  workoutPlanner: typeof workoutPlanner;
   workouts: typeof workouts;
 }>;
 
