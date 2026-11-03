@@ -19,6 +19,7 @@ import {
   type SyncReport,
 } from '../services/cloudSync';
 import { useSubscription } from './SubscriptionContext';
+import { unregisterPushDevice } from '../services/notifications';
 
 export type SyncStatus = 'off' | 'idle' | 'syncing' | 'error' | 'conflict';
 
@@ -270,9 +271,11 @@ export const CloudSyncProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       await syncNow(); // upload what's pending while we still can
     }
     if (timerRef.current) clearTimeout(timerRef.current);
+    // Stop AI nudges to this phone while the session can still say so.
+    await unregisterPushDevice(convex);
     await clerkSignOut();
     // RevenueCat follows Clerk (SubscriptionContext switches it to anonymous).
-  }, [syncNow, clerkSignOut]);
+  }, [syncNow, clerkSignOut, convex]);
 
   const deleteAccount = useCallback(async () => {
     if (!user) return;

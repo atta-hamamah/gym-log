@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TextInput, ScrollView, Share, TouchableOpacity, I18nManager, NativeModules, Modal } from 'react-native';
+import { View, StyleSheet, TextInput, ScrollView, Share, TouchableOpacity, I18nManager, NativeModules, Modal, Switch } from 'react-native';
 import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { Button } from '../components/Button';
@@ -20,7 +20,7 @@ import { generateId } from '../utils/generateId';
 import { useAuth, useUser } from '@clerk/clerk-expo';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
-import { Crown, Sparkles, CreditCard, LogOut, LogIn, Sun, Moon, Target, Ruler, Cloud, CloudOff, RefreshCw, AlertTriangle, Dumbbell, Globe, Scale, Download, Trash2, UserX, ChevronDown, ChevronUp } from 'lucide-react-native';
+import { Crown, Sparkles, CreditCard, LogOut, LogIn, Sun, Moon, Target, Ruler, Cloud, CloudOff, RefreshCw, AlertTriangle, Dumbbell, Globe, Scale, Download, Trash2, UserX, ChevronDown, ChevronUp, Bell } from 'lucide-react-native';
 import { ForwardChevron } from '../components/DirectionalIcons';
 import { formatDate } from '../utils/dates';
 import { ListGroup, ListRow } from '../components/ListRow';
@@ -29,6 +29,8 @@ import { SegmentedControl } from '../components/SegmentedControl';
 import { ScreenHeader } from '../components/ScreenHeader';
 import { useTheme } from '../context/ThemeContext';
 import { useUnits, UnitSystem } from '../context/UnitsContext';
+import { useNotifications } from '../context/NotificationsContext';
+import { COACH_CHOICES } from '../notifications/nudges';
 
 
 export const SettingsScreen = ({ navigation }: any) => {
@@ -67,6 +69,7 @@ export const SettingsScreen = ({ navigation }: any) => {
     } = useCloudSync();
     const { isSignedIn } = useAuth();
     const { user } = useUser();
+    const nudges = useNotifications();
     const updateProfile = useMutation(api.users.updateProfile);
     const convexUser = useQuery(api.users.me, isSignedIn ? {} : 'skip');
     const [restoring, setRestoring] = useState(false);
@@ -784,6 +787,55 @@ export const SettingsScreen = ({ navigation }: any) => {
                     </View>
                 </ListGroup>
 
+                {/* Coach nudges */}
+                {nudges.supported && (
+                    <ListGroup
+                        title={t('settings.notifications')}
+                        footer={nudges.blocked ? t('settings.notificationsBlocked') : undefined}
+                    >
+                        <ListRow
+                            title={t('settings.coachNudges')}
+                            subtitle={nudges.aiNudges ? t('settings.coachNudgesAI') : t('settings.coachNudgesDesc')}
+                            icon={c => <Bell color={c} size={17} />}
+                            iconTone="secondary"
+                            onPress={() => nudges.setEnabled(!nudges.enabled)}
+                            right={
+                                <Switch
+                                    value={nudges.enabled}
+                                    onValueChange={nudges.setEnabled}
+                                    trackColor={{ false: colors.border, true: colors.primary }}
+                                    thumbColor={colors.onPrimary}
+                                />
+                            }
+                        />
+                        {nudges.enabled && (
+                            <View style={styles.rowBody}>
+                                <Typography variant="label" style={styles.fieldLabel}>
+                                    {t('settings.nudgeCoach')}
+                                </Typography>
+                                <View style={styles.chipWrap}>
+                                    {COACH_CHOICES.map(choice => (
+                                        <Chip
+                                            key={choice}
+                                            label={choice === 'mix' ? t('settings.coachMix') : t(`nudges.coachName.${choice}`)}
+                                            selected={nudges.coach === choice}
+                                            onPress={() => nudges.setCoach(choice)}
+                                        />
+                                    ))}
+                                </View>
+                                <Button
+                                    title={t('settings.nudgePreview')}
+                                    variant="secondary"
+                                    size="small"
+                                    icon={c => <Bell color={c} size={14} />}
+                                    onPress={nudges.sendPreview}
+                                    style={styles.nudgePreview}
+                                />
+                            </View>
+                        )}
+                    </ListGroup>
+                )}
+
                 {/* Body */}
                 <ListGroup title={t('settings.body', 'Body')}>
                     <ListRow
@@ -1172,6 +1224,10 @@ const createStyles = (colors: ThemeColors) => StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         gap: 8,
+    },
+    nudgePreview: {
+        marginTop: 14,
+        alignSelf: 'flex-start',
     },
     fieldRow: {
         flexDirection: 'row',

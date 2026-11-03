@@ -60,6 +60,15 @@ export function hasActiveAI(user: Doc<"users">, now: number = Date.now()): boole
   return !!user.aiActive && (user.aiExpiresAt === undefined || user.aiExpiresAt > now);
 }
 
+/**
+ * Whether the server may spend an AI call on a coach nudge for this user.
+ * Unlike hasActiveAI it fails closed: nudges run on a timer, not on a user's
+ * request, so without RevenueCat checks only allowlisted accounts get them.
+ */
+export function aiNudgesAllowed(user: Doc<"users">, now: number = Date.now()): boolean {
+  return checksEnabled() ? hasActiveAI(user, now) : isAllowlisted(user.email);
+}
+
 export function subscriptionRequiredError() {
   return new ConvexError({ code: AI_SUBSCRIPTION_REQUIRED });
 }

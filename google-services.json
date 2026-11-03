@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "200217846294",
+    "project_id": "repai-871b6",
+    "storage_bucket": "repai-871b6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:200217846294:android:e0fed6fd26412935328b37",
+        "android_client_info": {
+          "package_name": "com.gymlog.tracker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAQ8NJF9xBavLjFnePtvrkffjqUpU2_mbc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

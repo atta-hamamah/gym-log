@@ -172,4 +172,46 @@ export default defineSchema({
   })
     .index("by_userId", ["userId"])
     .index("by_userId_status", ["userId", "status"]),
+
+  // ── Coach nudges for AI subscribers (see notifications.ts) ──
+  // Expo push token of each device signed in to the account.
+  pushTokens: defineTable({
+    userId: v.id("users"),
+    token: v.string(),
+    platform: v.union(v.literal("android"), v.literal("ios")),
+    updatedAt: v.float64(),
+  })
+    .index("by_token", ["token"])
+    .index("by_userId", ["userId"]),
+
+  // One row per user: who nudges them, in which language, and when.
+  nudgeSettings: defineTable({
+    userId: v.id("users"),
+    enabled: v.boolean(),
+    coach: v.union(v.literal("mix"), v.literal("repai"), v.literal("chad"), v.literal("kevin")),
+    language: v.string(),
+    timeZone: v.string(),
+    /** Local hour nudges go out (an hour before they usually train). */
+    hour: v.float64(),
+    /** Next time to consider a nudge (UTC ms); the cron picks up rows that are due. */
+    nextAt: v.float64(),
+    updatedAt: v.float64(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_nextAt", ["nextAt"]),
+
+  // Nudges sent, for the daily / weekly caps and spacing.
+  nudgeLog: defineTable({
+    userId: v.id("users"),
+    /** User's local day number (days since 1970-01-01 in their time zone). */
+    day: v.float64(),
+    kind: v.string(),
+    group: v.optional(v.string()),
+    coach: v.optional(v.string()),
+    status: v.union(v.literal("pending"), v.literal("sent"), v.literal("failed")),
+    body: v.optional(v.string()),
+    createdAt: v.float64(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_userId_day", ["userId", "day"]),
 });

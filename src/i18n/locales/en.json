@@ -619,7 +619,15 @@
     "height": "Height",
     "totalLabel": "Total",
     "preferences": "Preferences",
-    "body": "Body"
+    "body": "Body",
+    "notifications": "Notifications",
+    "coachNudges": "Coach nudges",
+    "coachNudgesDesc": "Reminders from your coach, based on your workouts",
+    "coachNudgesAI": "Written by AI from your training data",
+    "nudgeCoach": "Who nudges you",
+    "coachMix": "Mix 🎲",
+    "nudgePreview": "Send a preview",
+    "notificationsBlocked": "Notifications are off for RepAI in your phone settings. Tap the switch to open them."
   },
   "aiChat": {
     "subtitle": "Your AI fitness coach",
@@ -985,6 +993,104 @@
         "1": "Lower Body Circuit",
         "2": "Full Body Burn",
         "3": "Cardio + Core"
+      }
+    }
+  },
+  "nudges": {
+    "channelName": "Coach nudges",
+    "coachName": {
+      "repai": "RepAI Coach",
+      "chad": "Chad 🔥",
+      "kevin": "Kevin 🛋️"
+    },
+    "daysCount_one": "{{count}} day",
+    "daysCount_other": "{{count}} days",
+    "workoutsCount_one": "{{count}} workout",
+    "workoutsCount_other": "{{count}} workouts",
+    "setsCount_one": "{{count}} set",
+    "setsCount_other": "{{count}} sets",
+    "planDay": {
+      "repai": {
+        "1": "{{session}} is on your plan today. Warm up well and aim to beat last week by one rep.",
+        "2": "Today's session: {{session}}. Follow the plan and the progress takes care of itself."
+      },
+      "chad": {
+        "1": "{{session}} is on the plan today. The plan doesn't care about your feelings. Neither do I. Go.",
+        "2": "Bro. {{session}}. Today. The barbell already misses you."
+      },
+      "kevin": {
+        "1": "Your plan says {{session}} today. I say couch. Guess which one of us has goals.",
+        "2": "{{session}} today? Have fun. I'll be here, conserving energy like a champion."
+      }
+    },
+    "usualDay": {
+      "repai": {
+        "1": "You usually train on this day. Keep the rhythm going, even a short session counts.",
+        "2": "This is one of your training days. 30 focused minutes keeps your momentum alive."
+      },
+      "chad": {
+        "1": "This is your gym day and you know it. Your muscles are waiting. So is your dignity.",
+        "2": "It's lifting day. Don't make me come over there."
+      },
+      "kevin": {
+        "1": "Isn't today your gym day? Weird. Feels like a perfect nap day to me.",
+        "2": "It's your usual training day. Skip it with me? …Fine, go. Traitor."
+      }
+    },
+    "comeback": {
+      "repai": {
+        "1": "It's been {{days}} since your last workout. No guilt: one easy session gets you back on track.",
+        "2": "{{days}} off. Your progress is still there. Protect it with a short workout today."
+      },
+      "chad": {
+        "1": "{{days}} without lifting?! Your gains just filed a missing person report.",
+        "2": "{{days}} off. Even your shaker bottle thinks you quit. Prove it wrong."
+      },
+      "kevin": {
+        "1": "{{days}} without the gym. Welcome to the couch, friend. Snacks are on the left.",
+        "2": "{{days}} of rest. Honestly? Proud of you. Don't let your goals guilt you into anything."
+      }
+    },
+    "muscleGap": {
+      "repai": {
+        "1": "{{group}}: no work in {{days}}. Add a few sets to your next session to stay balanced.",
+        "2": "{{group}}: last session {{days}} ago. A couple of sets this week keeps things even."
+      },
+      "chad": {
+        "1": "{{group}}: skipped for {{days}}. Favorites are for ice cream flavors, not muscle groups.",
+        "2": "{{group}}: untouched for {{days}}. Skipping it won't build anything. Fix it."
+      },
+      "kevin": {
+        "1": "{{group}}: zero sessions in {{days}}. Respect. That's the kind of commitment to rest I believe in.",
+        "2": "{{group}}: last workout {{days}} ago. Let sleeping muscles lie."
+      }
+    },
+    "weeklyRecap": {
+      "repai": {
+        "1": "Your week: {{workouts}}, {{sets}}, {{volume}} lifted. Solid work. Let's build on it.",
+        "2": "Weekly check-in: {{workouts}} and {{volume}} lifted. This consistency is what builds results."
+      },
+      "chad": {
+        "1": "This week: {{workouts}}, {{volume}} lifted. Not bad. Not Chad. But not bad.",
+        "2": "{{volume}} this week. Cute. Next week we go heavier."
+      },
+      "kevin": {
+        "1": "{{workouts}} this week and {{volume}} lifted. I lifted the remote. We are not the same.",
+        "2": "{{volume}} this week. Why? Genuinely asking. Anyway… nice job, I guess."
+      }
+    },
+    "welcome": {
+      "repai": {
+        "1": "The first workout is the hardest to start. Pick a program and log just one session today.",
+        "2": "Ready when you are. A simple 20-minute full-body session is a great first step."
+      },
+      "chad": {
+        "1": "You downloaded a gym app and haven't lifted yet. Bold strategy. Let's fix that.",
+        "2": "Still zero workouts logged. The weights won't lift themselves, champ."
+      },
+      "kevin": {
+        "1": "No workouts yet? Same. We should start a club. Meetings are on the couch.",
+        "2": "You installed a workout app and then… didn’t. Honestly, a legend."
       }
     }
   }

@@ -13,6 +13,7 @@ import { WorkoutProvider } from './src/context/WorkoutContext';
 import { PlanProvider } from './src/context/PlanContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { UnitsProvider } from './src/context/UnitsContext';
+import { NotificationsProvider } from './src/context/NotificationsContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
 
 // ── Convex & Clerk Configuration ─────────────────────────
@@ -44,7 +45,9 @@ const AppContent = () => {
                             <WorkoutProvider>
                                 <PlanProvider>
                                     <UnitsProvider>
-                                        <AppNavigator />
+                                        <NotificationsProvider>
+                                            <AppNavigator />
+                                        </NotificationsProvider>
                                     </UnitsProvider>
                                 </PlanProvider>
                             </WorkoutProvider>

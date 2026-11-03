@@ -619,7 +619,15 @@
     "height": "Altura",
     "totalLabel": "Total",
     "preferences": "Preferencias",
-    "body": "Cuerpo"
+    "body": "Cuerpo",
+    "notifications": "Notificaciones",
+    "coachNudges": "Avisos del coach",
+    "coachNudgesDesc": "Recordatorios de tu coach según tus entrenamientos",
+    "coachNudgesAI": "Escritos por IA a partir de tus entrenamientos",
+    "nudgeCoach": "Quién te avisa",
+    "coachMix": "Mezcla 🎲",
+    "nudgePreview": "Enviar una prueba",
+    "notificationsBlocked": "Las notificaciones de RepAI están desactivadas en los ajustes del teléfono. Toca el interruptor para abrirlos."
   },
   "aiChat": {
     "subtitle": "Tu coach de fitness con IA",
@@ -985,6 +993,104 @@
         "1": "Circuito de tren inferior",
         "2": "Quema de cuerpo completo",
         "3": "Cardio + core"
+      }
+    }
+  },
+  "nudges": {
+    "channelName": "Avisos del coach",
+    "coachName": {
+      "repai": "Coach RepAI",
+      "chad": "Chad 🔥",
+      "kevin": "Kevin 🛋️"
+    },
+    "daysCount_one": "{{count}} día",
+    "daysCount_other": "{{count}} días",
+    "workoutsCount_one": "{{count}} entrenamiento",
+    "workoutsCount_other": "{{count}} entrenamientos",
+    "setsCount_one": "{{count}} serie",
+    "setsCount_other": "{{count}} series",
+    "planDay": {
+      "repai": {
+        "1": "Hoy toca {{session}} en tu plan. Calienta bien e intenta superar la semana pasada por una repetición.",
+        "2": "Sesión de hoy: {{session}}. Sigue el plan y el progreso llegará solo."
+      },
+      "chad": {
+        "1": "Hoy toca {{session}}. Al plan no le importan tus sentimientos. A mí tampoco. Ve.",
+        "2": "Bro. {{session}}. Hoy. La barra ya te extraña."
+      },
+      "kevin": {
+        "1": "Tu plan dice {{session}} hoy. Yo digo sofá. Adivina cuál de los dos tiene metas.",
+        "2": "¿{{session}} hoy? Diviértete. Yo me quedo aquí, ahorrando energía como un campeón."
+      }
+    },
+    "usualDay": {
+      "repai": {
+        "1": "Sueles entrenar este día. Mantén el ritmo: hasta una sesión corta cuenta.",
+        "2": "Hoy es uno de tus días de entreno. 30 minutos enfocados mantienen tu impulso."
+      },
+      "chad": {
+        "1": "Hoy es tu día de gym y lo sabes. Tus músculos te esperan. Tu dignidad también.",
+        "2": "Hoy toca levantar. No me hagas ir a buscarte."
+      },
+      "kevin": {
+        "1": "¿Hoy no es tu día de gym? Qué raro. A mí me parece un día perfecto para una siesta.",
+        "2": "Hoy sueles entrenar. ¿Lo saltamos juntos? …Vale, ve. Traidor."
+      }
+    },
+    "comeback": {
+      "repai": {
+        "1": "Han pasado {{days}} desde tu último entrenamiento. Sin culpa: una sesión suave te devuelve al camino.",
+        "2": "{{days}} de descanso. Tu progreso sigue ahí. Protégelo hoy con un entreno corto."
+      },
+      "chad": {
+        "1": "¿¡{{days}} sin levantar!? Tus ganancias acaban de denunciar tu desaparición.",
+        "2": "{{days}} sin entrenar. Hasta tu shaker cree que lo dejaste. Demuéstrale que no."
+      },
+      "kevin": {
+        "1": "{{days}} sin gym. Bienvenido al sofá, amigo. Los snacks están a la izquierda.",
+        "2": "{{days}} de descanso. ¿Sinceramente? Orgulloso de ti. No dejes que tus metas te hagan sentir culpable."
+      }
+    },
+    "muscleGap": {
+      "repai": {
+        "1": "{{group}}: nada en {{days}}. Añade unas series en tu próxima sesión para mantener el equilibrio.",
+        "2": "{{group}}: última sesión hace {{days}}. Un par de series esta semana lo equilibra."
+      },
+      "chad": {
+        "1": "{{group}}: nada desde hace {{days}}. Los favoritos son para los sabores de helado, no para los grupos musculares.",
+        "2": "{{group}}: sin tocar desde hace {{days}}. Saltártelo no construye nada. Arréglalo."
+      },
+      "kevin": {
+        "1": "{{group}}: cero sesiones en {{days}}. Respeto. Ese es el compromiso con el descanso en el que creo.",
+        "2": "{{group}}: último entreno hace {{days}}. Deja dormir a los músculos dormidos."
+      }
+    },
+    "weeklyRecap": {
+      "repai": {
+        "1": "Tu semana: {{workouts}}, {{sets}} y {{volume}} levantados. Buen trabajo. Sigamos construyendo.",
+        "2": "Resumen semanal: {{workouts}} y {{volume}} levantados. Esta constancia es la que da resultados."
+      },
+      "chad": {
+        "1": "Esta semana: {{workouts}}, {{volume}} levantados. No está mal. No es nivel Chad. Pero no está mal.",
+        "2": "{{volume}} esta semana. Qué tierno. La próxima semana, más pesado."
+      },
+      "kevin": {
+        "1": "{{workouts}} esta semana y {{volume}} levantados. Yo levanté el control remoto. No somos iguales.",
+        "2": "{{volume}} esta semana. ¿Por qué? Pregunto en serio. En fin… buen trabajo, supongo."
+      }
+    },
+    "welcome": {
+      "repai": {
+        "1": "El primer entreno es el más difícil de empezar. Elige un programa y registra una sesión hoy.",
+        "2": "Listo cuando tú lo estés. Una sesión de cuerpo completo de 20 minutos es un gran primer paso."
+      },
+      "chad": {
+        "1": "Descargaste una app de gym y aún no has levantado nada. Estrategia audaz. Arreglémoslo.",
+        "2": "Todavía cero entrenos registrados. Las pesas no se levantan solas, campeón."
+      },
+      "kevin": {
+        "1": "¿Aún sin entrenos? Igual que yo. Deberíamos fundar un club. Las reuniones son en el sofá.",
+        "2": "Instalaste una app de entrenamiento y luego… nada. Sinceramente, una leyenda."
       }
     }
   }

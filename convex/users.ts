@@ -46,8 +46,11 @@ export async function requireUserInAction(ctx: ActionCtx): Promise<Doc<"users">>
 /** Tables that hold per-user data, children first. */
 const HISTORY_TABLES = ["sets", "exerciseLogs", "workouts", "personalRecords"] as const;
 const ALL_DATA_TABLES = [...HISTORY_TABLES, "customExercises", "bodyMeasurements", "trainingPlans"] as const;
-/** Account deletion also removes the AI usage counters (kept on "clear all data", so limits can't be reset). */
-const ACCOUNT_TABLES = [...ALL_DATA_TABLES, "aiUsage"] as const;
+/**
+ * Account deletion also removes the AI usage counters (kept on "clear all data", so limits can't be reset)
+ * and the coach-nudge devices, settings and log (see notifications.ts).
+ */
+const ACCOUNT_TABLES = [...ALL_DATA_TABLES, "aiUsage", "pushTokens", "nudgeSettings", "nudgeLog"] as const;
 type UserDataTable = (typeof ACCOUNT_TABLES)[number];
 
 export type WipeScope = "history" | "all";
