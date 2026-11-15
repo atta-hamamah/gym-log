@@ -11,7 +11,7 @@
  * Anyone who has ever subscribed to AI also keeps Pro forever. RevenueCat
  * remembers expired entitlements, so this follows the account across devices.
  *
- * Identity: the RevenueCat app user ID mirrors the Clerk user ID while signed
+ * Identity: the RevenueCat app user ID mirrors the account user ID while signed
  * in, and is anonymous while signed out. Purchases made while anonymous are
  * moved to the account on the next logIn().
  */
@@ -144,7 +144,7 @@ export async function fetchBillingSnapshot(): Promise<BillingSnapshot> {
 }
 
 /**
- * Identify RevenueCat as the signed-in Clerk user. Purchases made while
+ * Identify RevenueCat as the signed-in user. Purchases made while
  * anonymous on this device move to the account. No-op if already identified.
  */
 export async function logInBillingUser(userId: string): Promise<BillingSnapshot> {

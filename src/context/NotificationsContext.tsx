@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState, Linking, Platform } from 'react-native';
-import { useAuth } from '@clerk/clerk-expo';
+import { useAccount } from '../services/auth';
 import { useConvex, useConvexAuth } from 'convex/react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../../convex/_generated/api';
@@ -83,7 +83,7 @@ export const NotificationsProvider: React.FC<{ children: React.ReactNode }> = ({
   const { workouts, exercises, currentWorkout, loading } = useWorkout();
   const { plan } = usePlan();
   const { isAISubscriber } = useSubscription();
-  const { isSignedIn, userId } = useAuth();
+  const { isSignedIn, userId } = useAccount();
   const { isAuthenticated } = useConvexAuth();
   const convex = useConvex();
   const { displayWeight, weightUnit } = useUnits();

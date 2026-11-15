@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { AppState, AppStateStatus, Linking } from 'react-native';
-import { useAuth, useUser } from '@clerk/clerk-expo';
 import { StorageService, type BillingCache } from '../services/storage';
+import { useAccount } from '../services/auth';
 import {
   initBilling,
   isBillingReady,
@@ -45,7 +45,7 @@ interface SubscriptionContextType {
   isAISubscriber: boolean;
   /** Paid for AI but hasn't created / signed in to an account yet */
   needsAccount: boolean;
-  /** RevenueCat is identified as the signed-in Clerk user (always true when signed out) */
+  /** RevenueCat is identified as the signed-in user (always true when signed out) */
   identityReady: boolean;
   aiExpiresAt: number | null;
   aiWillRenew: boolean;
@@ -80,8 +80,7 @@ function calculateTrialDaysRemaining(firstOpenDate: number): number {
 
 // ── Provider ─────────────────────────────────────────────
 export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isLoaded: authLoaded, isSignedIn, userId } = useAuth();
-  const { user } = useUser();
+  const { isLoaded: authLoaded, isSignedIn, userId, user } = useAccount();
 
   const [snapshot, setSnapshot] = useState<BillingSnapshot | null>(null);
   const [cache, setCache] = useState<BillingCache | null>(null);
@@ -91,7 +90,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [loading, setLoading] = useState(true);
   const appState = useRef(AppState.currentState);
 
-  // Latest Clerk state, read by queued billing tasks when they actually run.
+  // Latest auth state, read by queued billing tasks when they actually run.
   const authRef = useRef({ authLoaded: false, isSignedIn: false, userId: null as string | null });
   authRef.current = { authLoaded, isSignedIn: !!isSignedIn, userId: userId ?? null };
 
@@ -118,7 +117,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
   }, []);
 
   /**
-   * RevenueCat follows Clerk: identified as the Clerk user while signed in,
+   * RevenueCat follows the account: identified as the signed-in user,
    * anonymous while signed out. Then refresh entitlements.
    */
   const syncBilling = useCallback(() => enqueue(async () => {
@@ -174,7 +173,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
     return addBillingListener(applySnapshot);
   }, [billingReady, applySnapshot]);
 
-  // ── Follow Clerk sign-in / sign-out ─────────────────
+  // ── Follow sign-in / sign-out ───────────────────────
   useEffect(() => {
     if (!billingReady || !authLoaded) return;
     syncBilling();
@@ -263,7 +262,7 @@ export const SubscriptionProvider: React.FC<{ children: React.ReactNode }> = ({ 
         ? 'pro_trial'
         : 'free';
 
-  const isSuperAdmin = user?.primaryEmailAddress?.emailAddress === 'super@admin.com';
+  const isSuperAdmin = user?.email === 'super@admin.com';
 
   return (
     <SubscriptionContext.Provider

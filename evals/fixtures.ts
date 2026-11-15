@@ -52,7 +52,7 @@ export function user(p: Partial<Doc<"users">>): Doc<"users"> {
   return {
     _id: "eval_user" as Id<"users">,
     _creationTime: NOW - 400 * DAY,
-    clerkId: "eval",
+    authId: "eval",
     name: "Eval User",
     email: "eval@example.com",
     createdAt: NOW - 400 * DAY,

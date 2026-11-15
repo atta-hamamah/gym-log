@@ -19,7 +19,7 @@ import { workoutValidator } from "./validators";
  * never create duplicates. Personal records use the natural key
  * (workoutLocalId, exerciseId, type) because they have no ID of their own.
  *
- * All functions resolve the user from the Clerk token, and cloud access needs
+ * All functions resolve the user from the auth token, and cloud access needs
  * an active AI subscription (the app calls entitlements.ensureAccess first so
  * a fresh purchase is confirmed with RevenueCat before syncing).
  */

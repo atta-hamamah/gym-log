@@ -5,7 +5,7 @@ import { planFields, sourceValidator } from "./validators";
 export default defineSchema({
   // ── User Profile ──────────────────────────────────────
   users: defineTable({
-    clerkId: v.string(),
+    authId: v.string(),                    // Better Auth user ID (= identity.subject)
     name: v.string(),
     email: v.string(),
     dateOfBirth: v.optional(v.string()),   // ISO date string "1995-06-15"
@@ -30,7 +30,7 @@ export default defineSchema({
     aiExpiresAt: v.optional(v.float64()),   // missing while active = never expires
     entitlementCheckedAt: v.optional(v.float64()),
   })
-    .index("by_clerkId", ["clerkId"])
+    .index("by_authId", ["authId"])
     .index("by_email", ["email"]),
 
   // ── Workouts ──────────────────────────────────────────

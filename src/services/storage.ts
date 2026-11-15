@@ -64,7 +64,7 @@ export interface MeasurementTombstone {
  */
 export interface SyncState {
   version: 1;
-  /** Clerk user ID whose cloud account this local data belongs to. */
+  /** Account user ID whose cloud account this local data belongs to. */
   ownerId: string | null;
   ownerEmail: string | null;
   pending: {

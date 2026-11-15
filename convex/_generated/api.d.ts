@@ -13,6 +13,7 @@ import type * as aiHelpers from "../aiHelpers.js";
 import type * as aiModels from "../aiModels.js";
 import type * as aiUsage from "../aiUsage.js";
 import type * as aiWorkout from "../aiWorkout.js";
+import type * as auth from "../auth.js";
 import type * as coachChat from "../coachChat.js";
 import type * as coachData from "../coachData.js";
 import type * as coachPrompt from "../coachPrompt.js";
@@ -43,6 +44,7 @@ declare const fullApi: ApiFromModules<{
   aiModels: typeof aiModels;
   aiUsage: typeof aiUsage;
   aiWorkout: typeof aiWorkout;
+  auth: typeof auth;
   coachChat: typeof coachChat;
   coachData: typeof coachData;
   coachPrompt: typeof coachPrompt;
@@ -88,4 +90,6 @@ export declare const internal: FilterApi<
   FunctionReference<any, "internal">
 >;
 
-export declare const components: {};
+export declare const components: {
+  betterAuth: import("@convex-dev/better-auth/_generated/component.js").ComponentApi<"betterAuth">;
+};
