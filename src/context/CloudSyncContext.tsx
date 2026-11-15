@@ -1,6 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
-import { useAuth, useUser } from '@clerk/clerk-expo';
 import { useConvex, useConvexAuth, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { StorageService, pendingChangeCount, type SyncState } from '../services/storage';
@@ -20,6 +19,7 @@ import {
 } from '../services/cloudSync';
 import { useSubscription } from './SubscriptionContext';
 import { unregisterPushDevice } from '../services/notifications';
+import { authClient, useAccount } from '../services/auth';
 
 export type SyncStatus = 'off' | 'idle' | 'syncing' | 'error' | 'conflict';
 
@@ -57,7 +57,7 @@ interface CloudSyncContextType {
   resolveOwnership: (choice: 'merge' | 'replace') => Promise<void>;
   /** Upload pending changes, then sign out. Workouts stay on this device. */
   signOut: () => Promise<void>;
-  /** Delete the cloud account, the Clerk user and all data on this device */
+  /** Delete the cloud account (sign-in included) and all data on this device */
   deleteAccount: () => Promise<void>;
 }
 
@@ -66,13 +66,12 @@ const CloudSyncContext = createContext<CloudSyncContextType | undefined>(undefin
 export const CloudSyncProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const convex = useConvex();
   const { isAuthenticated: convexAuthenticated } = useConvexAuth();
-  const { isSignedIn, userId, signOut: clerkSignOut } = useAuth();
-  const { user } = useUser();
+  const { isSignedIn, userId, user } = useAccount();
   const { isAISubscriber, forgetDeviceEntitlements } = useSubscription();
 
   const cloudSyncActive = isAISubscriber && !!isSignedIn && convexAuthenticated;
-  const email = user?.primaryEmailAddress?.emailAddress ?? null;
-  const fullName = user?.fullName ?? null;
+  const email = user?.email || null;
+  const fullName = user?.name || null;
 
   const account: SyncAccount | null = useMemo(
     () => (isSignedIn && userId ? { userId, email, name: fullName } : null),
@@ -273,26 +272,26 @@ export const CloudSyncProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     if (timerRef.current) clearTimeout(timerRef.current);
     // Stop AI nudges to this phone while the session can still say so.
     await unregisterPushDevice(convex);
-    await clerkSignOut();
-    // RevenueCat follows Clerk (SubscriptionContext switches it to anonymous).
-  }, [syncNow, clerkSignOut, convex]);
+    await authClient.signOut();
+    // RevenueCat follows the account (SubscriptionContext switches it to anonymous).
+  }, [syncNow, convex]);
 
   const deleteAccount = useCallback(async () => {
-    if (!user) return;
+    if (!accountRef.current) return;
     if (!convexAuthRef.current) {
       throw new Error('Not connected to the server. Check your connection and try again.');
     }
-    // Cloud data first: if this fails, nothing has been deleted yet.
+    // One server call removes the profile, the cloud data and the sign-in
+    // account; if it fails, nothing has been deleted yet.
     await convex.mutation(api.users.deleteAccount, {});
-    await user.delete();
     try {
-      await clerkSignOut();
+      await authClient.signOut(); // clears the session stored on this device
     } catch {
-      // Deleting the user already ended the session.
+      // The server already removed the session.
     }
     await StorageService.resetAfterAccountDeletion();
     forgetDeviceEntitlements();
-  }, [user, convex, clerkSignOut, forgetDeviceEntitlements]);
+  }, [convex, forgetDeviceEntitlements]);
 
   const ownership = account && syncState ? getOwnership(syncState, account.userId) : null;
   const effectiveStatus: SyncStatus = !cloudSyncActive

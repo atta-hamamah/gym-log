@@ -3,10 +3,9 @@ import './src/i18n';
 import React from 'react';
 import { View, Text, StatusBar } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ClerkProvider, ClerkLoaded, useAuth } from '@clerk/clerk-expo';
-import { ConvexProviderWithClerk } from 'convex/react-clerk';
 import { ConvexReactClient } from 'convex/react';
-import { tokenCache } from './src/services/auth';
+import { ConvexBetterAuthProvider } from '@convex-dev/better-auth/react';
+import { authClient } from './src/services/auth';
 import { SubscriptionProvider } from './src/context/SubscriptionContext';
 import { CloudSyncProvider } from './src/context/CloudSyncContext';
 import { WorkoutProvider } from './src/context/WorkoutContext';
@@ -16,9 +15,7 @@ import { UnitsProvider } from './src/context/UnitsContext';
 import { NotificationsProvider } from './src/context/NotificationsContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
 
-// ── Convex & Clerk Configuration ─────────────────────────
-// Replace these with your actual keys from .env or config
-const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || 'YOUR_CLERK_PUBLISHABLE_KEY';
+// ── Convex Configuration ─────────────────────────────────
 const CONVEX_URL = process.env.EXPO_PUBLIC_CONVEX_URL || 'YOUR_CONVEX_URL';
 
 const convex = new ConvexReactClient(CONVEX_URL);
@@ -38,23 +35,21 @@ const AppContent = () => {
     return (
         <SafeAreaProvider>
             <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
-            <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
-                <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
-                    <SubscriptionProvider>
-                        <CloudSyncProvider>
-                            <WorkoutProvider>
-                                <PlanProvider>
-                                    <UnitsProvider>
-                                        <NotificationsProvider>
-                                            <AppNavigator />
-                                        </NotificationsProvider>
-                                    </UnitsProvider>
-                                </PlanProvider>
-                            </WorkoutProvider>
-                        </CloudSyncProvider>
-                    </SubscriptionProvider>
-                </ConvexProviderWithClerk>
-            </ClerkProvider>
+            <ConvexBetterAuthProvider client={convex} authClient={authClient}>
+                <SubscriptionProvider>
+                    <CloudSyncProvider>
+                        <WorkoutProvider>
+                            <PlanProvider>
+                                <UnitsProvider>
+                                    <NotificationsProvider>
+                                        <AppNavigator />
+                                    </NotificationsProvider>
+                                </UnitsProvider>
+                            </PlanProvider>
+                        </WorkoutProvider>
+                    </CloudSyncProvider>
+                </SubscriptionProvider>
+            </ConvexBetterAuthProvider>
         </SafeAreaProvider>
     );
 };

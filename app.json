@@ -2,6 +2,7 @@
   "expo": {
     "name": "RepAI: AI Gym Log & Tracker",
     "slug": "gym-log",
+    "scheme": "repai",
     "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

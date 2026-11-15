@@ -17,7 +17,7 @@ import { useCloudSync, SUBSCRIPTION_NOT_VERIFIED } from '../context/CloudSyncCon
 import { BodyMeasurement, MeasurementKey, TrainingProfile } from '../types';
 import { TrainingProfileForm, trainingProfileArgs, trainingProfileOf } from '../components/TrainingProfileForm';
 import { generateId } from '../utils/generateId';
-import { useAuth, useUser } from '@clerk/clerk-expo';
+import { useAccount } from '../services/auth';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { Crown, Sparkles, CreditCard, LogOut, LogIn, Sun, Moon, Target, Ruler, Cloud, CloudOff, RefreshCw, AlertTriangle, Dumbbell, Globe, Scale, Download, Trash2, UserX, ChevronDown, ChevronUp, Bell } from 'lucide-react-native';
@@ -67,8 +67,7 @@ export const SettingsScreen = ({ navigation }: any) => {
         signOut,
         deleteAccount,
     } = useCloudSync();
-    const { isSignedIn } = useAuth();
-    const { user } = useUser();
+    const { isSignedIn, user } = useAccount();
     const nudges = useNotifications();
     const updateProfile = useMutation(api.users.updateProfile);
     const convexUser = useQuery(api.users.me, isSignedIn ? {} : 'skip');
@@ -651,20 +650,21 @@ export const SettingsScreen = ({ navigation }: any) => {
                 : t('account.syncWaiting');
         }
 
-        const email = user?.primaryEmailAddress?.emailAddress ?? '';
+        const email = user?.email ?? '';
+        const name = user?.name ?? '';
         return (
             <ListGroup title={t('account.title')}>
                 <View style={styles.accountRow}>
                     <View style={styles.avatar}>
                         <Typography variant="body" bold color={colors.primary}>
-                            {(user?.firstName || email || '?').charAt(0).toUpperCase()}
+                            {(name || email || '?').charAt(0).toUpperCase()}
                         </Typography>
                     </View>
                     <View style={{ flex: 1 }}>
                         <Typography variant="body" bold numberOfLines={1}>
-                            {user?.fullName || email}
+                            {name || email}
                         </Typography>
-                        {!!user?.fullName && (
+                        {!!name && (
                             <Typography variant="caption" color={colors.textSecondary} numberOfLines={1}>{email}</Typography>
                         )}
                         <View style={[styles.statusLine, { marginTop: 6 }]}>

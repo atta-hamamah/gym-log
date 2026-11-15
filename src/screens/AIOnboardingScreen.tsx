@@ -14,11 +14,11 @@ import { Typography } from '../components/Typography';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { borderRadius } from '../theme/colors';
-import { useSignUp, useSignIn, useAuth, useUser } from '@clerk/clerk-expo';
+import { authClient, authErrorMessage, useAccount } from '../services/auth';
 import { useConvexAuth, useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { useTranslation } from 'react-i18next';
-import { Check, Brain, Calendar, Users, Sparkles, X, Eye, EyeOff, Target, CloudOff, UserCheck } from 'lucide-react-native';
+import { Check, Brain, Calendar, Users, Sparkles, X, Target, CloudOff, UserCheck } from 'lucide-react-native';
 import { useSubscription } from '../context/SubscriptionContext';
 import { useCloudSync } from '../context/CloudSyncContext';
 import { useTheme } from '../context/ThemeContext';
@@ -34,8 +34,9 @@ import type { SyncProgress, SyncReport } from '../services/cloudSync';
  *   auth ──► linking ──► (conflict) ──► inactive            (signed in, no active AI)
  *                                  └──► preparing ──► profile ──► syncing ──► complete
  *
- * - auth:      sign in, or sign up (sign-up only after paying for AI)
- * - linking:   wait for Clerk + RevenueCat to point at the same user, then
+ * - auth:      email → 6-digit code; the first sign-in creates the account
+ *              (sign-up, with a name, is offered after paying for AI)
+ * - linking:   wait for the account + RevenueCat to point at the same user, then
  *              link this device's data to the account
  * - conflict:  data on this device belongs to another account → user chooses
  * - preparing: create the cloud profile, check whether it's complete
@@ -56,20 +57,14 @@ type OnboardingStep =
 /** How long to wait for the subscription / server before offering a retry. */
 const LINK_TIMEOUT_MS = 20000;
 
-type SignInResult = NonNullable<ReturnType<typeof useSignIn>['signIn']>;
-type SecondFactorStrategy = 'email_code' | 'phone_code' | 'totp' | 'backup_code';
-
 export const AIOnboardingScreen = ({ navigation, route }: any) => {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const styles = createStyles(colors);
   const { workouts, bodyMeasurements } = useWorkout();
 
-  // ── Clerk Auth State ──
-  const { signUp, setActive, isLoaded: isSignUpLoaded } = useSignUp();
-  const { signIn, setActive: setSignInActive, isLoaded: isSignInLoaded } = useSignIn();
-  const { isSignedIn } = useAuth();
-  const { user } = useUser();
+  // ── Auth State ──
+  const { isSignedIn, user } = useAccount();
   const { isAuthenticated: convexAuthenticated } = useConvexAuth();
 
   // ── Subscription & sync ──
@@ -97,24 +92,11 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
   );
   const effectiveAuthMode = authMode === 'signup' && !canSignUp ? 'signin' : authMode;
 
-  // ── Signup/Signin Fields ──
+  // ── Sign-in Fields (email → code) ──
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [verificationCode, setVerificationCode] = useState('');
-  const [pendingVerification, setPendingVerification] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-
-  // ── Forgot Password Fields ──
-  const [forgotPasswordMode, setForgotPasswordMode] = useState(false);
-  const [resetCode, setResetCode] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [pendingReset, setPendingReset] = useState(false);
-
-  // ── Second factor (code after the password) ──
-  const [secondFactor, setSecondFactor] = useState<{ strategy: SecondFactorStrategy; target?: string } | null>(null);
-  const [secondFactorCode, setSecondFactorCode] = useState('');
+  const [code, setCode] = useState('');
+  const [codeSent, setCodeSent] = useState(false);
 
   // ── Profile Fields ──
   const [dateOfBirth, setDateOfBirth] = useState('');
@@ -138,204 +120,78 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
     hasLocalData: workouts.length > 0 || bodyMeasurements.length > 0,
   };
 
-  const clerkError = (err: any, fallback: string) =>
-    err?.errors?.[0]?.longMessage || err?.message || fallback;
+  const normalizedEmail = email.trim().toLowerCase();
+
+  /** Translated message for a failed send / verify. */
+  const codeError = (err: unknown, fallbackKey: string) => {
+    const e = err as { code?: string; status?: number } | null;
+    if (e?.code === 'INVALID_OTP') return t('aiOnboarding.codeInvalid');
+    if (e?.code === 'OTP_EXPIRED') return t('aiOnboarding.codeExpired');
+    if (e?.code === 'TOO_MANY_ATTEMPTS') return t('aiOnboarding.codeTooManyAttempts');
+    if (e?.status === 429) return t('aiOnboarding.tooManyRequests');
+    return authErrorMessage(err, t(fallbackKey));
+  };
 
   // ══════════════════════════════════════════════════════
-  // AUTH
+  // AUTH: email → 6-digit code. The first sign-in with a new email creates
+  // the account (named with the name given when signing up).
   // ══════════════════════════════════════════════════════
-  const handleSignUp = useCallback(async () => {
-    if (!isSignUpLoaded) return;
+  const handleSendCode = useCallback(async () => {
+    if (!normalizedEmail) return;
     setLoading(true);
     setError('');
-
     try {
-      await signUp.create({
-        emailAddress: email,
-        password,
-        firstName,
-        lastName,
+      const { error: sendError } = await authClient.emailOtp.sendVerificationOtp({
+        email: normalizedEmail,
+        type: 'sign-in',
       });
-
-      // Send email verification
-      await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
-      setPendingVerification(true);
-    } catch (err: any) {
-      if (err?.errors?.[0]?.code === 'form_identifier_exists') {
-        setAuthMode('signin');
-        setError(t('aiOnboarding.emailTaken'));
-      } else {
-        setError(clerkError(err, 'Sign up failed'));
+      if (sendError) {
+        setError(codeError(sendError, 'aiOnboarding.sendCodeFailed'));
+        return;
       }
+      setCode('');
+      setCodeSent(true);
+    } catch (err) {
+      setError(codeError(err, 'aiOnboarding.sendCodeFailed'));
     } finally {
       setLoading(false);
     }
-  }, [isSignUpLoaded, signUp, email, password, firstName, lastName, t]);
+  }, [normalizedEmail, t]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleVerifyEmail = useCallback(async () => {
-    if (!isSignUpLoaded) return;
+  const handleVerifyCode = useCallback(async () => {
+    const otp = code.trim();
+    if (!normalizedEmail || !otp) return;
     setLoading(true);
     setError('');
-
     try {
-      const result = await signUp.attemptEmailAddressVerification({
-        code: verificationCode,
+      const trimmedName = name.trim();
+      const { error: verifyError } = await authClient.signIn.emailOtp({
+        email: normalizedEmail,
+        otp,
+        // Only used when this email has no account yet.
+        ...(effectiveAuthMode === 'signup' && trimmedName ? { name: trimmedName } : {}),
       });
-
-      if (result.status === 'complete') {
-        await setActive({ session: result.createdSessionId });
-        // RevenueCat follows the new Clerk user automatically, which moves the
-        // purchase made before sign-up onto this account.
-        setStep('linking');
+      if (verifyError) {
+        setError(codeError(verifyError, 'aiOnboarding.verifyCodeFailed'));
+        return;
       }
-    } catch (err: any) {
-      setError(clerkError(err, 'Verification failed'));
-    } finally {
-      setLoading(false);
-    }
-  }, [isSignUpLoaded, signUp, verificationCode, setActive]);
-
-  // Clerk may ask for a one-time code after the password (e.g. the first
-  // sign-in on a new device). Send it and show the code step.
-  const startSecondFactor = useCallback(async (result: SignInResult) => {
-    const factors = result.supportedSecondFactors ?? [];
-    const factor =
-      factors.find(f => f.strategy === 'email_code') ??
-      factors.find(f => f.strategy === 'phone_code') ??
-      factors.find(f => f.strategy === 'totp') ??
-      factors.find(f => f.strategy === 'backup_code');
-    if (!factor) {
-      setError(t('aiOnboarding.unsupportedSignIn'));
-      return;
-    }
-    if (factor.strategy === 'email_code') {
-      await result.prepareSecondFactor({ strategy: 'email_code', emailAddressId: factor.emailAddressId });
-    } else if (factor.strategy === 'phone_code') {
-      await result.prepareSecondFactor({ strategy: 'phone_code', phoneNumberId: factor.phoneNumberId });
-    }
-    setSecondFactorCode('');
-    setSecondFactor({
-      strategy: factor.strategy as SecondFactorStrategy,
-      target: 'safeIdentifier' in factor ? factor.safeIdentifier : undefined,
-    });
-  }, [t]);
-
-  const continueSignIn = useCallback(async (result: SignInResult) => {
-    if (result.status === 'complete') {
-      if (!setSignInActive) return;
-      await setSignInActive({ session: result.createdSessionId });
-      setSecondFactor(null);
+      // RevenueCat follows the signed-in user automatically, which moves a
+      // purchase made before sign-up onto this account.
       setStep('linking');
-    } else if (result.status === 'needs_second_factor') {
-      await startSecondFactor(result);
-    } else {
-      setError(t('aiOnboarding.unsupportedSignIn'));
-    }
-  }, [setSignInActive, startSecondFactor, t]);
-
-  const handleSignIn = useCallback(async () => {
-    if (!isSignInLoaded) return;
-    setLoading(true);
-    setError('');
-
-    try {
-      const result = await signIn.create({
-        identifier: email,
-        password,
-      });
-
-      await continueSignIn(result);
-    } catch (err: any) {
-      if (err?.errors?.[0]?.code === 'session_exists') {
-        setStep('linking');
-      } else {
-        setError(clerkError(err, 'Sign in failed'));
-      }
+    } catch (err) {
+      setError(codeError(err, 'aiOnboarding.verifyCodeFailed'));
     } finally {
       setLoading(false);
     }
-  }, [isSignInLoaded, signIn, email, password, continueSignIn]);
+  }, [normalizedEmail, code, name, effectiveAuthMode, t]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleVerifySecondFactor = useCallback(async () => {
-    if (!isSignInLoaded || !secondFactor) return;
-    setLoading(true);
-    setError('');
-    try {
-      const result = await signIn.attemptSecondFactor({
-        strategy: secondFactor.strategy,
-        code: secondFactorCode.trim(),
-      } as Parameters<typeof signIn.attemptSecondFactor>[0]);
-      await continueSignIn(result);
-    } catch (err: any) {
-      setError(clerkError(err, 'Verification failed'));
-    } finally {
-      setLoading(false);
-    }
-  }, [isSignInLoaded, signIn, secondFactor, secondFactorCode, continueSignIn]);
-
-  const handleResendSecondFactor = useCallback(async () => {
-    if (!isSignInLoaded) return;
-    setError('');
-    try {
-      await startSecondFactor(signIn);
-    } catch (err: any) {
-      setError(clerkError(err, 'Failed to send code'));
-    }
-  }, [isSignInLoaded, signIn, startSecondFactor]);
+  // The stored session finished loading after this screen opened.
+  useEffect(() => {
+    if (step === 'auth' && isSignedIn) setStep('linking');
+  }, [step, isSignedIn]);
 
   // ══════════════════════════════════════════════════════
-  // FORGOT PASSWORD
-  // ══════════════════════════════════════════════════════
-  const handleForgotPassword = useCallback(async () => {
-    if (!isSignInLoaded) return;
-    if (!email) {
-      setError(t('aiOnboarding.enterEmailFirst', 'Please enter your email address first'));
-      return;
-    }
-    setLoading(true);
-    setError('');
-
-    try {
-      await signIn.create({
-        strategy: 'reset_password_email_code',
-        identifier: email,
-      });
-      setPendingReset(true);
-    } catch (err: any) {
-      setError(clerkError(err, 'Failed to send reset code'));
-    } finally {
-      setLoading(false);
-    }
-  }, [isSignInLoaded, signIn, email, t]);
-
-  const handleResetPassword = useCallback(async () => {
-    if (!isSignInLoaded) return;
-    setLoading(true);
-    setError('');
-
-    try {
-      const result = await signIn.attemptFirstFactor({
-        strategy: 'reset_password_email_code',
-        code: resetCode,
-        password: newPassword,
-      });
-
-      if (result.status === 'complete' || result.status === 'needs_second_factor') {
-        setForgotPasswordMode(false);
-        setPendingReset(false);
-        await continueSignIn(result);
-      } else {
-        setError(t('aiOnboarding.resetIncomplete', 'Password reset could not be completed.'));
-      }
-    } catch (err: any) {
-      setError(clerkError(err, 'Reset failed'));
-    } finally {
-      setLoading(false);
-    }
-  }, [isSignInLoaded, signIn, resetCode, newPassword, continueSignIn, t]);
-
-  // ══════════════════════════════════════════════════════
-  // LINKING: Clerk + RevenueCat agree on the user → link device data
+  // LINKING: the account + RevenueCat agree on the user → link device data
   // ══════════════════════════════════════════════════════
   useEffect(() => {
     if (step !== 'linking') return;
@@ -381,8 +237,8 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
 
     let cancelled = false;
     ensureUser({
-      name: user?.fullName ?? undefined,
-      email: user?.primaryEmailAddress?.emailAddress ?? undefined,
+      name: user?.name || undefined,
+      email: user?.email || undefined,
     }).catch(e => {
       console.warn('[AIOnboarding] Could not create profile:', e);
       if (!cancelled) setStep('linkError');
@@ -525,76 +381,7 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
   // ══════════════════════════════════════════════════════
   // RENDER: AUTH STEP
   // ══════════════════════════════════════════════════════
-  const renderSecondFactor = () => {
-    const strategy = secondFactor?.strategy;
-    const message =
-      strategy === 'email_code'
-        ? t('aiOnboarding.secondFactorEmail', { target: secondFactor?.target ?? email })
-        : strategy === 'phone_code'
-          ? t('aiOnboarding.secondFactorPhone', { target: secondFactor?.target ?? '' })
-          : strategy === 'totp'
-            ? t('aiOnboarding.secondFactorTotp')
-            : t('aiOnboarding.secondFactorBackup');
-    const canResend = strategy === 'email_code' || strategy === 'phone_code';
-
-    return (
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
-        <View style={styles.stepHeader}>
-          <View style={styles.stepIconContainer}>
-            <UserCheck color={colors.primary} size={24} />
-          </View>
-          <Typography variant="h2" style={{ marginTop: 12 }}>
-            {t('aiOnboarding.secondFactorTitle')}
-          </Typography>
-          <Typography variant="body" color={colors.textSecondary} align="center" style={{ marginTop: 4 }}>
-            {message}
-          </Typography>
-        </View>
-
-        <TextInput
-          style={styles.input}
-          value={secondFactorCode}
-          onChangeText={setSecondFactorCode}
-          placeholder={strategy === 'backup_code' ? 'xxxx-xxxx' : '123456'}
-          placeholderTextColor={colors.textMuted}
-          keyboardType={strategy === 'backup_code' ? 'default' : 'number-pad'}
-          autoCapitalize="none"
-          autoFocus
-        />
-
-        {error ? (
-          <Typography variant="caption" color={colors.error} style={{ marginTop: 8 }}>
-            {error}
-          </Typography>
-        ) : null}
-
-        <Button
-          title={loading ? t('subscription.processing') : t('aiOnboarding.verify')}
-          onPress={handleVerifySecondFactor}
-          size="large"
-          style={{ marginTop: 24 }}
-          disabled={loading || !secondFactorCode.trim()}
-        />
-
-        {canResend && (
-          <TouchableOpacity onPress={handleResendSecondFactor} disabled={loading} style={{ marginTop: 16, alignItems: 'center' }}>
-            <Typography variant="bodySmall" color={colors.primary}>
-              {t('aiOnboarding.resendCode')}
-            </Typography>
-          </TouchableOpacity>
-        )}
-
-        <Button
-          title={t('common.cancel')}
-          variant="ghost"
-          onPress={() => { setSecondFactor(null); setSecondFactorCode(''); setError(''); }}
-          style={{ marginTop: 12 }}
-        />
-      </ScrollView>
-    );
-  };
-
-  const renderAuth = () => secondFactor ? renderSecondFactor() : (
+  const renderAuth = () => (
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 40 }}>
       {/* Header */}
       <View style={styles.stepHeader}>
@@ -602,168 +389,40 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
           <Sparkles color={colors.primary} size={24} />
         </View>
         <Typography variant="h2" style={{ marginTop: 12 }}>
-          {pendingVerification
-            ? t('aiOnboarding.verifyEmail')
-            : forgotPasswordMode
-              ? t('aiOnboarding.resetPassword', 'Reset Password')
-              : effectiveAuthMode === 'signup'
-                ? t('aiOnboarding.createAccount')
-                : t('aiOnboarding.signIn', 'Sign In')}
+          {codeSent
+            ? t('aiOnboarding.enterCodeTitle')
+            : effectiveAuthMode === 'signup'
+              ? t('aiOnboarding.createAccount')
+              : t('aiOnboarding.signIn')}
         </Typography>
         <Typography variant="body" color={colors.textSecondary} align="center" style={{ marginTop: 4 }}>
-          {pendingVerification
-            ? t('aiOnboarding.verificationSent', { email })
-            : forgotPasswordMode
-              ? (pendingReset
-                ? t('aiOnboarding.resetCodeSent', 'Enter the code sent to {{email}} and your new password', { email })
-                : t('aiOnboarding.resetDesc', 'We\'ll send a code to your email'))
-              : effectiveAuthMode === 'signup'
-                ? t('aiOnboarding.accountRequired')
-                : t('aiOnboarding.signInDesc', 'Welcome back to your AI Coach')}
+          {codeSent
+            ? t('aiOnboarding.verificationSent', { email: normalizedEmail })
+            : effectiveAuthMode === 'signup'
+              ? t('aiOnboarding.accountRequired')
+              : t('aiOnboarding.signInDesc')}
         </Typography>
       </View>
 
-      {forgotPasswordMode ? (
-        /* ── Forgot Password Flow ── */
-        !pendingReset ? (
-          <>
-            <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 4 }}>
-              {t('aiOnboarding.email')}
-            </Typography>
-            <TextInput
-              style={styles.input}
-              value={email}
-              onChangeText={setEmail}
-              placeholder="you@example.com"
-              placeholderTextColor={colors.textMuted}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-
-            {error ? (
-              <Typography variant="caption" color={colors.error} style={{ marginTop: 8 }}>
-                {error}
-              </Typography>
-            ) : null}
-
-            <Button
-              title={loading ? t('subscription.processing') : t('aiOnboarding.sendResetCode', 'Send Reset Code')}
-              onPress={handleForgotPassword}
-              size="large"
-              style={{ marginTop: 24 }}
-              disabled={loading || !email}
-            />
-
-            <TouchableOpacity
-              onPress={() => {
-                setForgotPasswordMode(false);
-                setError('');
-              }}
-              style={{ marginTop: 16, alignItems: 'center' }}
-            >
-              <Typography variant="bodySmall" color={colors.primary}>
-                {t('aiOnboarding.backToSignIn', 'Back to Sign In')}
-              </Typography>
-            </TouchableOpacity>
-          </>
-        ) : (
-          <>
-            <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 4 }}>
-              {t('aiOnboarding.resetCodeLabel', 'Reset Code')}
-            </Typography>
-            <TextInput
-              style={styles.input}
-              value={resetCode}
-              onChangeText={setResetCode}
-              placeholder="123456"
-              placeholderTextColor={colors.textMuted}
-              keyboardType="number-pad"
-            />
-
-            <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 4 }}>
-              {t('aiOnboarding.newPassword', 'New Password')}
-            </Typography>
-            <View style={styles.passwordContainer}>
-              <TextInput
-                style={[styles.input, { marginBottom: 0, paddingRight: 45 }]}
-                value={newPassword}
-                onChangeText={setNewPassword}
-                placeholder="••••••••"
-                placeholderTextColor={colors.textMuted}
-                secureTextEntry={!showPassword}
-              />
-              <TouchableOpacity
-                onPress={() => setShowPassword(!showPassword)}
-                style={styles.eyeIcon}
-                activeOpacity={0.7}
-              >
-                {showPassword ? (
-                  <EyeOff color={colors.textMuted} size={20} />
-                ) : (
-                  <Eye color={colors.textMuted} size={20} />
-                )}
-              </TouchableOpacity>
-            </View>
-
-            {error ? (
-              <Typography variant="caption" color={colors.error} style={{ marginTop: 8 }}>
-                {error}
-              </Typography>
-            ) : null}
-
-            <Button
-              title={loading ? t('subscription.processing') : t('aiOnboarding.resetAndSignIn', 'Reset & Sign In')}
-              onPress={handleResetPassword}
-              size="large"
-              style={{ marginTop: 24 }}
-              disabled={loading || !resetCode || !newPassword}
-            />
-
-            <TouchableOpacity
-              onPress={() => {
-                setPendingReset(false);
-                setForgotPasswordMode(false);
-                setError('');
-              }}
-              style={{ marginTop: 16, alignItems: 'center' }}
-            >
-              <Typography variant="bodySmall" color={colors.primary}>
-                {t('aiOnboarding.backToSignIn', 'Back to Sign In')}
-              </Typography>
-            </TouchableOpacity>
-          </>
-        )
-      ) : !pendingVerification ? (
+      {!codeSent ? (
+        /* ── Step 1: email (and name when signing up) ── */
         <>
           {effectiveAuthMode === 'signup' && (
-            <View style={styles.nameRow}>
-              <View style={styles.nameField}>
-                <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 4 }}>
-                  {t('aiOnboarding.firstName')}
-                </Typography>
-                <TextInput
-                  style={styles.input}
-                  value={firstName}
-                  onChangeText={setFirstName}
-                  placeholder="John"
-                  placeholderTextColor={colors.textMuted}
-                  autoCapitalize="words"
-                />
-              </View>
-              <View style={styles.nameField}>
-                <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 4 }}>
-                  {t('aiOnboarding.lastName')}
-                </Typography>
-                <TextInput
-                  style={styles.input}
-                  value={lastName}
-                  onChangeText={setLastName}
-                  placeholder="Doe"
-                  placeholderTextColor={colors.textMuted}
-                  autoCapitalize="words"
-                />
-              </View>
-            </View>
+            <>
+              <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 4 }}>
+                {t('aiOnboarding.name')}
+              </Typography>
+              <TextInput
+                style={styles.input}
+                value={name}
+                onChangeText={setName}
+                placeholder="John Doe"
+                placeholderTextColor={colors.textMuted}
+                autoCapitalize="words"
+                autoComplete="name"
+                textContentType="name"
+              />
+            </>
           )}
 
           <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 4 }}>
@@ -777,32 +436,16 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
             placeholderTextColor={colors.textMuted}
             keyboardType="email-address"
             autoCapitalize="none"
+            autoCorrect={false}
+            autoComplete="email"
+            textContentType="emailAddress"
+            returnKeyType="send"
+            onSubmitEditing={handleSendCode}
           />
 
-          <Typography variant="caption" color={colors.textSecondary} style={{ marginBottom: 4, marginTop: 12 }}>
-            {t('aiOnboarding.password')}
+          <Typography variant="caption" color={colors.textMuted}>
+            {t('aiOnboarding.codeHint')}
           </Typography>
-          <View style={styles.passwordContainer}>
-            <TextInput
-              style={[styles.input, { marginBottom: 0, paddingRight: 45 }]}
-              value={password}
-              onChangeText={setPassword}
-              placeholder="••••••••"
-              placeholderTextColor={colors.textMuted}
-              secureTextEntry={!showPassword}
-            />
-            <TouchableOpacity
-              onPress={() => setShowPassword(!showPassword)}
-              style={styles.eyeIcon}
-              activeOpacity={0.7}
-            >
-              {showPassword ? (
-                <EyeOff color={colors.textMuted} size={20} />
-              ) : (
-                <Eye color={colors.textMuted} size={20} />
-              )}
-            </TouchableOpacity>
-          </View>
 
           {error ? (
             <Typography variant="caption" color={colors.error} style={{ marginTop: 8 }}>
@@ -811,42 +454,25 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
           ) : null}
 
           <Button
-            title={loading ? t('subscription.processing') : (effectiveAuthMode === 'signup' ? t('aiOnboarding.signUp') : t('aiOnboarding.signIn', 'Sign In'))}
-            onPress={effectiveAuthMode === 'signup' ? handleSignUp : handleSignIn}
+            title={loading ? t('subscription.processing') : t('aiOnboarding.sendCode')}
+            onPress={handleSendCode}
             size="large"
             style={{ marginTop: 24 }}
-            disabled={loading || !email || !password || (effectiveAuthMode === 'signup' && !firstName)}
+            disabled={loading || !normalizedEmail || (effectiveAuthMode === 'signup' && !name.trim())}
           />
-
-          {/* Forgot Password link — only in sign-in mode */}
-          {effectiveAuthMode === 'signin' && (
-            <TouchableOpacity
-              onPress={() => {
-                setForgotPasswordMode(true);
-                setError('');
-              }}
-              style={{ marginTop: 14, alignItems: 'center' }}
-            >
-              <Typography variant="caption" color={colors.textSecondary}>
-                {t('aiOnboarding.forgotPassword', 'Forgot your password?')}
-              </Typography>
-            </TouchableOpacity>
-          )}
 
           {canSignUp ? (
             <TouchableOpacity
               onPress={() => {
                 setAuthMode(effectiveAuthMode === 'signup' ? 'signin' : 'signup');
-                setForgotPasswordMode(false);
-                setPendingReset(false);
                 setError('');
               }}
               style={{ marginTop: 16, alignItems: 'center' }}
             >
               <Typography variant="bodySmall" color={colors.primary}>
                 {effectiveAuthMode === 'signup'
-                  ? t('aiOnboarding.alreadyHaveAccount', 'Already have an account? Sign in')
-                  : t('aiOnboarding.needAccount', "Don't have an account? Sign up")}
+                  ? t('aiOnboarding.alreadyHaveAccount')
+                  : t('aiOnboarding.needAccount')}
               </Typography>
             </TouchableOpacity>
           ) : (
@@ -856,14 +482,19 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
           )}
         </>
       ) : (
+        /* ── Step 2: the code from the email ── */
         <>
           <TextInput
             style={styles.input}
-            value={verificationCode}
-            onChangeText={setVerificationCode}
+            value={code}
+            onChangeText={text => setCode(text.replace(/\D/g, '').slice(0, 6))}
             placeholder="123456"
             placeholderTextColor={colors.textMuted}
             keyboardType="number-pad"
+            autoComplete="one-time-code"
+            textContentType="oneTimeCode"
+            maxLength={6}
+            autoFocus
           />
 
           {error ? (
@@ -874,18 +505,34 @@ export const AIOnboardingScreen = ({ navigation, route }: any) => {
 
           <Button
             title={loading ? t('subscription.processing') : t('aiOnboarding.verify')}
-            onPress={handleVerifyEmail}
+            onPress={handleVerifyCode}
             size="large"
             style={{ marginTop: 24 }}
-            disabled={loading || !verificationCode}
+            disabled={loading || code.length < 6}
           />
+
+          <TouchableOpacity onPress={handleSendCode} disabled={loading} style={{ marginTop: 16, alignItems: 'center' }}>
+            <Typography variant="bodySmall" color={colors.primary}>
+              {t('aiOnboarding.resendCode')}
+            </Typography>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => { setCodeSent(false); setCode(''); setError(''); }}
+            disabled={loading}
+            style={{ marginTop: 12, alignItems: 'center' }}
+          >
+            <Typography variant="caption" color={colors.textSecondary}>
+              {t('aiOnboarding.changeEmail')}
+            </Typography>
+          </TouchableOpacity>
         </>
       )}
 
       <Button
         title={t('common.cancel')}
         variant="ghost"
-        onPress={() => { setPendingVerification(false); setForgotPasswordMode(false); setPendingReset(false); navigation.goBack(); setError(''); }}
+        onPress={() => { setCodeSent(false); setError(''); navigation.goBack(); }}
         style={{ marginTop: 12 }}
       />
     </ScrollView>
@@ -1288,23 +935,6 @@ const createStyles = (colors: any) => StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     marginBottom: 12,
-  },
-  passwordContainer: {
-    marginBottom: 12,
-    justifyContent: 'center',
-  },
-  eyeIcon: {
-    position: 'absolute',
-    right: 16,
-    height: '100%',
-    justifyContent: 'center',
-  },
-  nameRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  nameField: {
-    flex: 1,
   },
   genderRow: {
     flexDirection: 'row',

@@ -10,19 +10,21 @@ import {
 } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
+import { deleteAuthUser } from "./auth";
 
 // ── Auth helpers (shared by other modules) ──────────────
 
 /**
  * The signed-in user's profile row, or null when signed out / not created yet.
- * Identity always comes from the Clerk token — never from client arguments.
+ * Identity always comes from the auth token (subject = Better Auth user ID) —
+ * never from client arguments.
  */
 export async function getCurrentUser(ctx: QueryCtx | MutationCtx): Promise<Doc<"users"> | null> {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) return null;
   return await ctx.db
     .query("users")
-    .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+    .withIndex("by_authId", (q) => q.eq("authId", identity.subject))
     .first();
 }
 
@@ -36,8 +38,8 @@ export async function requireCurrentUser(ctx: QueryCtx | MutationCtx): Promise<D
 export async function requireUserInAction(ctx: ActionCtx): Promise<Doc<"users">> {
   const identity = await ctx.auth.getUserIdentity();
   if (!identity) throw new Error("Unauthenticated");
-  const user: Doc<"users"> | null = await ctx.runQuery(internal.users.getByClerkId, {
-    clerkId: identity.subject,
+  const user: Doc<"users"> | null = await ctx.runQuery(internal.users.getByAuthId, {
+    authId: identity.subject,
   });
   if (!user) throw new Error("User profile missing");
   return user;
@@ -109,7 +111,7 @@ export const me = query({
 });
 
 /**
- * Create the profile row for the signed-in Clerk user if it doesn't exist.
+ * Create the profile row for the signed-in user if it doesn't exist.
  * Idempotent — safe to call on every sign-in / sync.
  */
 export const ensureUser = mutation({
@@ -123,7 +125,7 @@ export const ensureUser = mutation({
 
     const existing = await ctx.db
       .query("users")
-      .withIndex("by_clerkId", (q) => q.eq("clerkId", identity.subject))
+      .withIndex("by_authId", (q) => q.eq("authId", identity.subject))
       .first();
 
     const name = (identity.name || args.name || "").trim();
@@ -138,7 +140,7 @@ export const ensureUser = mutation({
     }
 
     return await ctx.db.insert("users", {
-      clerkId: identity.subject,
+      authId: identity.subject,
       name,
       email,
       createdAt: Date.now(),
@@ -185,16 +187,21 @@ export const updateProfile = mutation({
 });
 
 /**
- * Delete the signed-in user's profile and (asynchronously) all their data.
- * The profile row is removed immediately so the account stops resolving.
+ * Delete the signed-in account: the profile, (asynchronously) all their data,
+ * and the sign-in account with its sessions. The profile row is removed
+ * immediately so the account stops resolving.
  */
 export const deleteAccount = mutation({
   args: {},
   handler: async (ctx): Promise<void> => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) return;
     const user = await getCurrentUser(ctx);
-    if (!user) return;
-    await ctx.db.delete(user._id);
-    await ctx.scheduler.runAfter(0, internal.users.purgeUserData, { userId: user._id });
+    if (user) {
+      await ctx.db.delete(user._id);
+      await ctx.scheduler.runAfter(0, internal.users.purgeUserData, { userId: user._id });
+    }
+    await deleteAuthUser(ctx, identity.subject);
   },
 });
 
@@ -217,12 +224,12 @@ export const getById = internalQuery({
   },
 });
 
-export const getByClerkId = internalQuery({
-  args: { clerkId: v.string() },
+export const getByAuthId = internalQuery({
+  args: { authId: v.string() },
   handler: async (ctx, args) => {
     return await ctx.db
       .query("users")
-      .withIndex("by_clerkId", (q) => q.eq("clerkId", args.clerkId))
+      .withIndex("by_authId", (q) => q.eq("authId", args.authId))
       .first();
   },
 });

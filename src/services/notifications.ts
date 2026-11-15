@@ -37,7 +37,7 @@ export interface NudgeStore {
   sent: SentNudge[];
   /** Template nudges scheduled on this phone right now. */
   scheduled: ScheduledNudge[];
-  /** Push token registered with the server for AI nudges, and the Clerk user it's registered to. */
+  /** Push token registered with the server for AI nudges, and the user it's registered to. */
   registered?: { token: string; userId: string };
   /** Asked for notification permission after a workout already (only once). */
   askedAfterWorkout?: boolean;

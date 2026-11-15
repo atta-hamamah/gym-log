@@ -80,7 +80,7 @@ interface RevenueCatEntitlement {
   grace_period_expires_date?: string | null;
 }
 
-/** Current AI entitlement for a RevenueCat app user ID (= Clerk user ID). */
+/** Current AI entitlement for a RevenueCat app user ID (= Better Auth user ID). */
 async function fetchAIEntitlement(appUserId: string): Promise<{ active: boolean; expiresAt?: number }> {
   const response = await fetch(
     `https://api.revenuecat.com/v1/subscribers/${encodeURIComponent(appUserId)}`,
@@ -132,7 +132,7 @@ export async function refreshEntitlement(
     Date.now() - user.entitlementCheckedAt < REFRESH_COOLDOWN_MS;
   if (recentlyChecked && !options.force) return user;
 
-  const { active, expiresAt } = await fetchAIEntitlement(user.clerkId);
+  const { active, expiresAt } = await fetchAIEntitlement(user.authId);
   await ctx.runMutation(internal.entitlements.store, {
     userId: user._id,
     aiActive: active,
@@ -170,8 +170,8 @@ export const ensureAccess = action({
 export const refreshFromWebhook = internalAction({
   args: { appUserIds: v.array(v.string()) },
   handler: async (ctx, args): Promise<void> => {
-    for (const clerkId of args.appUserIds) {
-      const user: Doc<"users"> | null = await ctx.runQuery(internal.users.getByClerkId, { clerkId });
+    for (const authId of args.appUserIds) {
+      const user: Doc<"users"> | null = await ctx.runQuery(internal.users.getByAuthId, { authId });
       if (!user) continue; // anonymous purchase or user without a cloud profile yet
       await refreshEntitlement(ctx, user, { force: true });
     }

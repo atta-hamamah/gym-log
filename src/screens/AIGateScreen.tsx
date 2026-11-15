@@ -13,7 +13,7 @@ import { ScreenLayout } from '../components/ScreenLayout';
 import { Typography } from '../components/Typography';
 import { Button } from '../components/Button';
 import { useSubscription } from '../context/SubscriptionContext';
-import { useAuth, useUser } from '@clerk/clerk-expo';
+import { useAccount } from '../services/auth';
 import { useConvexAuth, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import { borderRadius, spacing } from '../theme/colors';
@@ -61,9 +61,8 @@ export const AIGateScreen = ({ navigation }: any) => {
     purchaseAISubscription,
     refreshSubscriptionState,
   } = useSubscription();
-  const { isSignedIn } = useAuth();
-  const { user } = useUser();
-  const email = user?.primaryEmailAddress?.emailAddress;
+  const { isSignedIn, user } = useAccount();
+  const email = user?.email;
   const { isAuthenticated: convexAuthenticated } = useConvexAuth();
   const profile = useQuery(api.users.me, isAISubscriber && convexAuthenticated ? {} : 'skip');
   const [subscribing, setSubscribing] = useState(false);

@@ -10,7 +10,7 @@ import { TrialBanner } from '../components/TrialBanner';
 import { PlanHomeCard } from '../components/PlanHomeCard';
 import { useWorkout } from '../context/WorkoutContext';
 import { useSubscription } from '../context/SubscriptionContext';
-import { useAuth } from '@clerk/clerk-expo';
+import { useAccount } from '../services/auth';
 import { Button } from '../components/Button';
 import { Card } from '../components/Card';
 import { isThisWeek } from 'date-fns';
@@ -28,7 +28,7 @@ export const HomeScreen = ({ navigation }: any) => {
     const { weightUnit, displayWeight } = useUnits();
     const { currentWorkout, startWorkout, workouts } = useWorkout();
     const { tier, isAISubscriber } = useSubscription();
-    const { isSignedIn } = useAuth();
+    const { isSignedIn } = useAccount();
     const [nameModalVisible, setNameModalVisible] = useState(false);
     const [workoutName, setWorkoutName] = useState('');
 

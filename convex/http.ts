@@ -1,8 +1,12 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { authComponent, createAuth } from "./auth";
 
 const http = httpRouter();
+
+// Better Auth endpoints (sign-in codes, sessions, Convex JWTs) under /api/auth/*
+authComponent.registerRoutes(http, createAuth);
 
 /**
  * RevenueCat webhook: https://<deployment>.convex.site/revenuecat/webhook
