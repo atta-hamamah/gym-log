@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@better-auth/expo": "~1.7.25",
-    "@convex-dev/better-auth": "~0.13.0",
+    "@convex-dev/better-auth": "~0.13.1",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-community/datetimepicker": "8.4.4",
     "@react-navigation/bottom-tabs": "^7.12.0",
