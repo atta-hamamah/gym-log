@@ -12,6 +12,7 @@ import type { CoachData } from "./coachData";
 import { analyzeRecovery, describeWorkout, fmtWeight, fromClientWorkout, unitsOf } from "./coachPrompt";
 import { runCoachChat } from "./coachChat";
 import { AURA_MODEL, temperatureFor } from "./aiModels";
+import { characterLanguage, characterVoice } from "./personas";
 
 /**
  * AI Chat Action
@@ -96,9 +97,10 @@ export const generateWorkoutAura = action({
       es: "Write your response in Spanish.",
       hi: "Write your response in Hindi.",
     };
-    const languageInstruction = LANGUAGE_MAP[lang] || `Write your response in the language with code: ${lang}.`;
-
     const characterMode = args.characterMode || "default";
+    const languageInstruction = characterMode === "chad" || characterMode === "kevin"
+      ? `Write your response in ${characterLanguage(lang)}, in your own first-person voice.`
+      : LANGUAGE_MAP[lang] || `Write your response in the language with code: ${lang}.`;
 
     let personalityAndTask = "";
     let recentWorkoutsContext = "";
@@ -138,20 +140,22 @@ export const generateWorkoutAura = action({
       }
     }
 
+    // English examples only show the tone: in other languages the model should invent native jokes.
+    const examplesNote = "These English examples only show the tone. In any other language, invent titles and comparisons that are natural and funny in that language and culture; never translate these.";
     if (characterMode === "chad") {
-      personalityAndTask = `You are Chad — the ultimate gym alpha who's been lifting since birth. You bench 315 for warm-up and look down on everyone's workout with the energy of Gordon Ramsay in a kitchen. You roast the user mercilessly but in a funny, gym-bro way. You refer to yourself as Chad occasionally. Never be actually cruel — just hilariously brutal.
+      personalityAndTask = `${characterVoice("chad", lang)}
 
 Your task:
-1. Assign them a brutally honest, roast-style "Gym Archetype" title (e.g., "The Warm-Up Warrior", "The Cardio Bunny Who Wandered In", "The Quarter-Rep King").
-2. Calculate what pathetically small real-world object their total volume roughly equals. Make the comparison deliberately insulting but funny (e.g., "a baby stroller", "half a shopping cart of excuses").
-3. Write a 2-sentence savage roast combining their archetype and the object comparison. Maximum Chad energy. Make it sting but make them laugh.`;
+1. Give them a brutally honest, roast-style "Gym Archetype" title (e.g., "The Warm-Up Warrior", "The Quarter-Rep King"). ${examplesNote}
+2. Compare their total volume to a deliberately small, funny real-world object (e.g., "a baby stroller", "half a shopping cart of excuses"). Pick objects people in that culture know from daily life.
+3. Write a 2-sentence roast combining the archetype and the comparison, in your own voice. Make it sting, but make them laugh.`;
     } else if (characterMode === "kevin") {
-      personalityAndTask = `You are Kevin — a lazy, unmotivated guy who genuinely does not understand why anyone would voluntarily go to the gym. You are passive-aggressive, deeply sarcastic, and low-key jealous they're working out while you're eating chips on the couch. You reluctantly analyze their workout while complaining about how exhausting even READING about it is. You refer to yourself as Kevin occasionally.
+      personalityAndTask = `${characterVoice("kevin", lang)}
 
 Your task:
-1. Assign them a passive-aggressive "Gym Archetype" title from someone who hates exercise (e.g., "The Unnecessarily Active", "The Person Who Could've Been Napping", "The Voluntary Sufferer").
-2. Calculate what real-world object their total volume roughly equals, but frame it as absurdly unnecessary effort (e.g., "congratulations, you could've just NOT lifted 3 refrigerators today").
-3. Write a 2-sentence passive-aggressive summary that makes exercise sound pointless but grudgingly acknowledges they showed up. Maximum Kevin energy.`;
+1. Give them a passive-aggressive "Gym Archetype" title from someone who hates exercise (e.g., "The Unnecessarily Active", "The Voluntary Sufferer"). ${examplesNote}
+2. Compare their total volume to a real-world object, framed as absurdly unnecessary effort (e.g., "you could've just NOT lifted 3 refrigerators today"). Pick objects people in that culture know from daily life.
+3. Write a 2-sentence passive-aggressive summary, in your own voice, that makes exercise sound pointless but grudgingly admits they showed up.`;
     } else {
       personalityAndTask = `You are an elite personal fitness coach — the kind that top athletes pay thousands for. You genuinely care about this person's progress and want to see them succeed. You analyze their workout with expert-level insight, compare it against their recent training history and goals, and deliver a verdict that is encouraging, specific, and actionable.
 

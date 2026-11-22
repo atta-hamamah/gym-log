@@ -212,7 +212,16 @@
     "resting": "Minuteur de repos",
     "restComplete": "Repos terminé !",
     "skip": "Passer",
-    "dismiss": "OK"
+    "dismiss": "OK",
+    "channelName": "Alarme de repos",
+    "liveChannelName": "Compte à rebours du repos",
+    "endTitle": "Repos terminé 💪",
+    "endBody": "C'est l'heure de votre prochaine série.",
+    "liveTitle": "Repos en cours…",
+    "liveBody": "Touchez pour revenir à votre séance.",
+    "pillDone": "Repos terminé",
+    "openWorkout": "Ouvrir la séance",
+    "stopTimer": "Arrêter le minuteur de repos"
   },
   "pr": {
     "newPR": "Nouveau record personnel !",
@@ -1018,12 +1027,12 @@
         "2": "Séance du jour : {{session}}. Suivez le plan, les progrès suivront."
       },
       "chad": {
-        "1": "{{session}} au programme aujourd'hui. Le plan se fiche de tes états d'âme. Moi aussi. Go.",
-        "2": "Mec. {{session}}. Aujourd'hui. La barre s'ennuie déjà de toi."
+        "1": "{{session}} au programme aujourd'hui. Le programme se fiche de ton humeur. Moi aussi. Allez, debout.",
+        "2": "Mon grand. {{session}}. Aujourd'hui. La barre commence à se sentir seule."
       },
       "kevin": {
-        "1": "Ton plan dit {{session}} aujourd'hui. Moi je dis canapé. Devine lequel de nous deux a des objectifs.",
-        "2": "{{session}} aujourd'hui ? Amuse-toi bien. Moi je reste là, à économiser mon énergie comme un champion."
+        "1": "Ton programme dit {{session}}. Moi je dis canapé. Devine lequel de nous deux a l’air reposé.",
+        "2": "{{session}} aujourd'hui ? Amuse-toi bien. Moi je reste là, à économiser mon énergie. Un vrai sportif."
       }
     },
     "usualDay": {
@@ -1032,12 +1041,12 @@
         "2": "C'est un de vos jours d'entraînement. 30 minutes concentrées entretiennent votre élan."
       },
       "chad": {
-        "1": "C'est ton jour de salle et tu le sais. Tes muscles t'attendent. Ta dignité aussi.",
-        "2": "Aujourd'hui, on soulève. Ne m'oblige pas à venir te chercher."
+        "1": "C'est ton jour de salle et tu le sais. Tes muscles t'attendent. Ta fierté aussi.",
+        "2": "Jour de fonte, champion. Ne m'oblige pas à venir te chercher."
       },
       "kevin": {
-        "1": "C'est pas ton jour de salle aujourd'hui ? Bizarre. Moi j'y vois un jour parfait pour une sieste.",
-        "2": "C'est ton jour d'entraînement habituel. On zappe ensemble ? …Bon, vas-y. Traître."
+        "1": "C'est pas ton jour de salle aujourd'hui ? Bizarre, moi j'y vois surtout un jour de sieste.",
+        "2": "C'est ton jour d'entraînement habituel. On sèche ensemble ? …Bon, vas-y. Traître."
       }
     },
     "comeback": {
@@ -1046,12 +1055,12 @@
         "2": "{{days}} de pause. Vos progrès sont toujours là. Protégez-les avec une courte séance aujourd’hui."
       },
       "chad": {
-        "1": "{{days}} sans soulever ?! Tes gains viennent de signaler ta disparition.",
-        "2": "{{days}} sans t'entraîner. Même ton shaker pense que t'as abandonné. Prouve-lui le contraire."
+        "1": "{{days}} sans soulever ?! Tes muscles viennent de lancer un avis de recherche.",
+        "2": "{{days}} de pause. Même ton shaker croit que t'as abandonné. Prouve-lui le contraire."
       },
       "kevin": {
-        "1": "{{days}} sans salle. Bienvenue sur le canapé, l’ami. Les chips sont à gauche.",
-        "2": "{{days}} de repos. Franchement ? Fier de toi. Ne laisse pas tes objectifs te culpabiliser."
+        "1": "{{days}} sans salle. Bienvenue au club du canapé, les chips sont à gauche.",
+        "2": "{{days}} de repos ? Franchement, je suis fier de toi. Ne laisse pas tes objectifs te culpabiliser."
       }
     },
     "muscleGap": {
@@ -1060,12 +1069,12 @@
         "2": "{{group}} : dernière séance il y a {{days}}. Quelques séries cette semaine et tout s'équilibre."
       },
       "chad": {
-        "1": "{{group}} : rien depuis {{days}}. Les favoris, c'est pour les parfums de glace, pas pour les muscles.",
-        "2": "{{group}} : pas touché depuis {{days}}. Zapper, ça ne construit rien. Règle ça."
+        "1": "{{group}} : zappé depuis {{days}}. On ne fait pas son marché dans ses muscles.",
+        "2": "{{group}} : pas touché depuis {{days}}. L'esquive, ça ne construit rien. On corrige ça."
       },
       "kevin": {
-        "1": "{{group}} : zéro séance depuis {{days}}. Respect. C'est ce genre d'engagement envers le repos que j'admire.",
-        "2": "{{group}} : dernière séance il y a {{days}}. Laisse dormir les muscles qui dorment."
+        "1": "{{group}} : zéro séance en {{days}}. Respect. Ça, c'est le genre de constance que j'admire.",
+        "2": "{{group}} : dernière séance il y a {{days}}. Laisse dormir ce muscle, il a l'air bien."
       }
     },
     "weeklyRecap": {
@@ -1074,12 +1083,12 @@
         "2": "Bilan de la semaine : {{workouts}} et {{volume}} soulevés. C'est cette régularité qui donne des résultats."
       },
       "chad": {
-        "1": "Cette semaine : {{workouts}}, {{volume}} soulevés. Pas mal. Pas du niveau de Chad. Mais pas mal.",
+        "1": "Cette semaine : {{workouts}}, {{volume}} soulevés. Pas mal. Pas mon niveau, mais pas mal.",
         "2": "{{volume}} cette semaine. Mignon. La semaine prochaine, on charge plus lourd."
       },
       "kevin": {
         "1": "{{workouts}} cette semaine et {{volume}} soulevés. Moi, j'ai soulevé la télécommande. On n'est pas pareils.",
-        "2": "{{volume}} cette semaine. Pourquoi ? Vraie question. Bref… bravo, j'imagine."
+        "2": "{{volume}} cette semaine. Mais pourquoi ? Vraiment, je demande. Bref… bravo, j'imagine."
       }
     },
     "welcome": {
@@ -1088,12 +1097,12 @@
         "2": "Prêt quand vous l'êtes. Une séance full body de 20 minutes est un excellent début."
       },
       "chad": {
-        "1": "Tu as téléchargé une appli de muscu et tu n'as encore rien soulevé. Stratégie audacieuse. On corrige ça.",
-        "2": "Toujours zéro séance enregistrée. Les poids ne vont pas se soulever tout seuls, champion."
+        "1": "Tu télécharges une appli de muscu et tu n'as encore rien soulevé. Stratégie audacieuse. On règle ça ?",
+        "2": "Toujours zéro séance. Les haltères ne vont pas se soulever toutes seules, champion."
       },
       "kevin": {
-        "1": "Pas encore de séance ? Pareil. On devrait fonder un club. Les réunions ont lieu sur le canapé.",
-        "2": "Tu as installé une appli d'entraînement et puis… rien. Franchement, une légende."
+        "1": "Pas encore de séance ? Moi non plus. On monte un club ? Réunions sur le canapé.",
+        "2": "T'as installé une appli de sport et puis… rien. Franchement, une légende."
       }
     }
   }

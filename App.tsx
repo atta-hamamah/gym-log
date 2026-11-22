@@ -13,6 +13,7 @@ import { PlanProvider } from './src/context/PlanContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { UnitsProvider } from './src/context/UnitsContext';
 import { NotificationsProvider } from './src/context/NotificationsContext';
+import { RestTimerProvider } from './src/context/RestTimerContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
 
 // ── Convex Configuration ─────────────────────────────────
@@ -42,7 +43,9 @@ const AppContent = () => {
                             <PlanProvider>
                                 <UnitsProvider>
                                     <NotificationsProvider>
-                                        <AppNavigator />
+                                        <RestTimerProvider>
+                                            <AppNavigator />
+                                        </RestTimerProvider>
                                     </NotificationsProvider>
                                 </UnitsProvider>
                             </PlanProvider>

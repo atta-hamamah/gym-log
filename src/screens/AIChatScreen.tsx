@@ -39,7 +39,7 @@ interface ChatMessage {
 }
 
 export const AIChatScreen = ({ navigation }: any) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const styles = createStyles(colors, insets.bottom);
@@ -149,7 +149,7 @@ export const AIChatScreen = ({ navigation }: any) => {
     setCommentModalVisible(false);
     setGenerating(true);
     try {
-      const result = await generateWorkoutAction(options);
+      const result = await generateWorkoutAction({ ...options, language: i18n.language });
       navigation.navigate('AIWorkoutPreview', {
         workout: result as AIGeneratedWorkout,
         options,
@@ -165,7 +165,7 @@ export const AIChatScreen = ({ navigation }: any) => {
     } finally {
       setGenerating(false);
     }
-  }, [generating, convexUser, generateWorkoutAction, navigation, t, aiErrorText]);
+  }, [generating, convexUser, generateWorkoutAction, navigation, t, i18n.language, aiErrorText]);
 
   // ── Render a single message bubble ──
   const renderMessage = useCallback(({ item }: { item: ChatMessage }) => {

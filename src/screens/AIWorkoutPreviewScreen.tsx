@@ -24,7 +24,7 @@ import { api } from '../../convex/_generated/api';
 import { aiLimitMessage } from '../utils/aiErrors';
 
 export const AIWorkoutPreviewScreen = ({ route, navigation }: any) => {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { colors } = useTheme();
     const styles = createStyles(colors);
     const { currentWorkout, startPlannedWorkout, refreshData } = useWorkout();
@@ -92,7 +92,7 @@ export const AIWorkoutPreviewScreen = ({ route, navigation }: any) => {
         if (!convexUser?._id || regenerating) return;
         setRegenerating(true);
         try {
-            const result = await generateWorkoutAction(route.params?.options ?? {});
+            const result = await generateWorkoutAction({ ...(route.params?.options ?? {}), language: i18n.language });
             setWorkout(result as AIGeneratedWorkout);
         } catch (error) {
             showModal(
@@ -102,7 +102,7 @@ export const AIWorkoutPreviewScreen = ({ route, navigation }: any) => {
         } finally {
             setRegenerating(false);
         }
-    }, [convexUser, regenerating, generateWorkoutAction, t, route.params?.options]);
+    }, [convexUser, regenerating, generateWorkoutAction, t, i18n.language, route.params?.options]);
 
     // ── Start the workout ──
     const handleStartWorkout = useCallback(async () => {

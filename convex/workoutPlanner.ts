@@ -12,6 +12,7 @@ import type { CoachData } from "./coachData";
 import { analyzeRecovery, buildCoachContext, lastPerformanceBlock, unitsOf, type Units } from "./coachPrompt";
 import { guardLoad, type LoadChange } from "./loadGuard";
 import { WORKOUT_MODEL, temperatureFor } from "./aiModels";
+import { languageName } from "./language";
 import { EXERCISE_CATALOG, exercisesForEquipment } from "../src/constants/exerciseCatalog";
 import type { AIGeneratedExercise, AIGeneratedWorkout, Equipment, Exercise } from "../src/types";
 
@@ -37,6 +38,8 @@ export interface WorkoutArgs {
   equipment?: string[];
   /** Muscle groups to focus on today. */
   focus?: string[];
+  /** App language code ("ar", "fr"...): the plan's text is written in it. */
+  language?: string;
 }
 
 export interface WorkoutRequest {
@@ -164,6 +167,7 @@ export function buildWorkoutRequest(user: Doc<"users">, data: CoachData, args: W
   const catalog = buildCatalog(equipment, data.customExercises);
 
   const minutes = clamp(Math.round(args.sessionMinutes ?? user.sessionMinutes ?? 60), 15, 180);
+  const language = languageName(args.language);
   const context = buildCoachContext(user, data, { detailed: 6, now });
   const recovery = analyzeRecovery(data.workouts, data.customExercises, now);
   const fresh = recovery
@@ -199,7 +203,8 @@ HOW TO DESIGN THE SESSION:
 9. Use catalog IDs exactly. Use "${NEW_EXERCISE}" with newExercise filled in ONLY if the user explicitly asks for a specific exercise that isn't in the list; otherwise newExercise is null.
 10. warmup: one short sentence (e.g. "5 min easy bike, then 2 light sets of the first lift").
 11. reasoning: 2-3 sentences referencing their data (what they trained recently, recovery, progress) and today's request.
-12. notes: one short cue per exercise (form tip or load guidance); write workoutName, reasoning, warmup and notes in the language the user wrote their request in, or English if none.
+12. notes: one short cue per exercise (form tip or load guidance).
+13. LANGUAGE: write workoutName, reasoning, warmup and every note in ${language}, the language of the user's app, even if their request or the data above is in another language. The examples above are only in English to show the format: write natural ${language}, not a word-for-word translation. Keep exercise IDs exactly as listed.
 
 USER DATA:
 ${context}

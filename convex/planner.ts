@@ -17,14 +17,12 @@ import { buildCoachContext, describeWorkout, lastPerformanceBlock, profileBlock,
 import { guardLoad } from "./loadGuard";
 import { AI_MODEL, temperatureFor } from "./aiModels";
 import { buildCatalog, catalogText, normalizeReps, type CatalogEntry } from "./workoutPlanner";
+import { languageName } from "./language";
 import { addDays, fromDateKey, phaseOf, planCompletions, sessionKey, weekRange, weekSchedule } from "../src/utils/trainingPlan";
 import type { Equipment, PlanAdjustment, PlanCheckIn, PlanExercise, PlanPhase, PlanSession, TrainingPlan } from "../src/types";
 
 const WEEKDAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-const LANGUAGES: Record<string, string> = { en: "English", ar: "Arabic", fr: "French", es: "Spanish", hi: "Hindi" };
-
-/** Language name for the model, from an app language code ("ar", "fr-FR"...). */
-export const languageName = (code?: string) => LANGUAGES[(code ?? "en").split("-")[0]] ?? "English";
+export { languageName };
 
 const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
 const text = (value: unknown, max: number, fallback = "") =>

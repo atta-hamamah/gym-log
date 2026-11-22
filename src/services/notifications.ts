@@ -63,14 +63,18 @@ export async function saveNudgeStore(store: NudgeStore): Promise<void> {
 }
 
 if (NUDGES_SUPPORTED) {
-  // Show nudges as a banner even while the app is open.
+  // Show nudges as a banner even while the app is open. The end-of-rest alarm
+  // is the exception: in the app, the rest timer itself rings (RestTimerContext).
   Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowBanner: true,
-      shouldShowList: true,
-      shouldPlaySound: false,
-      shouldSetBadge: false,
-    }),
+    handleNotification: async notification => {
+      const restEnd = notification.request.content.data?.type === 'restEnd';
+      return {
+        shouldShowBanner: !restEnd,
+        shouldShowList: !restEnd,
+        shouldPlaySound: false,
+        shouldSetBadge: false,
+      };
+    },
   });
 }
 

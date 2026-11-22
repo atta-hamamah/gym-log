@@ -212,7 +212,16 @@
     "resting": "Rest timer",
     "restComplete": "Rest complete!",
     "skip": "Skip",
-    "dismiss": "Done"
+    "dismiss": "Done",
+    "channelName": "Rest timer alarm",
+    "liveChannelName": "Rest countdown",
+    "endTitle": "Rest is over 💪",
+    "endBody": "Time for your next set.",
+    "liveTitle": "Resting…",
+    "liveBody": "Tap to go back to your workout.",
+    "pillDone": "Rest done",
+    "openWorkout": "Open workout",
+    "stopTimer": "Stop rest timer"
   },
   "pr": {
     "newPR": "New personal record!",
@@ -1074,7 +1083,7 @@
         "2": "Weekly check-in: {{workouts}} and {{volume}} lifted. This consistency is what builds results."
       },
       "chad": {
-        "1": "This week: {{workouts}}, {{volume}} lifted. Not bad. Not Chad. But not bad.",
+        "1": "This week: {{workouts}}, {{volume}} lifted. Not bad. Not my level. But not bad.",
         "2": "{{volume}} this week. Cute. Next week we go heavier."
       },
       "kevin": {

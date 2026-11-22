@@ -42,3 +42,7 @@ yarn-error.*
 
 # AI eval reports
 evals/results/
+
+# Build output of local native modules (modules/*)
+modules/*/android/build/
+modules/*/android/.gradle/

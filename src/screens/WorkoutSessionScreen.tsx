@@ -25,6 +25,7 @@ import { getExerciseName, EXERCISE_BY_ID } from '../constants/exercises';
 import { useTheme } from '../context/ThemeContext';
 import { useUnits } from '../context/UnitsContext';
 import { useFeatureAccess } from '../hooks/useFeatureAccess';
+import { useRestTimer } from '../context/RestTimerContext';
 
 export const WorkoutSessionScreen = ({ navigation }: any) => {
     const { t } = useTranslation();
@@ -50,9 +51,14 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
     const [pendingGoBack, setPendingGoBack] = useState(false);
     const [notes, setNotes] = useState('');
     const [elapsed, setElapsed] = useState(0);
-    const [showRestTimer, setShowRestTimer] = useState(false);
-    const [restDuration, setRestDuration] = useState(90); // default 90s
-    const [restCountdown, setRestCountdown] = useState<number | null>(null); // header countdown
+    // The rest timer is app-wide (keeps running when leaving this screen or the app).
+    const {
+        remaining: restCountdown,
+        start: startRest,
+        stop: stopRest,
+        setDefaultDuration: setRestDuration,
+    } = useRestTimer();
+    const [showRestTimer, setShowRestTimer] = useState(restCountdown !== null);
 
     // ── Superset linking state ──
     const [isLinkMode, setIsLinkMode] = useState(false);
@@ -106,15 +112,6 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
         return () => clearInterval(interval);
     }, [currentWorkout]);
 
-    // Header rest countdown
-    useEffect(() => {
-        if (restCountdown === null || restCountdown < -30) return; // stop after 30s overtime
-        const timer = setTimeout(() => {
-            setRestCountdown(prev => (prev !== null ? prev - 1 : null));
-        }, 1000);
-        return () => clearTimeout(timer);
-    }, [restCountdown]);
-
     const formatTime = useCallback((seconds: number) => {
         const h = Math.floor(seconds / 3600);
         const m = Math.floor((seconds % 3600) / 60);
@@ -133,16 +130,16 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
 
     // Rest after a set: the plan's rest for that exercise, otherwise the last chosen duration.
     const handleSetLogged = useCallback((plannedRest?: number) => {
-        const duration = plannedRest && plannedRest > 0 ? plannedRest : restDuration;
-        if (plannedRest && plannedRest > 0) setRestDuration(plannedRest);
+        const planned = plannedRest && plannedRest > 0 ? plannedRest : undefined;
+        if (planned) setRestDuration(planned);
+        startRest(planned);
         setShowRestTimer(true);
-        setRestCountdown(duration);
-    }, [restDuration]);
+    }, [startRest, setRestDuration]);
 
     const handleDismissRest = useCallback(() => {
         setShowRestTimer(false);
-        setRestCountdown(null);
-    }, []);
+        stopRest();
+    }, [stopRest]);
 
     // ── Superset linking handlers ──
     const handleToggleLinkMode = () => {
@@ -346,8 +343,8 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
                     onPress={() => {
                         if (restCountdown === null) {
                             // Start a new rest timer
+                            startRest();
                             setShowRestTimer(true);
-                            setRestCountdown(restDuration);
                         } else {
                             // Toggle the panel visibility
                             setShowRestTimer(!showRestTimer);
@@ -607,9 +604,7 @@ export const WorkoutSessionScreen = ({ navigation }: any) => {
 
             <RestTimer
                 visible={showRestTimer}
-                defaultDuration={restDuration}
                 onDismiss={handleDismissRest}
-                onTimeChange={(newRemaining) => setRestCountdown(newRemaining)}
             />
 
             <PRCelebration

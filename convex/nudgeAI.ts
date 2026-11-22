@@ -10,6 +10,8 @@ import type { NudgeContext } from "./notifications";
 import { aiNudgesAllowed } from "./entitlements";
 import { describeWorkout, fmtWeight, unitsOf, type Units } from "./coachPrompt";
 import { AI_MODEL, temperatureFor } from "./aiModels";
+import { languageName } from "./language";
+import { characterLanguage, characterVoice } from "./personas";
 import { resolveSession } from "../src/utils/trainingPlan";
 import {
   coachFor,
@@ -47,16 +49,15 @@ const COACH_TITLES: Record<string, Record<Coach, string>> = {
   ar: { repai: "مدرب RepAI", chad: "تشاد 🔥", kevin: "كيفن 🛋️" },
 };
 
-const PERSONAS: Record<Coach, string> = {
-  repai:
-    "You are RepAI Coach, an elite personal trainer: warm, motivating, specific and data-driven. Never sarcastic.",
-  chad:
-    "You are Chad, the ultimate gym alpha who has been lifting since birth. You roast people in a funny gym-bro way, like Gordon Ramsay in a gym: brutal about excuses and effort, never actually cruel, and you clearly want them to train.",
-  kevin:
-    "You are Kevin, a lazy couch potato who doesn't understand why anyone exercises. Passive-aggressive, sarcastic and low-key jealous. You use reverse psychology: you 'support' skipping the gym, which makes people want to go.",
-};
+const REPAI_PERSONA =
+  "You are RepAI Coach, an elite personal trainer: warm, motivating, specific and data-driven. Never sarcastic. Speak in the first person, straight to them.";
 
-const LANGUAGES: Record<string, string> = { en: "English", ar: "Arabic", fr: "French", es: "Spanish", hi: "Hindi" };
+/** Who writes the nudge, and in which language (Chad and Kevin get their culture-specific voice). */
+function persona(coach: Coach, language: string): { intro: string; writeIn: string } {
+  if (coach === "repai") return { intro: REPAI_PERSONA, writeIn: languageName(language) };
+  return { intro: characterVoice(coach, language), writeIn: characterLanguage(language) };
+}
+
 const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 // ── Entry points ─────────────────────────────────────────
@@ -247,7 +248,8 @@ async function writeNudge(opts: {
     user.limitations ? `Injuries / limitations (never joke about these): ${user.limitations.slice(0, 200)}` : null,
   ].filter(Boolean).join("\n");
 
-  const prompt = `${PERSONAS[coach]}
+  const voice = persona(coach, language);
+  const prompt = `${voice.intro}
 
 Write ONE push notification from you to this user.
 
@@ -259,11 +261,11 @@ ${profile || "(no profile)"}
 ${recent ? `Recent workouts (newest first):\n${recent}` : "No recent workouts."}
 
 RULES:
-- Write it in ${LANGUAGES[language] ?? "English"}.
+- Write it in ${voice.writeIn}.
 - 1-2 short sentences, at most ${MAX_BODY - 40} characters. It's a phone notification.
 - Be specific: use their real numbers, exercises or session name from above. Never invent numbers.
 - Stay in character, but only ever roast effort and excuses: never their body, weight, looks, age, gender, injuries or limitations.
-- No religious references, no hashtags, at most one emoji. Don't start with your own name (it's already the title).
+- No religious references, no hashtags, at most one emoji. Never write your own name: it's already the notification title, and you speak in the first person.
 
 Return JSON: {"body": "the notification text"}`;
 

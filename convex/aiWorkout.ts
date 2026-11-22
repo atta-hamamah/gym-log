@@ -25,6 +25,8 @@ export const generateWorkout = action({
     equipment: v.optional(v.array(v.string())),
     /** Muscle groups to focus on today. */
     focus: v.optional(v.array(v.string())),
+    /** App language code: the plan's name, reasoning, warm-up and notes are written in it. */
+    language: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });

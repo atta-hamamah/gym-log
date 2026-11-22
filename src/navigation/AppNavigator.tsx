@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, Platform, ActivityIndicator } from 'react-native';
-import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { HomeScreen } from '../screens/HomeScreen';
@@ -30,9 +30,11 @@ import { Home, History, TrendingUp, Settings, BookOpen, Sparkles } from 'lucide-
 import { RootStackParamList, TabParamList } from '../types';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
+import { RestTimerPill } from '../components/RestTimerPill';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<TabParamList>();
+const navigationRef = createNavigationContainerRef<RootStackParamList>();
 
 const AppTheme = {
     ...DefaultTheme,
@@ -157,6 +159,9 @@ export const AppNavigator = () => {
     const { colors, isDark } = useTheme();
     const { t } = useTranslation();
     const { tier, loading } = useSubscription();
+    // The rest timer pill shows everywhere except the workout screen (it has its own timer).
+    const [routeName, setRouteName] = useState<string | undefined>();
+    const trackRoute = () => setRouteName(navigationRef.getCurrentRoute()?.name);
     const appTheme = {
         ...AppTheme,
         dark: isDark,
@@ -183,7 +188,7 @@ export const AppNavigator = () => {
 
     // Normal app flow — app is always accessible, features are gated per tier
     return (
-        <NavigationContainer theme={appTheme}>
+        <NavigationContainer ref={navigationRef} theme={appTheme} onReady={trackRoute} onStateChange={trackRoute}>
             <Stack.Navigator
                 screenOptions={{
                     headerShown: false,
@@ -288,6 +293,12 @@ export const AppNavigator = () => {
                     }}
                 />
             </Stack.Navigator>
+            <RestTimerPill
+                hidden={routeName === 'WorkoutSession'}
+                onPress={() => {
+                    if (navigationRef.isReady()) navigationRef.navigate('WorkoutSession', {});
+                }}
+            />
         </NavigationContainer>
     );
 };
