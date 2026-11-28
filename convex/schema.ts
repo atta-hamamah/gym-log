@@ -214,4 +214,28 @@ export default defineSchema({
   })
     .index("by_userId", ["userId"])
     .index("by_userId_day", ["userId", "day"]),
+
+  // ── Landing page waitlist (see waitlist.ts) ──
+  waitlist: defineTable({
+    /** Lowercased and trimmed. */
+    email: v.string(),
+    platform: v.union(v.literal("android"), v.literal("ios")),
+    locale: v.string(),
+    referralCode: v.string(),
+    /** Referral code of the person whose link they joined with. */
+    referredBy: v.optional(v.string()),
+    referralCount: v.float64(),
+    /** 1 for the first person to join, 2 for the second, ... */
+    joinNumber: v.float64(),
+    /** utm_source or similar, to see which channels bring people. */
+    source: v.optional(v.string()),
+    createdAt: v.float64(),
+  })
+    .index("by_email", ["email"])
+    .index("by_referralCode", ["referralCode"]),
+
+  // Single row holding the waitlist size, so joining doesn't count the table.
+  waitlistMeta: defineTable({
+    total: v.float64(),
+  }),
 });
