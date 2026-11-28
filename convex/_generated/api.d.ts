@@ -31,6 +31,7 @@ import type * as plans from "../plans.js";
 import type * as sync from "../sync.js";
 import type * as users from "../users.js";
 import type * as validators from "../validators.js";
+import type * as waitlist from "../waitlist.js";
 import type * as workoutPlanner from "../workoutPlanner.js";
 import type * as workouts from "../workouts.js";
 
@@ -64,6 +65,7 @@ declare const fullApi: ApiFromModules<{
   sync: typeof sync;
   users: typeof users;
   validators: typeof validators;
+  waitlist: typeof waitlist;
   workoutPlanner: typeof workoutPlanner;
   workouts: typeof workouts;
 }>;
